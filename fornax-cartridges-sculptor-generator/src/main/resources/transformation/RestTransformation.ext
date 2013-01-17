@@ -1,0 +1,111 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptormetamodel;
+
+extension extensions::helper;
+extension extensions::properties;
+
+
+addRestDefaults(ResourceOperation operation) :
+	let defaultReturn = operation.defaultReturn() :
+	if (operation.returnString == null && defaultReturn != "") then
+		operation.setReturnString(defaultReturn)->
+	if (operation.path == null) then
+		operation.setPath(operation.defaultPath())->
+	if (operation.httpMethod == null || operation.httpMethod == HttpMethod::UNDEFINED) then
+		operation.setHttpMethod(operation.defaultHttpMethod().mapHttpMethod()) ->
+	if (operation.httpMethod == HttpMethod::GET && 
+		operation.name == "updateForm" && operation.parameters.isEmpty) then
+		operation.addIdParameter() ->
+	if (operation.httpMethod == HttpMethod::GET && 
+		(operation.delegate != null || operation.name == "createForm" || operation.name == "updateForm") &&
+		operation.parameters.notExists(e | e.type == "ModelMap" || e.type == "Model")) then
+		operation.addModelMapParameter() ->
+	if (operation.throws == null && (operation.httpMethod == HttpMethod::DELETE || operation.name == "updateForm")) then
+		operation.addThrowsException() ->
+	if (operation.domainObjectType != null) then
+		operation.domainObjectType.addXmlRootHint() ->
+	operation.parameters.select(e | e.domainObjectType != null).collect(e | e.domainObjectType).addXmlRootHint();
+
+String defaultReturn(ResourceOperation operation) :
+	let propKey1 = "rest." + operation.name + ".return" :
+	let propKey2 =  "rest." + (operation.delegate == null ? "default" : operation.delegate.name) + ".return" :
+	let value = 
+		(if hasProperty(propKey1) then
+			getProperty(propKey1)
+		else if hasProperty(propKey2) then
+			getProperty(propKey2)
+		else
+			"") :
+	value.replacePlaceholders(operation);
+
+String defaultHttpMethod(ResourceOperation operation) :
+	let propKey1 = "rest." + operation.name + ".httpMethod" :
+	let propKey2 =  "rest." + (operation.delegate == null ? "default" : operation.delegate.name) + ".httpMethod" :
+	if hasProperty(propKey1) then
+		getProperty(propKey1)
+	else if hasProperty(propKey2) then
+		getProperty(propKey2)
+	else
+		"GET";
+
+String defaultPath(ResourceOperation operation) :
+	let propKey1 = "rest." + operation.name + ".path" :
+	let propKey2 =  "rest." + (operation.delegate == null ? "default" : operation.delegate.name) + ".path" :
+	let value = 
+		(if hasProperty(propKey1) then
+			getProperty(propKey1)
+		else if hasProperty(propKey2) then
+			getProperty(propKey2)
+		else
+			"/${resourceName}") :
+	value.replacePlaceholders(operation);
+
+String replacePlaceholders(String str, ResourceOperation op) :
+	str.replaceRecourceNamePlaceholder(op)
+		.replaceOperationNamePlaceholder(op)
+		.replaceParamNamePlaceholders(op);
+
+String replaceRecourceNamePlaceholder(String str, ResourceOperation op) :
+	str.replaceAll("\\$\\{resourceName}", op.resource.getDomainResourceName().toFirstLower());
+	
+String replaceOperationNamePlaceholder(String str, ResourceOperation op) :
+	str.replaceAll("\\$\\{operationName}", op.name);
+	
+String replaceParamNamePlaceholders(String str, ResourceOperation op) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.replaceParamNamePlaceholders(java.lang.String, sculptormetamodel.Operation);  
+
+addModelMapParameter(ResourceOperation op) :
+	op.parameters.add(op.createModelMapParameter());
+	
+create Parameter this createModelMapParameter(ResourceOperation op) :
+	setName("modelMap") ->
+	setType("ModelMap");
+	
+addIdParameter(ResourceOperation op) :
+	op.parameters.add(op.createIdParameter());
+	
+create Parameter this createIdParameter(ResourceOperation op) :
+	setName("id") ->
+	setType("IDTYPE");
+
+addThrowsException(ResourceOperation op) :
+	op.setThrows("java.lang.Exception");
+	
+addXmlRootHint(DomainObject domainObject) :
+	domainObject.addHint("xmlRoot=true");	

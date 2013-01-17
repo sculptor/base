@@ -1,0 +1,90 @@
+/*
+ * Copyright 2011 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptordsl;
+
+extension extensions::helper;
+extension org::fornax::cartridges::sculptor::dsl::ModelLoadExtensions;
+
+// These checks fixes CSC-650, i.e. the problem that cross references are not linked in 
+// imported resources. It would have been better to force the linking and validation in 
+// the ordinary model load, but I couldn't find a way to do that. Maybe this issue:
+// http://www.eclipse.org/forums/index.php/mv/msg/136903/440479/#msg_440479
+
+checkCrossLink(DslModule module) :
+    let domainObjects = module.domainObjects:
+    domainObjects.checkCrossLink() ->
+    domainObjects.typeSelect(DslDomainObject).select(e | e.repository != null).repository.operations.checkCrossLink() ->
+    module.services.operations.checkCrossLink();
+
+checkCrossLink(DslSimpleDomainObject domainObject) :
+  null;
+
+checkCrossLink(DslEntity domainObject) :
+  domainObject.references.checkCrossLink() ->
+  if (domainObject.extends != null && domainObject.extends.eContainer == null) then 
+    error("Unresolved extends in " + domainObject.name);
+
+checkCrossLink(DslValueObject domainObject) :
+  domainObject.references.checkCrossLink() ->
+  if (domainObject.extends != null && domainObject.extends.eContainer == null) then 
+    error("Unresolved extends in " + domainObject.name);
+    
+checkCrossLink(DslBasicType domainObject) :
+  domainObject.references.checkCrossLink();
+    
+checkCrossLink(DslDomainEvent domainObject) :
+  domainObject.references.checkCrossLink() ->
+  if (domainObject.extends != null && domainObject.extends.eContainer == null) then 
+    error("Unresolved extends in " + domainObject.name);
+    
+checkCrossLink(DslCommandEvent domainObject) :
+  domainObject.references.checkCrossLink() ->
+  if (domainObject.extends != null && domainObject.extends.eContainer == null) then 
+    error("Unresolved extends in " + domainObject.name);
+    
+checkCrossLink(DslDataTransferObject domainObject) :
+  domainObject.references.checkCrossLink() ->
+  if (domainObject.extends != null && domainObject.extends.eContainer == null) then 
+    error("Unresolved extends in " + domainObject.name);
+
+checkCrossLink(DslReference ref) :
+    if (ref.domainObjectType.eContainer == null) then
+      error("Unresolved reference " + ((DslSimpleDomainObject) ref.eContainer).name + "#" + ref.name);
+      
+checkCrossLink(DslDtoReference ref) :
+    if (ref.domainObjectType.eContainer == null) then
+      error("Unresolved reference " + ((DslSimpleDomainObject) ref.eContainer).name + "#" + ref.name);
+
+
+checkCrossLink(DslServiceOperation op) :
+    op.parameters.checkCrossLink(op) ->
+    if (op.returnType != null && op.returnType.domainObjectType != null && op.returnType.domainObjectType.eContainer == null) then
+      error("Unresolved return type in operation " + ((DslService) op.eContainer).name + "#" + op.name);
+      
+checkCrossLink(DslParameter p, DslServiceOperation op) :
+    if (p.parameterType != null && p.parameterType.domainObjectType != null && p.parameterType.domainObjectType.eContainer == null) then
+      error("Unresolved parameter type in operation " + ((DslService) op.eContainer).name + "#" + op.name + " " + p.name);
+
+checkCrossLink(DslRepositoryOperation op) :
+    op.parameters.checkCrossLink(op) ->
+    if (op.returnType != null && op.returnType.domainObjectType != null && op.returnType.domainObjectType.eContainer == null) then
+      error("Unresolved return type in operation " + ((DslRepository) op.eContainer).name + "#" + op.name);
+      
+checkCrossLink(DslParameter p, DslRepositoryOperation op) :
+    if (p.parameterType != null && p.parameterType.domainObjectType != null && p.parameterType.domainObjectType.eContainer == null) then
+      error("Unresolved parameter type in operation " + ((DslRepository) op.eContainer).name + "#" + op.name + " " + p.name);

@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <description url="http://fornax-platform.org/updatesite/site.xml">
+      This is the Fornax-Platform developer update site to enable a simple setup
+   </description>
+   <feature url="features/org.topcased.modeler.ecore_1.0.0.v200702151548.jar" id="org.topcased.modeler.ecore" version="1.0.0.v200702151548">
+      <category name="Topcased"/>
+   </feature>
+   <feature url="features/org.topcased.modeler.uml_1.0.0.v200702151548.jar" id="org.topcased.modeler.uml" version="1.0.0.v200702151548">
+      <category name="Topcased"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.adapter.gmf.feature_4.1.2.v20070314.jar" id="org.openarchitectureware.adapter.gmf.feature" version="4.1.2.v20070314">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.adapter.rsdp.feature_4.1.2.v20070314.jar" id="org.openarchitectureware.adapter.rsdp.feature" version="4.1.2.v20070314">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.classic.feature_4.1.2.v20070314.jar" id="org.openarchitectureware.classic.feature" version="4.1.2.v20070314">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.core.feature_4.1.2.v20070314.jar" id="org.openarchitectureware.core.feature" version="4.1.2.v20070314">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.plugins.feature_4.1.2.v20070314.jar" id="org.openarchitectureware.plugins.feature" version="4.1.2.v20070314">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.recipe.feature_4.1.2.v20070314.jar" id="org.openarchitectureware.recipe.feature" version="4.1.2.v20070314">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.uml2.adapter_4.1.2.v20070314.jar" id="org.openarchitectureware.uml2.adapter" version="4.1.2.v20070314">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.util.stdlib.feature_4.1.2.v20070314.jar" id="org.openarchitectureware.util.stdlib.feature" version="4.1.2.v20070314">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.util.uml2ecore.feature_4.1.2.v20070314.jar" id="org.openarchitectureware.util.uml2ecore.feature" version="4.1.2.v20070314">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.xtext.feature_4.1.2.v20070314.jar" id="org.openarchitectureware.xtext.feature" version="4.1.2.v20070314">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.eclipse.mylar.bugzilla_feature_2.0.0.v20070330-2030.jar" id="org.eclipse.mylar.bugzilla_feature" version="2.0.0.v20070330-2030">
+      <category name="Mylyn"/>
+   </feature>
+   <feature url="features/org.eclipse.mylar.ide_feature_2.0.0.v20070330-2030.jar" id="org.eclipse.mylar.ide_feature" version="2.0.0.v20070330-2030">
+      <category name="Mylyn"/>
+   </feature>
+   <feature url="features/org.eclipse.mylar.jira_feature_2.0.0.v20070330-2030.jar" id="org.eclipse.mylar.jira_feature" version="2.0.0.v20070330-2030">
+      <category name="Mylyn"/>
+   </feature>
+   <feature url="features/org.eclipse.mylar_feature_2.0.0.v20070330-2030.jar" id="org.eclipse.mylar_feature" version="2.0.0.v20070330-2030">
+      <category name="Mylyn"/>
+   </feature>
+   <feature url="features/org.polarion.team.svn.mylar_1.0.5.jar" id="org.polarion.team.svn.mylar" version="1.0.5">
+      <category name="Subversive"/>
+   </feature>
+   <feature url="features/org.polarion.team.svn_1.1.0.RC6.jar" id="org.polarion.team.svn" version="1.1.0.RC6">
+      <category name="Subversive"/>
+   </feature>
+   <feature url="features/org.eclipse.uml2_2.0.3.v200702141227.jar" id="org.eclipse.uml2" version="2.0.3.v200702141227">
+      <category name="Eclipse UML2"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.dsl_1.0.0.jar" id="org.fornax.cartridges.sculptor.dsl" version="1.0.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.codehaus.groovy.eclipse.feature_1.0.0.20070607.jar" id="org.codehaus.groovy.eclipse.feature" version="1.0.0.20070607">
+      <category name="Groovy"/>
+   </feature>
+   <feature url="features/org.topcased.dependencies_1.0.0.v200707051726.jar" id="org.topcased.dependencies" version="1.0.0.v200707051726">
+      <category name="Topcased"/>
+   </feature>
+   <feature url="features/org.topcased.modeler.ecore_1.0.0.v200707051726.jar" id="org.topcased.modeler.ecore" version="1.0.0.v200707051726">
+      <category name="Topcased"/>
+   </feature>
+   <feature url="features/org.topcased.modeler.uml_1.0.0.v200707051726.jar" id="org.topcased.modeler.uml" version="1.0.0.v200707051726">
+      <category name="Topcased"/>
+   </feature>
+   <feature url="features/org.topcased.modeler.uml.java_0.3.0.v200707051726.jar" id="org.topcased.modeler.uml.java" version="0.3.0.v200707051726">
+      <category name="Topcased"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.adapter.gmf.feature_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.adapter.gmf.feature" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.adapter.gmf.feature.source_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.adapter.gmf.feature.source" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.adapter.rsdp.feature_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.adapter.rsdp.feature" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.adapter.rsdp.feature.source_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.adapter.rsdp.feature.source" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.classic.feature_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.classic.feature" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.core.feature_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.core.feature" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.core.feature.source_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.core.feature.source" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.lib.feature_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.lib.feature" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.plugins.feature_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.plugins.feature" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.plugins.feature.source_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.plugins.feature.source" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.recipe.feature_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.recipe.feature" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.recipe.feature.source_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.recipe.feature.source" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.sdk.feature_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.sdk.feature" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.uml2.adapter_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.uml2.adapter" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.uml2.adapter.source_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.uml2.adapter.source" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.util.ple_feature_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.util.ple_feature" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.util.stdlib.feature_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.util.stdlib.feature" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.util.stdlib.feature.source_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.util.stdlib.feature.source" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.util.uml2ecore.feature_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.util.uml2ecore.feature" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.util.uml2ecore.feature.source_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.util.uml2ecore.feature.source" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.xtext.feature_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.xtext.feature" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.openarchitectureware.xtext.feature.source_4.2.0.200709162219NGT.jar" id="org.openarchitectureware.xtext.feature.source" version="4.2.0.200709162219NGT">
+      <category name="openArchitectureWare"/>
+   </feature>
+   <feature url="features/org.eclipse.mylyn.bugzilla_feature_2.0.0.v20070627-1400.jar" id="org.eclipse.mylyn.bugzilla_feature" version="2.0.0.v20070627-1400">
+      <category name="Mylyn"/>
+   </feature>
+   <feature url="features/org.eclipse.mylyn.context_feature_2.0.0.v20070627-1400.jar" id="org.eclipse.mylyn.context_feature" version="2.0.0.v20070627-1400">
+      <category name="Mylyn"/>
+   </feature>
+   <feature url="features/org.eclipse.mylyn.ide_feature_2.0.0.v20070627-1400.jar" id="org.eclipse.mylyn.ide_feature" version="2.0.0.v20070627-1400">
+      <category name="Mylyn"/>
+   </feature>
+   <feature url="features/org.eclipse.mylyn.java_feature_2.0.0.v20070628-1000.jar" id="org.eclipse.mylyn.java_feature" version="2.0.0.v20070628-1000">
+      <category name="Mylyn"/>
+   </feature>
+   <feature url="features/org.eclipse.mylyn.pde_feature_2.0.0.v20070627-1400.jar" id="org.eclipse.mylyn.pde_feature" version="2.0.0.v20070627-1400">
+      <category name="Mylyn"/>
+   </feature>
+   <feature url="features/org.eclipse.mylyn.trac_feature_2.0.0.v20070627-1400.jar" id="org.eclipse.mylyn.trac_feature" version="2.0.0.v20070627-1400">
+      <category name="Mylyn"/>
+   </feature>
+   <feature url="features/org.eclipse.mylyn_feature_2.0.0.v20070627-1400.jar" id="org.eclipse.mylyn_feature" version="2.0.0.v20070627-1400">
+      <category name="Mylyn"/>
+   </feature>
+   <feature url="features/org.polarion.team.client.javahl_1.1.2.jar" id="org.polarion.team.client.javahl" version="1.1.2">
+      <category name="Subversive"/>
+   </feature>
+   <feature url="features/org.polarion.team.client.javahl.win32_1.1.0.Release.jar" id="org.polarion.team.client.javahl.win32" version="1.1.0.Release" os="win32" arch="x86">
+      <category name="Subversive"/>
+   </feature>
+   <feature url="features/org.polarion.team.client.javasvn.standard_1.1.2.jar" id="org.polarion.team.client.javasvn.standard" version="1.1.2">
+      <category name="Subversive"/>
+   </feature>
+   <feature url="features/org.polarion.team.svn_1.1.2.jar" id="org.polarion.team.svn" version="1.1.2">
+      <category name="Subversive"/>
+   </feature>
+   <feature url="features/org.polarion.team.svn.ignores.jdt_1.0.1.jar" id="org.polarion.team.svn.ignores.jdt" version="1.0.1">
+      <category name="Subversive"/>
+   </feature>
+   <feature url="features/org.eclipse.uml2_2.1.0.v200706251652.jar" id="org.eclipse.uml2" version="2.1.0.v200706251652">
+      <category name="Eclipse UML2"/>
+   </feature>
+   <feature url="features/org.eclipse.uml2.diagram_0.7.0.v200706201055.jar" id="org.eclipse.uml2.diagram" version="0.7.0.v200706201055">
+      <category name="Eclipse UML2"/>
+   </feature>
+   <feature url="features/org.eclipse.uml2.diagram.source_0.7.0.v200706201055.jar" id="org.eclipse.uml2.diagram.source" version="0.7.0.v200706201055">
+      <category name="Eclipse UML2"/>
+   </feature>
+   <feature url="features/org.eclipse.uml2.doc_2.1.0.v200706251652.jar" id="org.eclipse.uml2.doc" version="2.1.0.v200706251652">
+      <category name="Eclipse UML2"/>
+   </feature>
+   <feature url="features/org.eclipse.uml2.examples_2.1.0.v200706251652.jar" id="org.eclipse.uml2.examples" version="2.1.0.v200706251652">
+      <category name="Eclipse UML2"/>
+   </feature>
+   <feature url="features/org.eclipse.uml2.examples.source_2.1.0.v200706251652.jar" id="org.eclipse.uml2.examples.source" version="2.1.0.v200706251652">
+      <category name="Eclipse UML2"/>
+   </feature>
+   <feature url="features/org.eclipse.uml2.sdk_2.1.0.v200706251652.jar" id="org.eclipse.uml2.sdk" version="2.1.0.v200706251652">
+      <category name="Eclipse UML2"/>
+   </feature>
+   <feature url="features/org.eclipse.uml2.source_2.1.0.v200706251652.jar" id="org.eclipse.uml2.source" version="2.1.0.v200706251652">
+      <category name="Eclipse UML2"/>
+   </feature>
+   <feature url="features/org.eclipse.uml2tools_0.7.0.v200706201055.jar" id="org.eclipse.uml2tools" version="0.7.0.v200706201055">
+      <category name="Eclipse UML2"/>
+   </feature>
+   <feature url="features/org.eclipse.uml2tools.doc_0.7.0.v200706201055.jar" id="org.eclipse.uml2tools.doc" version="0.7.0.v200706201055">
+      <category name="Eclipse UML2"/>
+   </feature>
+   <feature url="features/org.eclipse.uml2tools.sdk_0.7.0.v200706201055.jar" id="org.eclipse.uml2tools.sdk" version="0.7.0.v200706201055">
+      <category name="Eclipse UML2"/>
+   </feature>
+   <feature url="features/org.codehaus.groovy.eclipse.feature_1.0.2.20070712.jar" id="org.codehaus.groovy.eclipse.feature" version="1.0.2.20070712">
+      <category name="Groovy"/>
+   </feature>
+   <feature url="features/org.maven.ide.eclipse.feature_0.0.11.20070916-2300.jar" id="org.maven.ide.eclipse.feature" version="0.0.11.20070916-2300">
+      <category name="Maven2"/>
+   </feature>
+   <feature url="features/org.maven.ide.eclipse.mylyn.feature_0.0.11.20070916-2300.jar" id="org.maven.ide.eclipse.mylyn.feature" version="0.0.11.20070916-2300">
+      <category name="Maven2"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.dsl_1.1.0.jar" id="org.fornax.cartridges.sculptor.dsl" version="1.1.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.dsl_1.2.0.jar" id="org.fornax.cartridges.sculptor.dsl" version="1.2.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.dsl_1.3.0.jar" id="org.fornax.cartridges.sculptor.dsl" version="1.3.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.dsl_1.4.0.jar" id="org.fornax.cartridges.sculptor.dsl" version="1.4.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.dsl_1.5.0.jar" id="org.fornax.cartridges.sculptor.dsl" version="1.5.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.richclient.feature_1.5.0.jar" id="org.fornax.cartridges.sculptor.richclient.feature" version="1.5.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.dsl_1.6.0.jar" id="org.fornax.cartridges.sculptor.dsl" version="1.6.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.richclient.feature_1.6.0.jar" id="org.fornax.cartridges.sculptor.richclient.feature" version="1.6.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.dsl_1.7.0.jar" id="org.fornax.cartridges.sculptor.dsl" version="1.7.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.richclient.feature_1.7.0.jar" id="org.fornax.cartridges.sculptor.richclient.feature" version="1.7.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.dsl_1.8.0.jar" id="org.fornax.cartridges.sculptor.dsl" version="1.8.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.richclient.feature_1.9.0.jar" id="org.fornax.cartridges.sculptor.richclient.feature" version="1.9.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.dsl_1.9.0.3.jar" id="org.fornax.cartridges.sculptor.dsl" version="1.9.0.3">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.richclient.feature_1.9.0.jar" id="org.fornax.cartridges.sculptor.richclient.feature" version="1.9.0">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.dsl_2.0.0.5.jar" id="org.fornax.cartridges.sculptor.dsl" version="2.0.0.5">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.richclient.feature_2.0.0.5.jar" id="org.fornax.cartridges.sculptor.richclient.feature" version="2.0.0.5">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.dsl_2.1.0.3.jar" id="org.fornax.cartridges.sculptor.dsl" version="2.1.0.3">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.cartridges.sculptor.richclient.feature_2.1.0.3.jar" id="org.fornax.cartridges.sculptor.richclient.feature" version="2.1.0.3">
+      <category name="Sculptor"/>
+   </feature>
+   <feature url="features/org.fornax.toolsupport.m2e.feature_1.0.0.jar" id="org.fornax.toolsupport.m2e.feature" version="1.0.0">
+      <category name="M2E"/>
+   </feature>
+   <feature url="features/org.fornax.toolsupport.m2e.feature_1.0.1.jar" id="org.fornax.toolsupport.m2e.feature" version="1.0.1">
+      <category name="M2E"/>
+   </feature>
+   <feature url="features/org.fornax.toolsupport.m2e.feature_1.0.2.jar" id="org.fornax.toolsupport.m2e.feature" version="1.0.2">
+      <category name="M2E"/>
+   </feature>
+   <category-def name="Topcased" label="Topcased">
+      <description>
+         A fully featured UML2 and Ecore Editor
+      </description>
+   </category-def>
+   <category-def name="openArchitectureWare" label="oAW">
+      <description>
+         All plugins needed to work with the openArchitectureWare Generator-Framework
+      </description>
+   </category-def>
+   <category-def name="Maven2" label="Maven2">
+      <description>
+         The Maven2 Eclipse-Feature to work comfortably with Eclipse and Maven2
+      </description>
+   </category-def>
+   <category-def name="Mylyn" label="Mylyn">
+      <description>
+         Feature to work task-oriented. With this you can synchronize your task with the Fornax-Platform tracker and automatically enable the monitoring of source-code changes with the tracker.
+      </description>
+   </category-def>
+   <category-def name="Subversive" label="Subversive">
+      <description>
+         The powerful subversion feature
+      </description>
+   </category-def>
+   <category-def name="Eclipse UML2" label="Eclipse UML2">
+      <description>
+         The Eclipse UML2-Framework. This is used by openArchitectureWare and TopCased.
+      </description>
+   </category-def>
+   <category-def name="Sculptor" label="Sculptor">
+      <description>
+         Editor for the Domain Specific Language of Sculptor.
+      </description>
+   </category-def>
+   <category-def name="Groovy" label="Groovy">
+      <description>
+         The powerful dynamic language built on top of Java.
+      </description>
+   </category-def>
+   <category-def name="M2E" label="M2E">
+      <description>
+         Extensions for Maven Integration (M2E)
+      </description>
+   </category-def>
+</site>

@@ -1,0 +1,375 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+
+«EXTENSION extensions::helper»
+«EXTENSION extensions::guihelper»
+«EXTENSION extensions::rcphelper»
+«EXTENSION extensions::properties»
+
+«DEFINE addDialog FOR GuiApplication»
+	«EXPAND addDialog FOREACH modules»
+«ENDDEFINE»
+
+«DEFINE addDialog FOR GuiModule»
+	«EXPAND addDialog FOREACH userTasks.typeSelect(AddTask)»
+	«EXPAND gapAddDialog FOREACH userTasks.typeSelect(AddTask)
+		.select(e | isGapClassToBeGenerated(e, "Add" + e.for.name + "Dialog"))»
+	«EXPAND addPage FOREACH userTasks.typeSelect(AddTask)»
+	«EXPAND gapAddPage FOREACH userTasks.typeSelect(AddTask)
+		.select(e | isGapClassToBeGenerated(e, "Add" + e.for.name + "Page"))»
+«ENDDEFINE»
+
+«DEFINE gapAddDialog FOR AddTask»
+«LET "Add" + for.name + "Dialog" AS className»
+«FILE javaFileName(module.getRichClientPackage() + ".ui." + className) TO_SRC -»
+«javaHeader()»
+package «module.getRichClientPackage()».ui;
+
+public class «className» extends «className»Base {
+	public «className»(org.eclipse.swt.widgets.Shell parentShell) {
+        super(parentShell);
+    }
+}
+«ENDFILE»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE addDialog FOR AddTask»
+«LET "Add" + for.name + "Dialog" + gapSubclassSuffix(this, "Add" + for.name + "Dialog") AS className»
+«FILE javaFileName(module.getRichClientPackage() + ".ui." + className) -»
+«javaHeader()»
+package «module.getRichClientPackage()».ui;
+
+public «IF className.endsWith("Base")»abstract«ENDIF» class «className» extends org.eclipse.jface.dialogs.TitleAreaDialog {
+    «EXPAND addDialogConstructor»
+    «EXPAND addDialogInit»
+    «EXPAND addDialogCreateContents»
+    «EXPAND addDialogCreateDialogArea»
+    «EXPAND addDialogOkPressed»
+    «EXPAND addDialogCancelPressed»
+}
+«ENDFILE»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE addDialogConstructor FOR AddTask»
+«LET "Add" + for.name + "Dialog" + gapSubclassSuffix(this, "Add" + for.name + "Dialog") AS className»
+    public «className»(org.eclipse.swt.widgets.Shell parentShell) {
+        super(parentShell);
+    }
+ «ENDLET»
+«ENDDEFINE»
+
+«DEFINE addDialogInit FOR AddTask»
+    private Add«for.name»Page page;
+    private «fw("richclient.controller.ParentOfSubtask")»<«module.getRichClientPackage()».data.Rich«for.name»> subtaskParent;
+    private String subtaskParentTitle;
+
+    public void init(«fw("richclient.controller.ParentOfSubtask")»<«module.getRichClientPackage()».data.Rich«for.name»> subtaskParent, String parentTitle, boolean singleSelect) {
+        page = «module.application.getRichClientPackage()».«module.application.name.toFirstUpper()»Plugin.getDefault().createPage(Add«for.name»Page.class);
+        page.setSingleSelect(singleSelect);
+        this.subtaskParent = subtaskParent;
+        this.subtaskParentTitle = parentTitle;
+    }
+«ENDDEFINE»
+
+«DEFINE addDialogCreateContents FOR AddTask»
+    @Override
+    protected org.eclipse.swt.widgets.Control createContents(org.eclipse.swt.widgets.Composite parent) {
+        org.eclipse.swt.widgets.Control result = super.createContents(parent);
+
+        getShell().setText(org.eclipse.osgi.util.NLS.bind(«getMessagesClass()».breadCrumb_add, «getMessagesClass()».«for.getMessagesKey()»));
+        if (subtaskParentTitle != null) {
+            setTitle(subtaskParentTitle + " " +
+                «getMessagesClass()».breadCrumb_separator + " " +
+                org.eclipse.osgi.util.NLS.bind(«getMessagesClass()».breadCrumb_add, «getMessagesClass()».«for.getMessagesKey()»));
+        } else {
+            setTitle(org.eclipse.osgi.util.NLS.bind(«getMessagesClass()».breadCrumb_add, «getMessagesClass()».«for.getMessagesKey()»));
+        }
+
+        return result;
+    }
+«ENDDEFINE»
+
+«DEFINE addDialogCreateDialogArea FOR AddTask»
+    @Override
+    protected org.eclipse.swt.widgets.Control createDialogArea(org.eclipse.swt.widgets.Composite parent) {
+        return page.createControl(parent);
+    }
+«ENDDEFINE»
+
+
+«DEFINE addDialogOkPressed FOR AddTask»
+    @Override
+    protected void okPressed() {
+        «module.getRichClientPackage()».data.Rich«for.name»[] result = page.getCheckedElements();
+        super.okPressed();
+        subtaskParent.subtaskCompleted(result);
+    }
+«ENDDEFINE»
+
+«DEFINE addDialogCancelPressed FOR AddTask»
+    @Override
+    protected void cancelPressed() {
+        super.cancelPressed();
+        subtaskParent.subtaskCancelled();
+    }
+«ENDDEFINE»
+
+«DEFINE gapAddPage FOR AddTask»
+«LET "Add" + for.name + "Page" AS className»
+«FILE javaFileName(module.getRichClientPackage() + ".ui." + className) TO_SRC -»
+«javaHeader()»
+package «module.getRichClientPackage()».ui;
+
+«EXPAND addPageSpringAnnotation»
+public class «className» extends «className»Base {
+	public «className»() {
+    }
+}
+«ENDFILE»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE addPage FOR AddTask»
+«LET "Add" + for.name + "Page" + gapSubclassSuffix(this, "Add" + for.name + "Page") AS className»
+«FILE javaFileName(module.getRichClientPackage() + ".ui." + className) -»
+«javaHeader()»
+package «module.getRichClientPackage()».ui;
+
+«IF !className.endsWith("Base")»
+«EXPAND addPageSpringAnnotation»
+«ENDIF»
+public «IF className.endsWith("Base")»abstract«ENDIF» class «className» {
+	«EXPAND addPageConstructor»
+	«EXPAND addPageSingleSelect»
+	«EXPAND RcpCrudGuiMessageResources::messageSourceDependencyProperty»
+	«EXPAND addPageRepository»
+	«EXPAND addPageCreateControl»
+	«EXPAND addPageInitParentLayout»
+	«EXPAND addPageCreateContentComposite»
+	«EXPAND addPageCreatePageContainer»
+	«EXPAND addPageCreateSelectionTable»
+	«EXPAND addPageDefineColumns»
+	«IF isPaging()»
+		«EXPAND addPageRetrievePagedInput»
+	«ELSE»
+		«EXPAND addPageRetrieveInput»
+	«ENDIF»
+	«EXPAND addPageGetCheckedElements»
+
+}
+«ENDFILE»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE addPageSpringAnnotation FOR AddTask»
+@org.springframework.stereotype.Component("add«for.name»Page")
+@org.springframework.context.annotation.Scope("prototype")
+«ENDDEFINE»
+
+«DEFINE addPageConstructor FOR AddTask»
+«LET "Add" + for.name + "Page" + gapSubclassSuffix(this, "Add" + for.name + "Page") AS className»
+    public «className»() {
+    }
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE addPageSingleSelect FOR AddTask»
+    private boolean singleSelect;
+
+    public boolean isSingleSelect() {
+        return singleSelect;
+    }
+
+    public void setSingleSelect(boolean singleSelect) {
+        this.singleSelect = singleSelect;
+    }
+«ENDDEFINE»
+
+«DEFINE addPageRepository FOR AddTask»
+	@org.springframework.beans.factory.annotation.Autowired
+    private «module.getRichClientPackage()».data.Rich«for.name»Repository repository;
+«ENDDEFINE»
+
+«DEFINE addPageCreateControl FOR AddTask»
+    protected org.eclipse.swt.widgets.Composite parent;
+    protected org.eclipse.swt.widgets.Composite pageContainer;
+    protected org.eclipse.swt.widgets.Composite contentComposite;
+    protected «fw("richclient.table.CustomizableTableViewer")» tableViewer;
+
+    protected org.eclipse.swt.widgets.Control createControl(org.eclipse.swt.widgets.Composite parent) {
+        this.parent = parent;
+        initParentLayout();
+
+        contentComposite = createContentComposite();
+        pageContainer = createPageContainer();
+
+        tableViewer = createSelectionTable();
+
+        retrieveInput();
+
+        return contentComposite;
+    }
+
+    protected org.eclipse.swt.widgets.Composite getParent() {
+        return parent;
+    }
+«ENDDEFINE»
+
+«DEFINE addPageInitParentLayout FOR AddTask»
+    protected void initParentLayout() {
+        parent.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
+    }
+«ENDDEFINE»
+
+«DEFINE addPageCreateContentComposite FOR AddTask»
+    protected org.eclipse.swt.widgets.Composite createContentComposite() {
+        org.eclipse.swt.widgets.Composite result = new org.eclipse.swt.widgets.Composite(parent, org.eclipse.swt.SWT.NONE);
+        result.setLayoutData(new org.eclipse.swt.layout.GridData(org.eclipse.swt.SWT.FILL, org.eclipse.swt.SWT.CENTER, true, false));
+
+        org.eclipse.swt.layout.FillLayout layout = new org.eclipse.swt.layout.FillLayout(org.eclipse.swt.SWT.VERTICAL);
+        layout.marginWidth = 5;
+        layout.marginHeight = 5;
+        result.setLayout(layout);
+        return result;
+    }
+
+    protected org.eclipse.swt.widgets.Composite getContentComposite() {
+        return contentComposite;
+    }
+«ENDDEFINE»
+
+«DEFINE addPageCreatePageContainer FOR AddTask»
+    protected org.eclipse.swt.widgets.Composite createPageContainer() {
+        org.eclipse.swt.widgets.Composite result = new org.eclipse.swt.widgets.Composite(contentComposite, org.eclipse.swt.SWT.NULL);
+        org.eclipse.swt.layout.GridLayout gridLayout = new org.eclipse.swt.layout.GridLayout();
+        gridLayout.numColumns = 1;
+        result.setLayout(gridLayout);
+        return result;
+    }
+
+    protected org.eclipse.swt.widgets.Composite getPageContainer() {
+        return pageContainer;
+    }
+«ENDDEFINE»
+
+«DEFINE addPageCreateSelectionTable FOR AddTask»
+    protected «fw("richclient.table.CustomizableTableViewer")» createSelectionTable() {
+        int style = org.eclipse.swt.SWT.MULTI | org.eclipse.swt.SWT.BORDER | org.eclipse.swt.SWT.H_SCROLL | org.eclipse.swt.SWT.V_SCROLL | org.eclipse.swt.SWT.FULL_SELECTION;
+        «fw("richclient.table.CustomizableTableViewer")» result;
+        if (singleSelect) {
+            result = «fw("richclient.table.CustomizableTableViewer")».newSingleCheckList(pageContainer, style);
+        } else {
+            result = «fw("richclient.table.CustomizableTableViewer")».newCheckList(pageContainer, style);
+        }
+        defineColumns(result);
+        org.eclipse.swt.layout.GridData gridData = new org.eclipse.swt.layout.GridData(org.eclipse.swt.SWT.FILL, org.eclipse.swt.SWT.FILL, true, true, 3, 1);
+        gridData.heightHint = 200;
+        result.getViewer().getTable().setLayoutData(gridData);
+        org.eclipse.swt.widgets.Table table = result.getViewer().getTable();
+        table.setLinesVisible(true);
+        table.setHeaderVisible(true);
+        result.getViewer().setContentProvider(new org.eclipse.jface.viewers.ArrayContentProvider());
+
+        return result;
+    }
+
+    protected «fw("richclient.table.CustomizableTableViewer")» getSelectionTableViewer() {
+        return tableViewer;
+    }
+«ENDDEFINE»
+
+«DEFINE addPageDefineColumns FOR AddTask»
+	«EXPAND RcpCrudGuiDefineColumns::defineColumns FOR viewProperties»
+«ENDDEFINE»
+
+«DEFINE addPageRetrieveInput FOR AddTask»
+    private void retrieveInput() {
+        org.eclipse.core.runtime.jobs.Job job = new «fw("richclient.errorhandling.ExceptionAwareJob")»(
+        	org.eclipse.osgi.util.NLS.bind(«getMessagesClass()».readJob, «getMessagesClass()».«for.getMessagesKey()»_plural), messages) {
+            @Override
+            protected org.eclipse.core.runtime.IStatus doRun(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                monitor.beginTask(getName(), org.eclipse.core.runtime.IProgressMonitor.UNKNOWN);
+                final java.util.List<«module.getRichClientPackage()».data.Rich«for.name»> result = repository.«getPrimaryServiceOperation().name»();
+                org.eclipse.swt.widgets.Display.getDefault().asyncExec(new Runnable() {
+                    public void run() {
+                        tableViewer.getViewer().setInput(result);
+                    }
+                });
+                monitor.done();
+                return org.eclipse.core.runtime.Status.OK_STATUS;
+            }
+        };
+        job.schedule();
+    }
+«ENDDEFINE»
+
+«REM»This solution should probably be changed.«ENDREM»
+«DEFINE addPageRetrievePagedInput FOR AddTask»
+    private void retrieveInput() {
+        org.eclipse.core.runtime.jobs.Job job = new «fw("richclient.errorhandling.ExceptionAwareJob")»(
+        	org.eclipse.osgi.util.NLS.bind(«getMessagesClass()».readJob, «getMessagesClass()».«for.getMessagesKey()»_plural), messages) {
+            @Override
+            protected org.eclipse.core.runtime.IStatus doRun(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                monitor.beginTask(getName(), org.eclipse.core.runtime.IProgressMonitor.UNKNOWN);
+                int maxPages = 20;
+                int pageSize = 500;
+                for (int i = 1; i <= maxPages; i++) {
+                	if (monitor.isCanceled() || i == 20) {
+                        return Status.CANCEL_STATUS;
+                    }
+                    boolean countTotalPages = (i == 1);
+                    «getJavaType("PagingParameter")» pagingParameter = «getJavaType("PagingParameter")».pageAccess(pageSize, i, countTotalPages);
+	                final «getJavaType("PagedResult")»<«module.getRichClientPackage()».data.Rich«for.name»> result = repository.«getPrimaryServiceOperation().name»(pagingParameter);
+                    if (result.isTotalCounted()) {
+                        maxPages = result.getTotalPages();
+                    }
+	                
+	                org.eclipse.swt.widgets.Display.getDefault().asyncExec(new Runnable() {
+	                    public void run() {
+	                    	Object[] currentValues = (Object[]) tableViewer.getViewer().getInput();
+                            if (currentValues == null) {
+                                currentValues = new Object[0];
+                            }
+                            java.util.Set<Object> allValues = new java.util.LinkedHashSet<Object>(java.util.Arrays.asList(currentValues));
+                            allValues.addAll(result.getValues());
+	                    
+	                        tableViewer.getViewer().setInput(allValues.toArray());
+	                    }
+	                });
+	            }
+                monitor.done();
+                return org.eclipse.core.runtime.Status.OK_STATUS;
+            }
+        };
+        job.schedule();
+    }
+«ENDDEFINE»
+
+«DEFINE addPageGetCheckedElements FOR AddTask»
+    public «module.getRichClientPackage()».data.Rich«for.name»[] getCheckedElements() {
+        org.eclipse.jface.viewers.CheckboxTableViewer viewer = (org.eclipse.jface.viewers.CheckboxTableViewer) tableViewer.getViewer();
+        Object[] checkedElements = viewer.getCheckedElements();
+        «module.getRichClientPackage()».data.Rich«for.name»[] result = new «module.getRichClientPackage()».data.Rich«for.name»[checkedElements.length];
+        System.arraycopy(checkedElements, 0, result, 0, checkedElements.length);
+        return result;
+    }
+«ENDDEFINE»

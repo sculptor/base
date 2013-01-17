@@ -1,0 +1,10 @@
+<archetype>
+  <id>fornax-cartridges-sculptor-archetype-parent</id>
+  <sources>
+  </sources>
+  <resources>
+	<resource>antbuild-war.xml</resource>
+	<resource>antbuild-ear.xml</resource>
+	<resource>.project</resource>
+  </resources>
+</archetype>

@@ -1,0 +1,135 @@
+«REM»
+ * Copyright 2011 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+
+«DEFINE builder FOR DomainObject»
+«FILE javaFileName(getBuilderFqn())»
+«javaHeader()»
+package «getBuilderPackage()»;
+«EXPAND builderBody FOR this»
+«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE builderBody FOR DomainObject»
+
+	/**
+	  * Builder for «name» class.
+	  */
+	public class «getBuilderClassName()»  {
+	
+		«EXPAND templates::domain::DomainObjectAttribute::attribute(false) FOREACH getBuilderAttributes()»
+		
+	    «EXPAND templates::domain::DomainObjectReference::oneReferenceAttribute(false) FOREACH this.getBuilderReferences().select(r| !r.many)»
+	    «EXPAND templates::domain::DomainObjectReference::manyReferenceAttribute(false) FOREACH this.getBuilderReferences().select(r| r.many)»
+
+		/**
+		 * Static factory method for «getBuilderClassName()»
+		 */
+		public static «name»Builder «name.toFirstLower()»() {
+			return new «name»Builder();
+		}
+		 
+		public «name»Builder() {
+		}
+		
+		«IF !getBuilderConstructorParameters().isEmpty -»
+		public «name»Builder(«EXPAND templates::domain::DomainObjectConstructor::parameterTypeAndName FOREACH getBuilderConstructorParameters() SEPARATOR ","») {
+		
+			«FOREACH getBuilderConstructorParameters() AS p»
+				«EXPAND assignAttributeInConstructor FOR p»
+			«ENDFOREACH»
+		}
+		«ENDIF»
+		
+		«EXPAND builderAttributeSetter(this) FOREACH getBuilderAttributes() »
+		
+		«EXPAND builderSingleReferenceSetter(this) FOREACH getBuilderReferences().select(r | !r.many) »
+		
+		
+		«EXPAND multiReferenceAdd(this) FOREACH getBuilderReferences().select(r| r.many)»
+		
+		«EXPAND templates::domain::DomainObjectAttribute::propertyGetter FOREACH getBuilderAttributes() »
+
+		«EXPAND templates::domain::DomainObjectReference::oneReferenceGetter(false) FOREACH getBuilderReferences().select(r| !r.many)»
+		«EXPAND templates::domain::DomainObjectReference::manyReferenceGetter(false) FOREACH getBuilderReferences().select(r| r.many)»
+		
+		/**
+		 * @return new «name» instance constructed based on the values that have been set into this builder
+		 */
+		public «getDomainPackage() + "." + name» build() {
+			«getDomainPackage() + "." + name» obj = new «name»(«FOREACH getBuilderConstructorParameters() AS attr SEPARATOR ", "»«attr.getGetAccessor()»()«ENDFOREACH»);
+			«FOREACH getBuilderAttributes()
+				.addAll(getBuilderReferences().select(r | !r.many)).removeAll(getBuilderConstructorParameters()) AS prop»
+				obj.set«prop.name.toFirstUpper()»(«prop.name»);
+			«ENDFOREACH»
+			
+			«FOREACH this.getBuilderReferences().select(r | r.many).removeAll(getBuilderConstructorParameters()) AS prop»
+				obj.get«prop.name.toFirstUpper()»().addAll(«prop.name»);
+			«ENDFOREACH»
+
+			return obj;
+		}		
+	}
+
+«ENDDEFINE»
+
+«DEFINE assignAttributeInConstructor FOR NamedElement»
+	        «IF metaType == Reference && ((Reference) this).many -»
+	        	this.«name».addAll(«name»);
+	        «ELSE-»
+	        	this.«name» = «name»;
+	        «ENDIF-»
+
+«ENDDEFINE»
+
+«DEFINE multiReferenceAdd(DomainObject obj) FOR Reference»
+    /**
+     * Adds an object to the to-many
+     * association.
+     * It is added the collection {@link #get«name.toFirstUpper()»}.
+     */
+    public «obj.name»Builder add«name.toFirstUpper().singular()»(«getTypeName()» «name.singular()»Element) {
+        get«name.toFirstUpper()»().add(«name.singular()»Element);
+        return this;
+    };
+«ENDDEFINE»
+
+
+«DEFINE builderAttribute FOR Attribute»
+	protected «getImplTypeName()» «name»;
+«ENDDEFINE»
+
+«DEFINE builderAttributeSetter(DomainObject obj) FOR Attribute»
+    «formatJavaDoc()»
+	public «obj.name»Builder «name»(«getTypeName()» val) {
+		this.«name» = val;
+		return this;
+	}
+«ENDDEFINE»
+
+«DEFINE builderSingleReferenceSetter(DomainObject obj) FOR Reference»
+    «formatJavaDoc()»
+    public «obj.name»Builder «name»(«getTypeName()» «name») {
+        this.«name» = «name»;
+        return this;
+    };
+«ENDDEFINE»
+
+

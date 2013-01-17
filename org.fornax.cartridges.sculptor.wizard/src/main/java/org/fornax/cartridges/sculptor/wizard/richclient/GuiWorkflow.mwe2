@@ -1,0 +1,17 @@
+module workflow.GuiWorkflow
+
+import workflow
+
+Workflow {
+	component = @SculptorGuiWorkflow {
+		modelFile = "classpath:/model.guidesign"
+		// For org.eclipse.xtext.mwe.Reader:
+		// modelFile = "."
+
+		// Advice for
+		//    transformation, Xtend 'src/main/resources/generator/RichClientSpecialCases.ext'
+		transformationAdvice = "generator::RichClientSpecialCases"
+		//    templates, Xpand 'src/main/resources/generator/RichClientSpecialCases.xpt'
+		templateAdvice = "generator::RichClientSpecialCases"
+	}
+}

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+		xmlns:aop="http://www.springframework.org/schema/aop"
+		xmlns:tx="http://www.springframework.org/schema/tx"
+		xmlns:jee="http://www.springframework.org/schema/jee"
+		xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans   http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+			http://www.springframework.org/schema/context   http://www.springframework.org/schema/context/spring-context-2.5.xsd
+			http://www.springframework.org/schema/aop   http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+			http://www.springframework.org/schema/jee   http://www.springframework.org/schema/jee/spring-jee-2.5.xsd
+			http://www.springframework.org/schema/tx   http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+<!--
+	<bean id="schedulerServiceContext" class="org.fornax.cartridges.sculptor.framework.errorhandling.ServiceContext">
+		<constructor-arg index="0" value="scheduler"/>
+		<constructor-arg index="1" value="0"/>
+		<constructor-arg index="2" value="EIC scheduler"/>
+		<constructor-arg index="3">
+			<list><value>ROLE_SCHEDULER</value></list>
+		</constructor-arg>
+	</bean>
+
+	<bean id="jobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="mailService"/>
+		<property name="targetMethod" value="sendSimpleMail"/>
+		<property name="arguments">
+			<list>
+				<ref bean="schedulerServiceContext"/>
+				<value>test@gmail.com</value>
+				<value>Server was started</value>
+				<value>15 sec delay</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="sendMailTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerBean">
+		<property name="jobDetail" ref="jobDetail"/>
+		<property name="startDelay" value="1500000"/>
+		<property name="repeatInterval" value="6000000"/>
+	</bean>
+-->
+
+	<bean id="scheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<!-- 
+		<property name="triggers">
+		<list>
+			<ref bean="sendMailTrigger"/>
+		</list>
+		</property>
+		 -->
+		<property name="applicationContextSchedulerContextKey" value="applicationContext" />
+	</bean>
+
+</beans>

@@ -1,0 +1,436 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::dbhelper»
+«EXTENSION extensions::properties»
+
+«DEFINE jpa FOR Application-»
+	«EXPAND persistenceUnitXmlFile»
+    «IF isJpaProviderHibernate()»
+        «EXPAND Hibernate::hibernate»
+    «ENDIF»
+	«IF isJpaProviderEclipseLink()»
+		«EXPAND EclipseLink::eclipseLink»
+	«ENDIF»
+	«IF isJpaProviderDataNucleus()»
+		«EXPAND DataNucleus::dataNucleus»
+	«ENDIF»
+	«IF isJpaProviderOpenJpa()»
+		«EXPAND OpenJpa::openJpa»
+	«ENDIF»
+	«IF isTestToBeGenerated() && !pureEjb3()»
+		«EXPAND persistenceUnitXmlFileTest»
+	«ENDIF»
+«ENDDEFINE »
+
+
+«REM»######################################################################«ENDREM»
+«REM»JPA PersistenceUnit configuration                                     «ENDREM»
+«REM»######################################################################«ENDREM»
+
+«DEFINE persistenceUnitXmlFile FOR Application»
+	«FILE persistenceXml() TO_GEN_RESOURCES-»
+	«EXPAND persistenceUnitHeader»
+
+	«FOREACH modules.reject(e|e.external).collect(e|e.persistenceUnit).toSet() AS unitName»
+		«EXPAND persistenceUnitContent(unitName)»
+	«ENDFOREACH»
+
+</persistence>
+    «ENDFILE »
+«ENDDEFINE»
+
+«DEFINE persistenceUnitHeader FOR Application»
+«IF isJpa1()»
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd"
+             version="1.0">
+«ELSE»
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
+             version="2.0">
+«ENDIF»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitContent(String unitName) FOR Application»
+	<persistence-unit name="«unitName»" «IF isEar() && (!isSpringDataSourceSupportToBeGenerated() || applicationServer() == "jboss")»transaction-type="JTA"«ELSE»transaction-type="RESOURCE_LOCAL"«ENDIF»>
+		<description>JPA configuration for «name» «IF !isDefaultPersistenceUnitName(unitName)»«unitName»«ENDIF»</description>
+	    «EXPAND persistenceUnit(unitName)»
+	    «EXPAND persistenceUnitProvider»
+	    «EXPAND persistenceUnitDataSource(unitName)»
+		<!-- annotated classes -->
+	    «EXPAND persistenceUnitAnnotatedClasses(unitName)»
+		«IF isJpa2()»
+		    «EXPAND persistenceUnitSharedCacheMode»
+		    «EXPAND persistenceUnitValidationMode»
+		«ENDIF»
+		<!-- properties  -->
+	    «EXPAND persistenceUnitProperties(unitName)»
+		«REM»extension point for additional configuration of the PersistenceUnit«ENDREM»
+		<!-- add additional configuration properties by using SpecialCases.xpt "AROUND templates::jpa::JPA::persistenceUnitAdditions FOR Application" -->
+	    «EXPAND persistenceUnitAdditions(unitName)»
+    </persistence-unit>
+«ENDDEFINE»
+
+«DEFINE persistenceUnit(String unitName) FOR Application»
+    «REM»
+    <exclude-unlisted-classes>true</exclude-unlisted-classes>
+   	«ENDREM»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitAnnotatedClasses(String unitName) FOR Application»
+	«IF isJpaProviderEclipseLink()»
+	<mapping-file>«getResourceDir("META-INF") + "orm.xml"»</mapping-file>
+	«ENDIF»
+    «EXPAND persistenceUnitAnnotatedClasses FOREACH getAllDomainObjects().select(d | d.module.persistenceUnit == unitName)»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitAnnotatedClasses FOR DomainObject»
+	«IF hasOwnDatabaseRepresentation()»
+	<class>«getDomainPackage()».«name»</class>
+	«ENDIF»
+    «IF isEmbeddable()»
+    <class>«getDomainPackage()».«name»</class>
+    «ENDIF»
+	«REM»seems that openjpa needs also the mappedsuperclasses in persistence.xml«ENDREM»
+	«IF isJpaProviderOpenJpa()»
+		«IF gapClass»
+	<class>«getDomainPackage()».«name»Base</class>
+		«ENDIF»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitDataSource(String unitName) FOR Application»
+	«REM»TODO: add additional support for jta«ENDREM»
+	«REM»Invoke old dataSourceName() for backwards compatibility reasons«ENDREM»
+	«LET isDefaultPersistenceUnitName(unitName) ? dataSourceName() : dataSourceName(unitName) AS dataSourceName»
+	«IF isEar()»
+	    «IF applicationServer() == "jboss" -»
+		<jta-data-source>java:jdbc/«dataSourceName»</jta-data-source>
+        «ELSE -»
+			«IF !isSpringDataSourceSupportToBeGenerated()»
+		<jta-data-source>java:comp/env/jdbc/«dataSourceName»</jta-data-source>
+			«ENDIF»
+		«ENDIF»
+	«ELSEIF isWar()»
+		«IF applicationServer() == "appengine" -»
+	    «ELSEIF applicationServer() == "jboss" -»
+		<non-jta-data-source>java:jdbc/«dataSourceName»</non-jta-data-source>
+        «ELSE -»
+			«IF !isSpringDataSourceSupportToBeGenerated()»
+		<non-jta-data-source>java:comp/env/jdbc/«dataSourceName»</non-jta-data-source>
+			«ENDIF»
+		«ENDIF»
+	«ENDIF»
+	«ENDLET»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitProvider FOR Application»
+	«IF isJpaProviderHibernate()»
+	<provider>org.hibernate.ejb.HibernatePersistence</provider>
+	«ELSEIF isJpaProviderEclipseLink()»
+    <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+	«ELSEIF isJpaProviderDataNucleus()»
+    <provider>org.datanucleus.api.jpa.PersistenceProviderImpl</provider>
+	«ELSEIF isJpaProviderAppEngine()»
+    <provider>org.datanucleus.store.appengine.jpa.DatastorePersistenceProvider</provider>
+	«ELSEIF isJpaProviderOpenJpa()»
+    <provider>org.apache.openjpa.persistence.PersistenceProviderImpl</provider>
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitSharedCacheMode FOR Application»
+	<shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
+«ENDDEFINE»
+
+«DEFINE persistenceUnitValidationMode FOR Application»
+ 	<validation-mode>AUTO</validation-mode>
+«ENDDEFINE»
+
+«DEFINE persistenceUnitProperties(String unitName) FOR Application»
+	<properties>
+	«IF isJpaProviderHibernate()»
+		«EXPAND persistenceUnitPropertiesHibernate(unitName)»
+	«ELSEIF isJpaProviderEclipseLink()»
+		«EXPAND persistenceUnitPropertiesEclipseLink(unitName)»
+	«ELSEIF isJpaProviderDataNucleus()»
+		«EXPAND persistenceUnitPropertiesDataNucleus(unitName)»
+	«ELSEIF isJpaProviderAppEngine()»
+		«EXPAND persistenceUnitPropertiesAppEngine»
+	«ELSEIF isJpaProviderOpenJpa()»
+		«EXPAND persistenceUnitPropertiesOpenJpa»
+	«ENDIF»
+	«REM»extension point for additional configuration of the PersistenceUnit«ENDREM»
+	<!-- add additional configuration properties by using SpecialCases.xpt "AROUND templates::jpa::JPA::persistenceUnitAdditionalProperties FOR Application" -->
+    «EXPAND persistenceUnitAdditionalProperties(unitName)»
+	</properties>
+«ENDDEFINE»
+
+«DEFINE persistenceUnitAdditionalProperties(String unitName) FOR Application»
+	«EXPAND persistenceUnitAdditionalProperties»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitAdditionalProperties FOR Application»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitPropertiesHibernate(String unitName) FOR Application»
+		<property name="hibernate.dialect" value="«hibernateDialect()»" />
+		<property name="query.substitutions" value="true 1, false 0" />
+	«REM»for testing purposes only«ENDREM»
+	«IF dbProduct() == "hsqldb-inmemory"»
+		<property name="hibernate.show_sql" value="true" />
+		<property name="hibernate.hbm2ddl.auto" value="create-drop" />
+	«ENDIF»
+	«EXPAND persistenceUnitCacheProperties(unitName)»
+	«IF isEar()»
+		«EXPAND persistenceUnitTransactionProperties(unitName)»
+		«IF isEar() && (!isSpringDataSourceSupportToBeGenerated() || applicationServer() == "jboss")»
+		<property name="jboss.entity.manager.factory.jndi.name" value="java:/«unitName»"/>
+		«ENDIF»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitPropertiesEclipseLink(String unitName) FOR Application»
+		<property name="eclipselink.weaving" value="static"/>
+		<property name="eclipselink.target-database" value="«getEclipseLinkTargetDatabase(unitName)»"/>
+		«IF isEar() && applicationServer() == "jboss"»
+		<property name="eclipselink.target-server" value="JBoss"/>
+		«ENDIF»
+		«REM» need this to create sequence table «IF dbProduct() == "hsqldb-inmemory"» «ENDREM»
+		«REM» TODO: find better solution, maybe put seequnce table generation to ddl script «ENDREM»
+		<property name="eclipselink.ddl-generation" value="create-tables"/>
+		<property name="eclipselink.ddl-generation.output-mode" value="database"/>
+		«REM»«ENDIF»«ENDREM»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitPropertiesDataNucleus(String unitName) FOR Application»
+    <property name="datanucleus.storeManagerType" value="rdbms"/>
+    <property name="datanucleus.ConnectionFactoryName" value="java:comp/env/jdbc/«dataSourceName(unitName)»"/>
+ 	«IF dbProduct() == "hsqldb-inmemory"»
+        <property name="datanucleus.autoCreateSchema" value="true"/>
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitPropertiesAppEngine FOR Application»
+        <property name="datanucleus.NontransactionalRead" value="true"/>
+        <property name="datanucleus.NontransactionalWrite" value="true"/>
+        <property name="datanucleus.ConnectionURL" value="appengine"/>
+        <!-- <property name="datanucleus.appengine.autoCreateDatastoreTxns" value="true"/> -->
+        <!-- <property name="datanucleus.manageRelationshipsChecks" value="false"/> -->
+«ENDDEFINE»
+
+«DEFINE persistenceUnitPropertiesOpenJpa(String unitName) FOR Application»
+      <property name="openjpa.Log" value="DefaultLevel=INFO"/>
+      <property name="openjpa.Compatibility" value="AbstractMappingUniDirectional=false"/>
+«ENDDEFINE»
+
+«DEFINE persistenceUnitCacheProperties(String unitName) FOR Application»
+	«IF isJpaProviderHibernate()»
+		«EXPAND persistenceUnitCachePropertiesHibernate(unitName)»
+	«ELSEIF isJpaProviderEclipseLink()»
+		«EXPAND persistenceUnitCachePropertiesEclipseLink(unitName)»
+	«ELSEIF isJpaProviderDataNucleus() || isJpaProviderAppEngine()»
+		«EXPAND persistenceUnitCachePropertiesDataNucleus(unitName)»
+	«ELSEIF isJpaProviderOpenJpa()»
+		«EXPAND persistenceUnitCachePropertiesOpenJpa(unitName)»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitCachePropertiesHibernate(String unitName) FOR Application»
+        <property name="hibernate.cache.use_query_cache" value="true"/>
+        <property name="hibernate.cache.use_second_level_cache" value="true"/>
+        <property name="hibernate.cache.region_prefix" value=""/>
+	«IF cacheProvider() == "EhCache"»
+        «IF isJpaProviderHibernate3()»
+        <property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.SingletonEhCacheRegionFactory"/>
+        «ELSE»
+        <property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory"/>
+        «ENDIF»
+	«ELSEIF cacheProvider() == "TreeCache"»
+        <property name="hibernate.cache.provider_class" value="org.hibernate.cache.TreeCacheProvider"/>
+    «ELSEIF cacheProvider() == "JbossTreeCache"»
+    	<!-- Clustered cache with Jboss TreeCache -->
+      	<property name="hibernate.cache.provider_class" value="org.jboss.ejb3.entity.TreeCacheProviderHook"/>
+      	<property name="treecache.mbean.object_name" value="jboss.cache:service=EJB3EntityTreeCache"/>
+	«ELSEIF cacheProvider() == "DeployedTreeCache"»
+        <property name="hibernate.cache.provider_class" value="org.jboss.hibernate.cache.DeployedTreeCacheProvider"/>
+        <property name="hibernate.treecache.objectName" value="jboss.cache:service=«isDefaultPersistenceUnitName(unitName) ? name : unitName»TreeCache"/>
+        <!-- use_minimal_puts in clustered environment -->
+        <property name="hibernate.cache.use_minimal_puts" value="true"/>
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitCachePropertiesEclipseLink(String unitName) FOR Application»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitCachePropertiesDataNucleus(String unitName) FOR Application»
+	«REM»TODO: add more cache providers, oscache, swarmcache, ...«ENDREM»
+	«IF cacheProvider() == "EhCache"»
+        <property name="datanucleus.cache.level2.type" value="ehcache"/>
+		«REM»TODO: check if needed
+        <property name="datanucleus.cache.level2.cacheName" value="ehcache"/>
+        <property name="datanucleus.cache.level2.configurationFile" value="ehcache.xml"/>
+        «ENDREM»
+	«ELSEIF cacheProvider() == "DataNucleusWeak"»
+        <property name="datanucleus.cache.level2.type" value="weak"/>
+	«ELSEIF cacheProvider() == "DataNucleusSoft"»
+        <property name="datanucleus.cache.level2.type" value="soft"/>
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitCachePropertiesOpenJpa(String unitName) FOR Application»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitPropertiesOpenJpa FOR Application»
+      <property name="openjpa.Log" value="DefaultLevel=WARN"/>
+«ENDDEFINE»
+
+«DEFINE persistenceUnitTransactionProperties(String unitName) FOR Application»
+	«IF isJpaProviderHibernate()»
+		«EXPAND persistenceUnitTransactionPropertiesHibernate(unitName)»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitTransactionPropertiesHibernate(String unitName) FOR Application»
+		«REM»TODO remove
+		<property name="hibernate.transaction.factory_class" value="org.hibernate.ejb.transaction.JoinableCMTTransactionFactory"/>
+		<property name="javax.persistence.transactionType" value="jta"/>
+		<property name="hibernate.transaction.factory_class" value="org.hibernate.transaction.CMTTransactionFactory"/>
+		an alternative is: <property name="hibernate.transaction.factory_class" value="org.hibernate.transaction.JTATransactionFactory"/>
+		«ENDREM»
+		<!-- «!isSpringDataSourceSupportToBeGenerated()» -->
+		«IF isEar() && (!isSpringDataSourceSupportToBeGenerated() || applicationServer() == "jboss") -»
+		<property name="hibernate.transaction.manager_lookup_class" value="org.hibernate.transaction.JBossTransactionManagerLookup"/>
+		«ENDIF»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitTransactionPropertiesEclipseLink(String unitName) FOR Application»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitTransactionPropertiesDataNucleus(String unitName) FOR Application»
+		«IF isEar() && (!isSpringDataSourceSupportToBeGenerated()) -»
+		<property name="datanucleus.jtaLocator" value="«applicationServer()»"/>
+		«REM»
+		<property name="datanucleus.jtaJndiLocation " value="java:/TransactionManager"/>
+		«ENDREM»
+ 		«ENDIF»
+«ENDDEFINE»
+
+«REM»extension point for additional configuration of the PersistenceUnit«ENDREM»
+«DEFINE persistenceUnitAdditions(String unitName) FOR Application»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitXmlFileTest FOR Application»
+	«FILE "META-INF/persistence-test.xml" TO_GEN_RESOURCES_TEST»
+	«EXPAND persistenceUnitHeader»
+	«FOREACH modules.reject(e|e.external).collect(e|e.persistenceUnit).toSet() AS unitName»
+		«EXPAND persistenceUnitContentTest(unitName)»
+	«ENDFOREACH»
+</persistence>
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitContentTest(String unitName) FOR Application»
+	<persistence-unit name="«unitName»">
+		<description>JPA configuration for «name» «IF !isDefaultPersistenceUnitName(unitName)»«unitName»«ENDIF»</description>
+	    «EXPAND persistenceUnit(unitName)»
+	    «EXPAND persistenceUnitProvider»
+		<!-- annotated classes -->
+	    «EXPAND persistenceUnitAnnotatedClasses(unitName)»
+		«IF isJpa2()»
+		    «EXPAND persistenceUnitSharedCacheMode»
+		    «EXPAND persistenceUnitValidationMode»
+		«ENDIF»
+		<!-- propeties  -->
+	    «EXPAND persistenceUnitPropertiesTest(unitName)»
+		«REM»extension point for additional configuration of the PersistenceUnit«ENDREM»
+		<!-- add additional configuration properties by using SpecialCases.xpt "AROUND templates::jpa::JPA::persistenceUnitAdditions FOR Application" -->
+	    «EXPAND persistenceUnitAdditions(unitName)»
+    </persistence-unit>
+«ENDDEFINE»
+
+«DEFINE persistenceUnitPropertiesTest(String unitName) FOR Application»
+	<properties>
+	«IF isJpaProviderHibernate()»
+		«EXPAND persistenceUnitPropertiesTestHibernate(unitName)»
+	«ELSEIF isJpaProviderEclipseLink()»
+		«EXPAND persistenceUnitPropertiesTestEclipseLink(unitName)»
+	«ELSEIF isJpaProviderDataNucleus()»
+		«EXPAND persistenceUnitPropertiesTestDataNucleus(unitName)»
+	«ELSEIF isJpaProviderOpenJpa()»
+		«EXPAND persistenceUnitPropertiesTestOpenJpa(unitName)»
+	«ENDIF»
+	«REM»extension point for additional configuration of the PersistenceUnit«ENDREM»
+	<!-- add additional configuration properties by using SpecialCases.xpt "AROUND templates::jpa::JPA::persistenceUnitAdditionalPropertiesTest FOR Application" -->
+    «EXPAND persistenceUnitAdditionalPropertiesTest(unitName)»
+	</properties>
+«ENDDEFINE»
+
+«DEFINE persistenceUnitAdditionalPropertiesTest(String unitName) FOR Application»
+	«EXPAND persistenceUnitAdditionalPropertiesTest»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitAdditionalPropertiesTest FOR Application»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitPropertiesTestHibernate(String unitName) FOR Application»
+		<property name="hibernate.dialect" value="«fw("persistence.CustomHSQLDialect")»" />
+		<property name="hibernate.show_sql" value="true" />
+		<property name="hibernate.hbm2ddl.auto" value="create-drop" />
+	«IF !isJpa2()»
+		<property name="hibernate.ejb.cfgfile" value="hibernate.cfg.xml"/>
+	«ENDIF»
+		<property name="query.substitutions" value="true 1, false 0" />
+        <property name="hibernate.cache.use_query_cache" value="true"/>
+        <property name="hibernate.cache.use_second_level_cache" value="true"/>
+        «IF isJpaProviderHibernate3()»
+        <property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.SingletonEhCacheRegionFactory"/>
+        «ELSE»
+        <property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory"/>
+        «ENDIF»
+«ENDDEFINE»
+
+«DEFINE persistenceUnitPropertiesTestEclipseLink(String unitName) FOR Application»
+		<property name="eclipselink.target-database" value="HSQL"/>
+		<property name="eclipselink.ddl-generation" value="create-tables"/>
+		<property name="eclipselink.ddl-generation.output-mode" value="database"/>
+		<property name="eclipselink.logging.level" value="FINE" />
+		<property name="eclipselink.weaving" value="static"/>
+«ENDDEFINE»
+
+«DEFINE persistenceUnitPropertiesTestDataNucleus(String unitName) FOR Application»
+    	<property name="datanucleus.storeManagerType" value="rdbms"/>
+    	<property name="datanucleus.jpa.addClassTransformer" value="false"/>
+    	<property name="datanucleus.autoStartMechanism" value="none"/>
+    	<property name="datanucleus.autoCreateSchema" value="true"/>
+«ENDDEFINE»
+
+«DEFINE persistenceUnitPropertiesTestOpenJpa(String unitName) FOR Application»
+      <property name="openjpa.Log" value="DefaultLevel=TRACE"/>
+      <property name="openjpa.DynamicEnhancementAgent" value="false"/>
+      <property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema(PrimaryKeys=true,ForeignKeys=true,Indexes=true)"/>
+      <property name="openjpa.jdbc.MappingDefaults" value="ForeignKeyDeleteAction=restrict, JoinForeignKeyDeleteAction=restrict"/>
+      <property name="openjpa.Compatibility" value="AbstractMappingUniDirectional=false"/>
+      <property name="openjpa.Sequence" value="InitialValue=100"/>
+«ENDDEFINE»
+

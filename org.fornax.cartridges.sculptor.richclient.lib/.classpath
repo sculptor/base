@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry exported="true" kind="lib" path="lib/aopalliance-1.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/asm-1.5.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/aspectjweaver-1.5.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/cglib-2.1_3.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/commons-beanutils-1.7.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/commons-lang-2.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/commons-logging-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/dom4j-1.6.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/hamcrest-core-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/hamcrest-library-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/hibernate-core-3.6.9.Final.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/javassist-3.8.0.GA.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jmock-2.2.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/joda-time-1.6.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jsr250-api-1.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/log4j-1.2.15.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/persistence-api-1.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/slf4j-api-1.6.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/slf4j-log4j12-1.6.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/spring-aop-3.0.4.RELEASE.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/spring-asm-3.0.4.RELEASE.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/spring-beans-3.0.4.RELEASE.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/spring-context-3.0.4.RELEASE.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/spring-context-support-3.0.4.RELEASE.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/spring-core-3.0.4.RELEASE.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/spring-expression-3.0.4.RELEASE.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/validation-api-1.0.0.GA.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/fornax-cartridges-sculptor-framework-2.2.0-SNAPSHOT.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>

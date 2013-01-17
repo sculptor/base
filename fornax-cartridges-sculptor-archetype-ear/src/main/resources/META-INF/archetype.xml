@@ -1,0 +1,8 @@
+<archetype>
+  <id>fornax-cartridges-sculptor-archetype-ear</id>
+  <sources>
+  </sources>
+  <resources>
+  	<resource>antbuild-ear.xml</resource>
+  </resources>
+</archetype>

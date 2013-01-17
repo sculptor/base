@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.1" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:JavaBasic="http:///schemas/JavaBasic/0" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:uml="http://www.eclipse.org/uml2/2.0.0/UML" xsi:schemaLocation="http:///schemas/JavaBasic/0 javabasic.profile.uml#_AydtoRJ5Edu-OL389vF1Hw">
+  <uml:Model xmi:id="_qb8akM37EdqwVrslYOdUDA">
+    <packagedElement xmi:type="uml:Package" xmi:id="_w8IxIM37EdqwVrslYOdUDA" name="org">
+      <packagedElement xmi:type="uml:Package" xmi:id="_qf1LwI58EduWu8yoeva0Iw" name="test">
+        <packagedElement xmi:type="uml:Class" xmi:id="_t6y2wI58EduWu8yoeva0Iw" name="Customer">
+          <ownedAttribute xmi:id="_EqErEI59EduWu8yoeva0Iw" name="firstname" visibility="private">
+            <type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String"/>
+          </ownedAttribute>
+          <ownedAttribute xmi:id="_H53A0I59EduWu8yoeva0Iw" name="lastname" visibility="private">
+            <type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String"/>
+          </ownedAttribute>
+        </packagedElement>
+      </packagedElement>
+      <profileApplication xmi:id="_jJGOwI58EduWu8yoeva0Iw">
+        <eAnnotations xmi:id="_jJi6sI58EduWu8yoeva0Iw" source="http://www.eclipse.org/uml2/2.0.0/UML">
+          <references xmi:type="ecore:EPackage" href="javabasic.profile.uml#_AydtoRJ5Edu-OL389vF1Hw"/>
+        </eAnnotations>
+        <appliedProfile href="javabasic.profile.uml#_SquBEBJXEdupw8SPRvQOEg"/>
+      </profileApplication>
+    </packagedElement>
+  </uml:Model>
+  <JavaBasic:Entity xmi:id="_DeDj4I59EduWu8yoeva0Iw" base_Class="_t6y2wI58EduWu8yoeva0Iw"/>
+</xmi:XMI>

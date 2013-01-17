@@ -1,0 +1,439 @@
+«REM»
+ * Copyright 2010 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::dbhelper»
+«EXTENSION extensions::properties»
+
+«DEFINE mongoDbMapper FOR DomainObject»
+	«IF hasHint("gapMapper")»
+ 	   «EXPAND mongoDbMapperSubclass»
+    «ENDIF»
+    «EXPAND mongoDbMapperBase»
+«ENDDEFINE»
+
+«DEFINE mongoDbMapperSubclass FOR DomainObject»
+	«FILE javaFileName(getMapperPackage(module) + "." + name + "Mapper") TO_SRC»
+«javaHeader()»
+package «getMapperPackage(module)»;
+
+public class «name»Mapper extends «name»MapperBase {
+	«EXPAND getInstance»
+	«EXPAND constructor»
+	«EXPAND gapToDomain»
+	«EXPAND gapToData»
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE mongoDbMapperBase FOR DomainObject»
+    «FILE javaFileName(getMapperPackage(module) + "." + name + "Mapper" + (hasHint("gapMapper") ? "Base" : ""))»
+«javaHeader()»
+package «getMapperPackage(module)»;
+
+public «IF hasHint("gapMapper")»abstract «ENDIF»class «name»Mapper«IF hasHint("gapMapper")»Base«ENDIF» implements «fw("accessimpl.mongodb.DataMapper")»<«getRootExtends().getDomainPackage()».«getRootExtends().name», com.mongodb.DBObject> {
+
+	«IF extends != null»
+		«EXPAND discriminator»
+	«ENDIF»
+    
+    «IF !hasHint("gapMapper")»
+    	«EXPAND getInstance»
+    «ENDIF»
+    
+    «EXPAND constructorBase»
+    
+    «EXPAND canMapToData»
+    «EXPAND getDBCollectionName»
+    
+    «IF abstract || hasSubClass()»
+    	«EXPAND registerSubclassMappers FOR this»
+    	«EXPAND abstractToDomain»
+    	«EXPAND abstractToData»
+    «ELSE»
+		«EXPAND toDomain»
+	    «EXPAND toData»
+    «ENDIF»
+    
+    «EXPAND indexes»
+    
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE constructor FOR DomainObject»
+	protected «name»Mapper() {
+    }
+«ENDDEFINE»
+
+«DEFINE constructorBase FOR DomainObject»
+	protected «name»Mapper«IF hasHint("gapMapper")»Base«ENDIF»() {
+		«IF abstract || hasSubClass()»
+			registerSubclassMappers();
+		«ENDIF»
+    }
+«ENDDEFINE»
+
+«DEFINE getInstance FOR DomainObject»
+    private static final «name»Mapper instance = new «name»Mapper();
+    
+    public static «name»Mapper getInstance() {
+        return instance;
+    }
+    
+«ENDDEFINE»
+
+«DEFINE discriminator FOR DomainObject»
+    public static final String «getRootExtends().inheritance.discriminatorColumnName()» = «IF discriminatorColumnValue == null»«getDomainPackage()».«name».class.getSimpleName()«ELSE»"«discriminatorColumnValue»"«ENDIF»;
+«ENDDEFINE»
+
+«DEFINE registerSubclassMappers FOR DomainObject»
+    private final java.util.Map<Class<?>, «fw("accessimpl.mongodb.DataMapper")»<«getDomainPackage()».«name», com.mongodb.DBObject>> subclassMapperByClass = new java.util.concurrent.ConcurrentHashMap<Class<?>, «fw("accessimpl.mongodb.DataMapper")»<«getDomainPackage()».«name», com.mongodb.DBObject>>();
+    private final java.util.Map<String, «fw("accessimpl.mongodb.DataMapper")»<«getDomainPackage()».«name», com.mongodb.DBObject>> subclassMapperByDtype = new java.util.concurrent.ConcurrentHashMap<String, «fw("accessimpl.mongodb.DataMapper")»<«getDomainPackage()».«name», com.mongodb.DBObject>>();
+    
+    protected void registerSubclassMappers() {
+    	«FOREACH getAllSubclasses() AS sub»
+        registerSubclassMapper(
+            «sub.getDomainPackage()».«sub.name».class,
+            «sub.module.getMapperPackage()».«sub.name»Mapper.«getRootExtends().inheritance.discriminatorColumnName()»,
+            «sub.module.getMapperPackage()».«sub.name»Mapper.getInstance());
+        «ENDFOREACH»
+    }
+    
+    protected void registerSubclassMapper(Class<?> domainType, String dtype, «fw("accessimpl.mongodb.DataMapper")»<«getDomainPackage()».«name», com.mongodb.DBObject> mapper) {
+        subclassMapperByClass.put(domainType, mapper);
+        subclassMapperByDtype.put(dtype, mapper);
+    }
+«ENDDEFINE»
+
+«DEFINE delegateToDomainToSubclassMapper FOR DomainObject»
+	String dtype;
+	if (from.containsField("«getRootExtends().inheritance.discriminatorColumnName()»")) {
+        dtype = (String) from.get("«getRootExtends().inheritance.discriminatorColumnName()»");
+    } else {
+    	dtype = "unknown";
+    }
+    
+    «fw("accessimpl.mongodb.DataMapper")»<? extends «getDomainPackage()».«name», DBObject> subclassMapper = subclassMapperByDtype.get(dtype);
+    if (subclassMapper == null) {
+        throw new IllegalArgumentException("Unsupported domain object («getRootExtends().inheritance.discriminatorColumnName()»): " + dtype);
+    }
+    return subclassMapper.toDomain(from);
+«ENDDEFINE»
+
+«DEFINE delegateToDataToSubclassMapper FOR DomainObject»
+        «fw("accessimpl.mongodb.DataMapper")»<«getDomainPackage()».«name», com.mongodb.DBObject> subclassMapper = subclassMapperByClass.get(from.getClass());
+        if (subclassMapper == null) {
+            throw new IllegalArgumentException("Unsupported domain object: " + from.getClass().getName());
+        }
+
+        return subclassMapper.toData(from);
+«ENDDEFINE»
+
+«DEFINE fromNullCheck FOR DomainObject»
+		if (from == null) {
+			return null;
+		}
+«ENDDEFINE»
+
+«DEFINE abstractToDomain FOR DomainObject»
+    @Override
+	public «getRootExtends().getDomainPackage()».«getRootExtends().name» toDomain(com.mongodb.DBObject from) {
+		«EXPAND fromNullCheck»
+		«EXPAND delegateToDomainToSubclassMapper»
+	}
+«ENDDEFINE»
+
+«DEFINE gapToDomain FOR DomainObject»
+    @Override
+	public «getRootExtends().getDomainPackage()».«getRootExtends().name» toDomain(com.mongodb.DBObject from) {
+	    return super.toDomain(from);
+	}
+«ENDDEFINE»
+«DEFINE toDomain FOR DomainObject»
+    @Override
+	public «getRootExtends().getDomainPackage()».«getRootExtends().name» toDomain(com.mongodb.DBObject from) {
+		«EXPAND fromNullCheck»
+	
+    «LET getConstructorParameters() AS constructorParameters»
+    «LET getConstructorParameters().typeSelect(Reference).reject(e | e.isEnumReference()) AS nonEnumReferenceConstructorParameters»
+    «LET getAllReferences().reject(e | e.isEnumReference() || constructorParameters.contains(e)) AS allNonEnumNonConstructorReferences»
+    	«FOREACH constructorParameters.typeSelect(Attribute) AS p -»
+    		«IF p.isJodaTemporal() -»
+    		«p.getTypeName()» «p.name» = «fw("accessimpl.mongodb." + (p.type == "Date" ? "JodaLocalDate" : "JodaDateTime")  + "Mapper")».getInstance().toDomain(from.get("«p.getDatabaseName()»"));
+    		«ELSE -»
+    		«p.getTypeName()» «p.name» = («p.getTypeName().getObjectTypeName()») from.get("«p.getDatabaseName()»");
+    		«ENDIF-»
+    	«ENDFOREACH-»
+    	«FOREACH constructorParameters.select(e | e.isEnumReference()) AS p -»
+    		«p.getTypeName()» «p.name» = (from.get("«p.getDatabaseName()»") == null ? null : «p.getTypeName()».valueOf((String) from.get("«p.getDatabaseName()»")));
+    	«ENDFOREACH-»
+    	
+    	«REM»Single reference in constructor param, persistent, and should be included in aggregate«ENDREM»
+    	«FOREACH nonEnumReferenceConstructorParameters
+    		.select(e | !e.many && e.to.isPersistent() && e.opposite == null && (e.isBasicTypeReference() || !e.isUnownedReference())) AS p -»
+    		«p.getTypeName()» «p.name» = null;
+    		if (from.containsField("«p.getDatabaseName()»")) {
+	            «p.name» = 
+	            	«p.to.module.getMapperPackage()».«p.to.name»Mapper.getInstance().toDomain(
+	            		(com.mongodb.DBObject) from.get("«p.getDatabaseName()»"));
+	        }
+    	«ENDFOREACH-»
+    	
+    	«REM»Single reference in constructor param, not in same aggregate root (unowned reference)«ENDREM»
+    	«FOREACH nonEnumReferenceConstructorParameters.select(e | !e.many && e.isUnownedReference()) AS p -»
+    		«getJavaType("IDTYPE")» «p.name» = null;
+    		if (from.containsField("«p.getDatabaseName()»")) {
+	            «p.name» = («getJavaType("IDTYPE")») from.get("«p.getDatabaseName()»");
+	        }
+    	«ENDFOREACH-»
+    	«REM»TODO many references in constructor«ENDREM»
+    	
+        «getDomainPackage()».«name» result = new «getDomainPackage()».«name»(
+        	«FOREACH constructorParameters AS p SEPARATOR ", "»«p.name»«ENDFOREACH»);
+        «IF metaType != BasicType»
+	        if (from.containsField("_id")) {
+	            org.bson.types.ObjectId objectId = (org.bson.types.ObjectId) from.get("_id");
+	            String idString = objectId.toStringMongod();
+	            «fw("accessimpl.mongodb.IdReflectionUtil")».internalSetId(result, idString);
+	        }
+        «ENDIF»
+        «LET getAllAttributes().selectFirst(e|e.isUuid()) AS uuid»
+	        «IF uuid != null»
+	        	if (from.containsField("«uuid.getDatabaseName()»")) {
+	        	    «fw("accessimpl.mongodb.IdReflectionUtil")».internalSetUuid(result, (String) from.get("«uuid.getDatabaseName()»"));
+		        }
+	        «ENDIF»
+        «ENDLET»
+        «FOREACH getAllAttributes().reject(e|e.isUuid() || e.name == "id" || constructorParameters.contains(e)) AS att -»
+	        if (from.containsField("«att.getDatabaseName()»")) {
+	        	«IF att.collectionType != null -»
+	        		result.set«att.name.toFirstUpper()»(new «att.getImplTypeName()»((java.util.Collection) from.get("«att.getDatabaseName()»")));
+	        	«ELSEIF att.isJodaTemporal() -»
+    				result.set«att.name.toFirstUpper()»(«fw("accessimpl.mongodb." + (att.type == "Date" ? "JodaLocalDate" : "JodaDateTime")  + "Mapper")».getInstance().toDomain(from.get("«att.getDatabaseName()»")));
+	        	«ELSE -»
+	            result.set«att.name.toFirstUpper()»((«att.getTypeName().getObjectTypeName()») from.get("«att.getDatabaseName()»"));
+	            «ENDIF -»
+	        }
+        «ENDFOREACH»
+        
+        «FOREACH getAllEnumReferences().reject(e|constructorParameters.contains(e)) AS enumRef -»
+	        if (from.containsField("«enumRef.getDatabaseName()»")) {
+	            result.set«enumRef.name.toFirstUpper()»((from.get("«enumRef.getDatabaseName()»") == null ? null : «enumRef.getTypeName()».valueOf((String) from.get("«enumRef.getDatabaseName()»"))));
+	        }
+        «ENDFOREACH»
+        
+        «REM»Single reference not in constructor param, persistent, and should be included in aggregate«ENDREM»
+        «FOREACH allNonEnumNonConstructorReferences
+        	.select(e | !e.many && e.to.isPersistent() && e.opposite == null && (e.isBasicTypeReference() || !e.isUnownedReference())) 
+        	AS ref»
+        	if (from.containsField("«ref.getDatabaseName()»")) {
+	            result.set«ref.name.toFirstUpper()»(
+	            	«ref.to.module.getMapperPackage()».«ref.to.name»Mapper.getInstance().toDomain(
+	            		(com.mongodb.DBObject) from.get("«ref.getDatabaseName()»")));
+	        }
+        «ENDFOREACH»
+        
+        «REM»Multiple reference not in constructor param, persistent, and should be included in aggregate«ENDREM»
+        «FOREACH allNonEnumNonConstructorReferences
+        	.select(e | e.many && e.to.isPersistent() && (e.isBasicTypeReference() || !e.isUnownedReference())) 
+        	AS ref»
+        	if (from.containsField("«ref.getDatabaseName()»")) {
+        	    @SuppressWarnings("unchecked")
+		        java.util.Collection<com.mongodb.DBObject> «ref.name»Data = (java.util.Collection<com.mongodb.DBObject>) from.get("«ref.getDatabaseName()»");
+		        for (com.mongodb.DBObject each : «ref.name»Data) {
+		        	result.add«ref.name.toFirstUpper().singular()»(«ref.to.module.getMapperPackage()».«ref.to.name»Mapper.getInstance().toDomain(each));
+		        }
+		    }
+        «ENDFOREACH»
+
+		
+        «REM»Single reference not in constructor param, not in same aggregate root (unowned reference)«ENDREM»
+		«FOREACH allNonEnumNonConstructorReferences
+			.select(e | !e.many && e.isUnownedReference()) 
+			AS ref»
+        	if (from.containsField("«ref.getDatabaseName()»")) {
+	            result.set«ref.name.toFirstUpper()»Id((«getJavaType("IDTYPE")») from.get("«ref.getDatabaseName()»"));
+	        }
+        «ENDFOREACH»
+        
+        «REM»Multiple reference not in constructor param, not in same aggregate root (unowned reference)«ENDREM»
+        «FOREACH allNonEnumNonConstructorReferences
+        	.select(e | e.many && e.isUnownedReference()) 
+        	AS ref»
+        	if (from.containsField("«ref.getDatabaseName()»")) {
+        	    @SuppressWarnings("unchecked")
+		        java.util.Collection<«getJavaType("IDTYPE")»> «ref.name»Data = (java.util.Collection<«getJavaType("IDTYPE")»>) from.get("«ref.getDatabaseName()»");
+		        for («getJavaType("IDTYPE")» each : «ref.name»Data) {
+		        	result.get«ref.name.toFirstUpper()»Ids().add(each);
+		        }
+		    }
+        «ENDFOREACH»
+        
+        return result;
+    «ENDLET»
+    «ENDLET»
+    «ENDLET»
+    }
+«ENDDEFINE»
+
+«DEFINE getDBCollectionName FOR DomainObject»
+    @Override
+    public String getDBCollectionName() {
+    	return "«getRootExtends().getDatabaseName()»";
+    }
+«ENDDEFINE»
+
+«DEFINE getDBCollectionName FOR BasicType»
+    @Override
+    public String getDBCollectionName() {
+    	throw new IllegalStateException("BasicType «name» is not stored in own DBCollection");
+    }
+«ENDDEFINE»
+
+«DEFINE canMapToData FOR DomainObject»
+    @Override
+	public boolean canMapToData(Class<?> domainObjectClass) {
+	    if (domainObjectClass == null) {
+	    	return true;
+	    }
+		return «getDomainPackage()».«name».class.isAssignableFrom(domainObjectClass);
+	}
+«ENDDEFINE»
+
+
+«DEFINE abstractToData FOR DomainObject»
+    @Override
+	public com.mongodb.DBObject toData(«getRootExtends().getDomainPackage()».«getRootExtends().name» from) {
+		«EXPAND fromNullCheck»
+		«EXPAND delegateToDataToSubclassMapper»
+	}
+«ENDDEFINE»	
+
+«DEFINE gapToData FOR DomainObject»
+    @Override
+	public com.mongodb.DBObject toData(«getRootExtends().getDomainPackage()».«getRootExtends().name» from) {
+		return super.toData(from);
+	}
+«ENDDEFINE»
+
+«DEFINE toData FOR DomainObject»
+	«LET getAllReferences().reject(e | e.isEnumReference() || e.transient) AS allNonEnumNonTransientReferences»
+	@Override
+	public com.mongodb.DBObject toData(«getRootExtends().getDomainPackage()».«getRootExtends().name» «IF extends == null»from«ELSE»inFrom«ENDIF») {
+		«IF extends != null»
+			«getDomainPackage()».«name» from = («getDomainPackage()».«name») inFrom;
+		«ENDIF»
+		«EXPAND fromNullCheck»
+
+        com.mongodb.DBObject result = new com.mongodb.BasicDBObject();
+        «IF metaType != BasicType»
+	        if (from.getId() != null) {
+	            org.bson.types.ObjectId objectId = org.bson.types.ObjectId.massageToObjectId(from.getId());
+	            result.put("_id", objectId);
+	        }
+	    «ENDIF»
+	    
+	    «IF extends != null»
+	    	result.put("«getRootExtends().inheritance.discriminatorColumnName()»", «getRootExtends().inheritance.discriminatorColumnName()»);
+	    «ENDIF»
+	    
+        «FOREACH getAllAttributes().reject(e|e.name == "id" || e.transient) AS att -»
+        	«IF att.collectionType != null -»
+        		result.put("«att.getDatabaseName()»", new java.util.ArrayList<Object>(from.«att.getGetAccessor()»()));
+        	«ELSEIF att.isJodaTemporal() -»
+    			result.put("«att.getDatabaseName()»", «fw("accessimpl.mongodb." + (att.type == "Date" ? "JodaLocalDate" : "JodaDateTime")  + "Mapper")».getInstance().toData(from.«att.getGetAccessor()»()));
+        	«ELSE -»
+        		result.put("«att.getDatabaseName()»", from.«att.getGetAccessor()»());
+        	«ENDIF -»
+        «ENDFOREACH»
+        
+        «FOREACH getAllEnumReferences().reject(e|e.transient) AS enumRef -»
+        result.put("«enumRef.getDatabaseName()»", from.«enumRef.getGetAccessor()»() == null ? null : from.«enumRef.getGetAccessor()»().name());
+        «ENDFOREACH»
+        
+        «FOREACH allNonEnumNonTransientReferences
+        	.select(e | e.isBasicTypeReference() || (!e.many && e.bothEndsInSameAggregateRoot() && e.opposite == null)) 
+        	AS ref»
+        result.put("«ref.getDatabaseName()»", 
+        	«ref.to.module.getMapperPackage()».«ref.to.name»Mapper.getInstance().toData(
+        		from.get«ref.name.toFirstUpper()»()));
+        «ENDFOREACH»
+                
+        «FOREACH allNonEnumNonTransientReferences
+        	.select(e | !e.isBasicTypeReference() && e.many && e.bothEndsInSameAggregateRoot()) 
+        	AS ref»
+        java.util.List<com.mongodb.DBObject> «ref.name»Data = new java.util.ArrayList<com.mongodb.DBObject>();
+        for («ref.getTypeName()» each : from.get«ref.name.toFirstUpper()»()) {
+        	«ref.name»Data.add(«ref.to.module.getMapperPackage()».«ref.to.name»Mapper.getInstance().toData(each));
+        }
+        result.put("«ref.name»", «ref.name»Data);
+        «ENDFOREACH»
+        
+        «FOREACH allNonEnumNonTransientReferences
+        	.select(e | !e.many && e.isUnownedReference()) 
+        	AS ref»
+        result.put("«ref.getDatabaseName()»", from.get«ref.name.toFirstUpper()»Id()); 
+        «ENDFOREACH»
+        
+        «FOREACH allNonEnumNonTransientReferences
+        	.select(e | e.many && e.isUnownedReference()) 
+        	AS ref»
+        java.util.List<«getJavaType("IDTYPE")»> «ref.name»Data = new java.util.ArrayList<«getJavaType("IDTYPE")»>();
+        for («getJavaType("IDTYPE")» each : from.get«ref.name.toFirstUpper()»Ids()) {
+        	«ref.name»Data.add(each);
+        }
+        result.put("«ref.getDatabaseName()»", «ref.name»Data);
+        «ENDFOREACH»
+        return result;
+    }
+    «ENDLET»
+«ENDDEFINE»
+
+«DEFINE indexes FOR DomainObject»
+    @Override
+	public java.util.List<«fw("accessimpl.mongodb.IndexSpecification")»> indexes() {
+	«IF isAggregateRoot()»
+	    java.util.List<«fw("accessimpl.mongodb.IndexSpecification")»> indexes = new java.util.ArrayList<«fw("accessimpl.mongodb.IndexSpecification")»>();
+	    «IF hasNaturalKey()»
+		    com.mongodb.DBObject naturalKey = new com.mongodb.BasicDBObject();
+		    «EXPAND populateNaturalKeyIndex("") -»
+		    indexes.add(new «fw("accessimpl.mongodb.IndexSpecification")»("naturalKey", naturalKey, true));
+	    «ENDIF»
+	    «FOREACH getAllAttributes().select(e | e.index) AS att»
+	    indexes.add(new «fw("accessimpl.mongodb.IndexSpecification")»("«att.name»", new com.mongodb.BasicDBObject("«att.name»", 1), false));
+	    «ENDFOREACH»
+	    return indexes;
+	«ELSE»	    
+	    return java.util.Collections.emptyList();
+	«ENDIF»
+	}
+«ENDDEFINE»
+
+«DEFINE populateNaturalKeyIndex(String parent) FOR DomainObject -»
+    «EXPAND putNaturalKeyIndex(parent) FOREACH getAllNaturalKeyAttributes() -»
+    «EXPAND putNaturalKeyIndex(parent) FOREACH getAllNaturalKeyReferences().select(e|e.isEnumReference()) -»
+    «EXPAND putNaturalKeyIndex(parent) FOREACH getAllNaturalKeyReferences().select(e|e.isUnownedReference()) -»
+    «FOREACH getAllNaturalKeyReferences().reject(e|e.isEnumReference() || e.isUnownedReference() || e.to.isAggregateRoot()) AS e -»
+    	«EXPAND populateNaturalKeyIndex(parent + e.getDatabaseName() + ".") FOR e.to -»
+    «ENDFOREACH -»
+«ENDDEFINE»
+
+«DEFINE putNaturalKeyIndex(String parent) FOR NamedElement -»
+		    naturalKey.put("«parent»«getDatabaseName()»", 1);
+«ENDDEFINE»

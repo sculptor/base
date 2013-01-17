@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype>
+  <id>fornax-cartridges-sculptor-smartclient</id>
+  <resources>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/smartclient.gwt.xml</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/client/GuiUtil.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/client/Main.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/client/DetailForm.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/client/Comet.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/client/GridClickHandler.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/client/MakeWindow.js</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/client/DetailButtons.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/client/DebugWindow.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/client/UserInfo.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/Main.css</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/favicon.ico</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/index.html</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/Main.html</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/16/house.png</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/16/person.png</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/32/house.png</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/32/person.gif</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/32/folder.png</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/icon_logout.gif</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/reporting/last-d.gif</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/reporting/first.gif</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/reporting/first-d.gif</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/reporting/prev.gif</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/reporting/prev-d.gif</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/reporting/next.gif</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/reporting/pdf.gif</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/reporting/next-d.gif</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/reporting/last.gif</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/link_Disabled.png</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/logo.png</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/logo_small.png</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/logout.gif</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/images/link.png</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/public/login.html</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/util/SculptorUserDetailProvider.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/util/SculptorUserDetail.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/util/Config.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/util/DebugDecorator.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/util/UnifiedFormatter.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/util/ServiceContextFactoryForSpring.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/jsparser/compileAndRun.sh</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/jsparser/JavaScriptData.g</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/jsparser/JavaScriptData.tokens</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/jsparser/JavaScriptDataParser.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/jsparser/JavaScriptDataLexer.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/UploadServlet.java</resource>
+    <resource filtered="false">src/org/fornax/cartridges/sculptor/smartclient/server/ScServlet.java</resource>
+    <resource filtered="false">src/log4j.isc.config.xml</resource>
+    <resource filtered="false">src/CompanyPolicy.dslr</resource>
+    <resource filtered="false">src/commons-logging.properties</resource>
+    <resource filtered="false">src/log4j.properties</resource>
+    <resource filtered="false">src/CompanyPolicy.dsl</resource>
+    <resource filtered="false">src/CompanyPolicy.xml</resource>
+    <resource filtered="false">war/WEB-INF/sc-dev.properties</resource>
+    <resource filtered="false">war/WEB-INF/Security.xml</resource>
+    <resource filtered="false">war/WEB-INF/Quartz.xml</resource>
+    <resource filtered="false">war/WEB-INF/sc-test.properties</resource>
+    <resource filtered="false">war/WEB-INF/web.xml</resource>
+    <resource>pom.xml</resource>
+    <resource>smartclient.launch</resource>
+    <resource>src/default.properties</resource>
+    <resource>src/org/fornax/cartridges/sculptor/smartclient/server/log-dev.properties</resource>
+    <resource>war/WEB-INF/scservice-servlet.xml</resource>
+    <resource>war/WEB-INF/applicationContext.xml</resource>
+    <resource>src_launcher/org/fornax/cartridges/sculptor/smartclient/server/util/JettyLauncher.java</resource>
+  </resources>
+</archetype>

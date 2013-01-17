@@ -1,0 +1,53 @@
+h1. Sculptor High Level Overview
+
+h2. Introduction
+
+Developer productivity and quality can be improved by using the simple approach presented in this article and the tools provided by Sculptor. The solution is to drive the development with a domain specific language (DSL) and custom made code generators based on the problem domain. In a nutshell, you as an architect/developer will implement and use your own code generators to avoid repetitive manual coding and therefore increase efficiency. You are in control and can easily adopt the tools to fit the requirements and frameworks you are working with. Sculptor provides a quick start to this approach.
+
+h2. Problem
+
+The way software is developed today is rather primitive and is not as effective as can be. The initial cost (time, knowledge) when trying to automate this process it often too large.
+
+Programmers tend to frequently do trivial coding just to build up a skeleton. It is tedious and error prone. After a while it also becomes a maintenance burden, since a change in one place (e.g. addition of a new property/type) ripples into several other classes, interfaces or configuration files.
+
+For example a design with Abstract Factory and separation of interface and implementation of the factory and the products is sometimes a good design decision. However, it has drawbacks. Assume that we need 3 factories with 10 products each, and 2 different implementations of the products (e.g. real and fake). This ends up in 99 classes\!
+
+Spring is a great framework, but it doesn't really solve this problem. The factories might be replaced by Spring, but the amount of configuration is comparable to the code in the factory classes.
+
+It might be considered trivial copy paste, replace programming. Yes, but what if you need to change the way the products are defined or implemented. E.g. introduce command pattern in the interface of the products or template method in the implementation. More copy/paste... To me it is the #1 bad smell - duplication.
+
+h2. Solution
+
+The idea for solution is to use a domain specific language (DSL) that fits the problem domain and generate realization with specialized code generators. It raises the level of abstraction and automates a lot of otherwise hand written code. It is [Model Driven Software Development|http://www.voelter.de/mdsd-book/](MDSD). This is not a new idea, but it can be difficult to make it work without introducing too much complexity. The tools provided by [openArchitectureWare|http://www.eclipse.org/gmt/oaw/] (oAW) and Sculptor makes it possible.
+
+An efficient approach is to be in control of the DSL and the code generation tools. The tools should be adopted to fill the needs of your system. As developer you will define the DSL and implement the code generators yourself. Further on, it will make you feel comfortable with the result, since it is under your control. This is a different approach from many of the general purpose [Model Driven Architecture|http://www.omg.org/mda/](MDA) tools that are popping up in this area. Vendor specific code generation tools often look good at the first demo, but later on turns out to be inadequate and hard to evolve as the requirements changes. In contrast, when you develop the code generators yourself you can always change them when it is needed.
+
+However, you don't want to start from scratch and it is here Sculptor comes into the picture, since it provides a quick start to Model Driven Software Development.
+
+h2. High Level Features
+
+The intention of Sculptor is to be an Architecture Centric MDSD platform. The high level features of Sculptor are:
+# Possibility to use the concepts from [Domain-Driven Design|http://domaindrivendesign.org/books/index.html] (DDD) directly in the program language (the textual DSL). E.g. Module,      Service, Entity, Value Object, Repository, ...
+# It provides a "best practice design" for Hibernate and Spring. The target environment is real enterprise systems. It is easy to make CRUD-services, but the design is based on the assumption that more than simple CRUDs are needed (flexibility, business logic, ...).
+# The design and the generated code is better and more complete than existing code generating tools (e.g. Hibernate synchronizer, Hibernate reveng) can achieve out of the box. Maybe the biggest advantage is that a complete application can be generated from a single model, not only fragments, which are hard to fit in to the overall design.
+# Quick start. The initial investment for getting started with MDSD can be big and this platform reduces that a lot.
+
+h2. Not one-size-fits-all
+
+It is important to stress that Sculptor is not an one-size-fits-all product. Even though it is a good start for many systems, sooner or later adjustments are always needed.
+
+It must be easy to change and add more code generation patterns as the need arises. The investment in development of the code generator must be low and the payback time short. It should be possible to create a new code generator in a few hours.
+
+The tools should not set constraints on the design or demand a specific design. You know the requirements for your system and should also be in charge of the generated code. You can fully utilize your design skills and system specific design decisions.
+
+h2. Don't Generate More than Needed
+
+Usage of design patterns and frameworks is a critical success factor for this approach. A well designed framework often requires that you plug-in specific implementations and add the glue (configuration files) to make things work together. Code generation can be an efficient way to reduce the size and complexity of the 'framework completion code'. This approach has an advantage over complex general purpose tools when it comes to adoption to specific frameworks. You can easily define DSL and templates in a way that fits your framework.
+
+The generated code of Sculptor uses well known frameworks such as [Spring|http://www.springframework.org/], [Hibernate|http://www.hibernate.org/], [DBUnit|http://dbunit.sourceforge.net/], [HSQLDB|http://hsqldb.org/], ... In addition Sculptor provides a small runtime framework which contains general purpose Hibernate data access objects, error handling and utilities. It can be used as is or you can replace it with your own favourite framework.
+
+h2. Background
+
+The core ideas of Sculptor was originally presented 2006 in the article [Improving Developer Productivity with Lightweight Domain Specific Modeling|http://www.theserverside.com/tt/articles/article.tss?l=LightweightModeling] written by me (Patrik Nordwall).
+
+{rating:Rate this article}

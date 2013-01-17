@@ -1,0 +1,157 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+
+«DEFINE domainObjectSubclass FOR Trait»
+«FILE javaFileName(getDomainPackage() + "." + name + "Trait") TO_SRC»
+«javaHeader()»
+package «getDomainPackage()»;
+
+«IF formatJavaDoc() == "" -»
+/**
+ * «name» trait
+ * @param S self type
+ */
+«ELSE -»
+«formatJavaDoc()»
+«ENDIF -»
+«EXPAND DomainObjectAnnotation::domainObjectSubclassAnnotations»
+public «getAbstractLitteral()»class «name»Trait<S extends  «getDomainPackage()».«name»> extends «name»TraitBase<S> {
+	«EXPAND DomainObject::serialVersionUID»
+    «EXPAND traitImplMethod FOREACH operations.reject(e | e.abstract)»
+}
+«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE domainObjectBase FOR Trait»
+	«EXPAND traitInterface»
+    «FILE javaFileName(getDomainPackage() + "." + name + "TraitBase")»
+«javaHeader()»
+package «getDomainPackage()»;
+
+/**
+ * @param S self type
+ */
+public abstract class «name»TraitBase<S extends  «getDomainPackage()».«name»> «getExtendsAndImplementsLitteral()» {
+	«EXPAND DomainObject::serialVersionUID»
+
+	«EXPAND traitBaseSelfMethod»
+	«EXPAND traitBaseMethod FOREACH operations.reject(op | op.isPublicVisibility())»
+	«EXPAND traitBaseDelegateToSelfMethod FOREACH operations.select(e | e.abstract && e.isPublicVisibility())»
+	«EXPAND traitBaseHook»
+}
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE traitInterface FOR Trait»
+    «FILE javaFileName(getDomainPackage() + "." + name)»
+«javaHeader()»
+package «getDomainPackage()»;
+
+public interface «name» {
+	«EXPAND traitInterfaceMethod FOREACH operations.select(op | op.isPublicVisibility())»
+	«EXPAND traitInterfaceHook»
+}
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE traitImplMethod FOR DomainObjectOperation»
+	«getVisibilityLitteral()» «getTypeName()» «name»(«EXPAND DomainObject::methodParameterTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws» {
+    	// TODO Auto-generated method stub
+        throw new UnsupportedOperationException("«name» not implemented");
+     }
+«ENDDEFINE»
+
+«DEFINE traitInterfaceMethod FOR DomainObjectOperation»
+    «formatJavaDoc()»
+    «getTypeName()» «name»(«EXPAND DomainObject::methodParameterTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws»;
+«ENDDEFINE»
+
+«DEFINE delegateToTraitMethod FOR DomainObjectOperation»
+	«formatJavaDoc()»
+    «IF isPublicVisibility()»@Override«ENDIF»
+	«getVisibilityLitteral()» «getTypeName()» «name»(«EXPAND DomainObject::methodParameterTypeAndName FOREACH parameters SEPARATOR ", "») «
+    EXPAND templates::common::Exception::throws» {
+    	«IF getTypeName() != "void"»return «ENDIF»«getHint("trait").toFirstLower()»Trait.«name»(«FOREACH parameters AS p SEPARATOR ", "»«p.name»«ENDFOREACH»);
+    }
+«ENDDEFINE»
+
+«DEFINE traitInstance(DomainObject inDomainObject) FOR Trait»
+	«IF isJpaAnnotationToBeGenerated() && isJpaAnnotationOnFieldToBeGenerated()»
+		@javax.persistence.Transient
+	«ENDIF»
+    private «getDomainPackage()».«name»Trait<«inDomainObject.getDomainPackage()».«inDomainObject.name»> «name.toFirstLower()»Trait = new «getDomainPackage()».«name»Trait<«inDomainObject.getDomainPackage()».«inDomainObject.name»>() {
+    	«EXPAND DomainObject::serialVersionUID»
+    	«EXPAND traitInstanceSelfMethod(inDomainObject)»
+        «EXPAND traitInstanceMethod(inDomainObject) FOREACH operations.select(e | e.abstract && !e.isPublicVisibility())»
+    }; 
+«ENDDEFINE»
+
+«DEFINE traitInstanceSelfMethod(DomainObject inDomainObject) FOR Trait»
+    @Override
+    protected «inDomainObject.getDomainPackage()».«inDomainObject.name» self() {
+        return «IF inDomainObject.gapClass»(«inDomainObject.getDomainPackage()».«inDomainObject.name»)«ENDIF» «inDomainObject.getDomainPackage()».«inDomainObject.name»«IF inDomainObject.gapClass»Base«ENDIF».this;
+    }
+«ENDDEFINE»
+
+«DEFINE traitInstanceMethod(DomainObject inDomainObject) FOR DomainObjectOperation»
+    @Override
+	«getVisibilityLitteral()» «getTypeName()» «name»(«EXPAND DomainObject::methodParameterTypeAndName FOREACH parameters SEPARATOR ", "») «
+    EXPAND templates::common::Exception::throws» {
+    	«IF getTypeName() != "void"»return «ENDIF»«inDomainObject.getDomainPackage()».«inDomainObject.name»«IF inDomainObject.gapClass»Base«ENDIF».this.«name»(
+    		«FOREACH parameters AS p SEPARATOR ", "»«p.name»«ENDFOREACH»);
+    }
+«ENDDEFINE»
+
+«DEFINE traitBaseSelfMethod FOR Trait»
+    /**
+     * The instance that contains the trait
+     */
+    protected abstract S self();
+«ENDDEFINE»
+
+«DEFINE traitBaseMethod FOR DomainObjectOperation»
+    «formatJavaDoc()»
+    «getVisibilityLitteral()» abstract «getTypeName()» «name»(«EXPAND DomainObject::methodParameterTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws»;
+«ENDDEFINE»
+
+«DEFINE traitBaseDelegateToSelfMethod FOR DomainObjectOperation»
+    @Override
+	«getVisibilityLitteral()» «getTypeName()» «name»(«EXPAND DomainObject::methodParameterTypeAndName FOREACH parameters SEPARATOR ", "») «
+    EXPAND templates::common::Exception::throws» {
+    	«IF getTypeName() != "void"»return «ENDIF»self().«name»(
+    		«FOREACH parameters AS p SEPARATOR ", "»«p.name»«ENDFOREACH»);
+    }
+«ENDDEFINE»
+
+«REM»Extension point to generate more stuff in trait interface.
+User AROUND templates::domain::DomainObjectTrait::traitInterfaceHook FOR Trait
+in SpecialCases.xpt«ENDREM»
+«DEFINE traitInterfaceHook FOR Trait»
+«ENDDEFINE»
+
+«REM»Extension point to generate more stuff in trait abstract base class.
+User AROUND templates::domain::DomainObjectTrait::traitBaseHook FOR Trait
+in SpecialCases.xpt«ENDREM»
+«DEFINE traitBaseHook FOR Trait»
+«ENDDEFINE»

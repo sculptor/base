@@ -1,0 +1,175 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+
+«DEFINE keyGetter FOR DomainObject»
+    «IF attributes.exists(a | a.isUuid()) »
+        /**
+         * This method is used by equals and hashCode.
+         * @return {{@link #getUuid}
+         */
+		«IF isJpaAnnotationToBeGenerated() && !isJpaAnnotationOnFieldToBeGenerated()»
+        @javax.persistence.Transient
+		«ENDIF»
+        public Object getKey() {
+            return getUuid();
+        }
+    «ELSEIF getNaturalKeyAttributes().isEmpty && getNaturalKeyReferences().isEmpty »
+    	«REM»No keys in this class, key implemented by extended class«ENDREM»
+    «ELSEIF getNaturalKeyReferences().size == 1 && getAllNaturalKeyReferences().size == 1 && getAllNaturalKeyAttributes().isEmpty »
+        /**
+         * This method is used by equals and hashCode.
+         * @return {@link #get«getNaturalKeyReferences().first().name.toFirstUpper()»}
+         */
+		«IF isJpaAnnotationToBeGenerated() && !isJpaAnnotationOnFieldToBeGenerated()»
+        @javax.persistence.Transient
+		«ENDIF»
+        public Object getKey() {
+            return get«getNaturalKeyReferences().first().name.toFirstUpper()»();
+        }
+    «ELSEIF getNaturalKeyAttributes().size == 1 && getAllNaturalKeyAttributes().size == 1 && getAllNaturalKeyReferences().isEmpty »
+        /**
+         * This method is used by equals and hashCode.
+         * @return {@link #«getGetAccessor(attributes.select(a | a.naturalKey).get(0))»}
+         */
+		«IF isJpaAnnotationToBeGenerated() && !isJpaAnnotationOnFieldToBeGenerated()»
+        @javax.persistence.Transient
+		«ENDIF»
+        public Object getKey() {
+            return «getGetAccessor(attributes.select(a | a.naturalKey).get(0))»();
+        }
+    «ELSEIF isDomainObjectCompositeKeyClassToBeGenerated() »
+        «EXPAND compositeKeyGetter»
+    «ELSE»
+    	«EXPAND compositeKeyEquals»
+        «EXPAND compositeKeyHashCode»
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE compositeKeyGetter FOR DomainObject»
+        /**
+         * This method is used by equals and hashCode.
+         * @return {@link #get«name»Key}
+         */
+		«IF isJpaAnnotationToBeGenerated() && !isJpaAnnotationOnFieldToBeGenerated()»
+        @javax.persistence.Transient
+		«ENDIF»
+        public Object getKey() {
+            return get«name»Key();
+        }
+        
+        «IF isJpaAnnotationToBeGenerated() && isJpaAnnotationOnFieldToBeGenerated()»
+        @javax.persistence.Transient
+		«ENDIF»
+        private transient «name»Key cached«name»Key;
+
+        /**
+         * The natural key for the domain object is
+         * a composite key consisting of several attributes.
+         */
+		«IF isJpaAnnotationToBeGenerated() && !isJpaAnnotationOnFieldToBeGenerated()»
+        @javax.persistence.Transient
+		«ENDIF»
+        public «name»Key get«name»Key() {
+        	if (cached«name»Key == null) {
+                cached«name»Key = new «name»Key(«FOREACH getAllNaturalKeys() AS a SEPARATOR ","»«a.getGetAccessor()»()«ENDFOREACH»);
+            }
+            return cached«name»Key;
+        }
+        «EXPAND compositeKey »
+«ENDDEFINE»
+
+«DEFINE compositeKey FOR DomainObject»
+«LET getAllNaturalKeys() AS allKeys»
+
+    /**
+     * This is the natural key for the domain object.
+     * It is a composite key consisting of several
+     * attributes.
+     */
+    public static class «name»Key {
+
+        «FOREACH getAllNaturalKeyAttributes() AS a»
+        «EXPAND DomainObjectAttribute::attribute(false) FOR a »
+        «ENDFOREACH»
+
+        «FOREACH getAllNaturalKeyReferences() AS ref»
+        «EXPAND DomainObjectReference::oneReferenceAttribute(false) FOR ref »
+        «ENDFOREACH»
+
+        public «name»Key(«EXPAND DomainObjectConstructor::parameterTypeAndName FOREACH allKeys SEPARATOR ","») {
+            «FOREACH allKeys AS a -»
+            this.«a.name» = «a.name»;
+            «ENDFOREACH»
+        }
+
+		«REM»no annotations for composite key classes«ENDREM»
+        «EXPAND DomainObjectAttribute::propertyGetter(false) FOREACH getAllNaturalKeyAttributes()»
+        «EXPAND DomainObjectReference::oneReferenceGetter(false) FOREACH getAllNaturalKeyReferences()»
+
+		«EXPAND compositeKeyEquals»
+        «EXPAND compositeKeyHashCode»
+
+    }
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE compositeKeyEquals FOR DomainObject»
+«LET getAllNaturalKeys() AS allKeys»
+«LET isDomainObjectCompositeKeyClassToBeGenerated() ? name + "Key" : name AS className»
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (!(obj instanceof «className»)) return false;
+
+            «className» other = («className») obj;
+
+            «FOREACH getAllNaturalKeyAttributes() AS a -»
+            	«IF a.isPrimitive() -»
+            if («getGetAccessor(a)»() != other.«getGetAccessor(a)»()) return false;
+            	«ELSE -»
+            if (!«fw("util.EqualsHelper")».equals(«getGetAccessor(a)»(), other.«getGetAccessor(a)»())) return false;
+            	«ENDIF -»
+            «ENDFOREACH -»
+            «FOREACH getAllNaturalKeyReferences() AS r -»
+            if (!«fw("util.EqualsHelper")».equals(«getGetAccessor(r)»(), other.«getGetAccessor(r)»())) return false;
+            «ENDFOREACH -»
+            return true;
+        }
+«ENDLET»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE compositeKeyHashCode FOR DomainObject»
+«LET getAllNaturalKeys() AS allKeys»
+        @Override
+        public int hashCode() {
+            int result = 17;
+            «FOREACH allKeys AS a -»
+            result = 37 * result + «fw("util.EqualsHelper")».computeHashCode(«getGetAccessor(a)»());
+            «ENDFOREACH -»
+            return result;
+        }
+«ENDLET»
+«ENDDEFINE»
+
+
+
+

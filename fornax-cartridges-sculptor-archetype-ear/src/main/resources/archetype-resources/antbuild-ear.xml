@@ -1,0 +1,84 @@
+#set( $artifactIdBaseLength = $artifactId.length() - 4) 
+#set( $artifactIdBase =$artifactId.substring(0, $artifactIdBaseLength) )
+<?xml version="1.0"?>
+
+<project name="${artifactId}" default="deploy-copy" basedir=".">
+	
+	<!-- You must define environment variable JBOSS_HOME to be able to use this build script -->
+	<property name="jboss.home" value="${env.JBOSS_HOME}"/>
+	<property name="jboss.server.config" value="default"/>
+	<property name="system.name" value="${artifactIdBase}"/>
+	
+	<target name="explode-ear" depends="check-exploded-ear-exists" unless="exploded.ear.exists">
+		<echo>Exploding EAR to ${jboss.home}/server/${jboss.server.config}/deploy/${system.name}-ear.ear ...</echo>
+		<copy file="target/${system.name}-ear/${system.name}-web.war" 
+			tofile="target/${system.name}-ear/${system.name}-web.war.orig" />
+		<copy file="target/${system.name}-ear/${system.name}.jar" 
+			tofile="target/${system.name}-ear/${system.name}.jar.orig" />
+		<unzip
+			src="target/${system.name}-ear/${system.name}-web.war"
+			dest="target/${system.name}-ear/${system.name}-web.war.tmp"/>
+		<unzip
+			src="target/${system.name}-ear/${system.name}.jar"
+			dest="target/${system.name}-ear/${system.name}.jar.tmp"/>
+		<delete
+			file="target/${system.name}-ear/${system.name}-web.war"/>
+		<delete
+			file="target/${system.name}-ear/${system.name}.jar"/>
+		
+		<move
+			file="target/${system.name}-ear/${system.name}-web.war.tmp"
+			tofile="target/${system.name}-ear/${system.name}-web.war"/>
+		<move
+			file="target/${system.name}-ear/${system.name}.jar.tmp"
+			tofile="target/${system.name}-ear/${system.name}.jar"/>
+		<copy
+			todir="${jboss.home}/server/${jboss.server.config}/deploy/${system.name}-ear.ear"
+			preservelastmodified="true">
+			<fileset dir="target/${system.name}-ear">
+				<include name="**/*"/>
+				<exclude name="*.orig" />
+			</fileset>
+		</copy>
+		
+		
+		<!-- Remove directories and restore original files, 
+			to avoid problems in next build, if clean is not done -->
+		<delete
+			dir="target/${system.name}-ear/${system.name}-web.war"/>
+		<delete
+			dir="target/${system.name}-ear/${system.name}.jar"/>
+		<move file="target/${system.name}-ear/${system.name}-web.war.orig"
+			tofile="target/${system.name}-ear/${system.name}-web.war" />
+		<move file="target/${system.name}-ear/${system.name}.jar.orig"
+			tofile="target/${system.name}-ear/${system.name}.jar" />
+							
+	</target>	
+	
+	<target name="check-exploded-ear-exists">
+		<available file="${jboss.home}/server/${jboss.server.config}/deploy/${system.name}-ear.ear/META-INF/application.xml" 
+			property="exploded.ear.exists"/> 
+	</target>
+	
+	<target name="deploy-copy">
+		
+		<copy
+			todir="${jboss.home}/server/${jboss.server.config}/deploy/${system.name}-ear.ear">
+			<fileset dir="target/${system.name}-ear">
+				<include name="**/*"/>
+				<exclude name="${system.name}*.jar"/>
+				<exclude name="${system.name}*.war"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="touch-ear">
+		<touch>
+			<fileset
+				dir="${jboss.home}/server/${jboss.server.config}/deploy/${system.name}-ear.ear"/>
+		</touch>
+	</target>
+	
+
+	
+</project>

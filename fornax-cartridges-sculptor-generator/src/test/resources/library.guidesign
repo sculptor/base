@@ -1,0 +1,59 @@
+import "classpath:/library-person.btdesign"
+import 'classpath:/library.btdesign' 
+
+gui LibraryWeb for Library {
+
+	Module for media {
+		CreateTask for Library {
+			gap
+			- name  
+			
+			list media use attributes location
+			createWith LibraryService.saveLibrary
+			populateWith LibraryService.populate
+		}
+		
+		AddTask for PhysicalMedia {
+			- location
+		}
+		
+		ViewTask for Library {
+			gap
+			- name hint="myhint"
+		}
+		
+		ViewTask for PhysicalMedia {
+			list media for target Book use attributes isbn, title
+			list media for target Movie use attributes title, category
+		}
+		
+		CreateTask for Engagement {
+			- person 
+			- role
+			- media
+			
+			list person use attributes ssn.country, sex, name
+		}
+		ViewTask for Engagement {
+			list person use attributes ssn.country, ssn.number, name, sex, birthDate
+		}
+		
+		skip DeleteTask for Review
+		skip UpdateTask for Review
+		
+		skip DeleteTask for Comment
+		skip UpdateTask for Comment
+		
+		
+		
+	}
+	Module for person {
+		ViewTask for Person {
+			- name.first
+			- name.last
+			- birthDate
+			- sex
+		}
+	}
+
+}

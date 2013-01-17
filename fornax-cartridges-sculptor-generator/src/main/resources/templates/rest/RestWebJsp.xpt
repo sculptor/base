@@ -1,0 +1,333 @@
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::helper»
+
+«DEFINE jsp FOR Application»
+	«EXPAND index»
+	«EXPAND header»
+	«EXPAND footer»
+	«EXPAND includes»
+	«EXPAND uncaughtException»
+«ENDDEFINE»
+
+«DEFINE index FOR Application»
+	«FILE "index.jsp" TO_WEBROOT»
+<META http-equiv="refresh" content="0;URL=rest/front">
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE header FOR Application»
+	«FILE "WEB-INF/jsp/header.jsp" TO_WEBROOT»
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <style type="text/css" media="screen">   
+    @import url("<c:url value="/stylesheets/main.css"/>");
+  </style>     
+  <title>TITLE</title>	
+</head>
+<body >	
+  <div id="wrap">
+    <div id="main">	
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE footer FOR Application»
+	«FILE "WEB-INF/jsp/footer.jsp" TO_WEBROOT»
+<br/>
+	  <table class="footer">
+	    <tr>
+	      <td><a href="<c:url value="/rest/front" />">Home</a></td>
+	      <td>&nbsp;</td>
+	      <td>&nbsp;</td>
+	    </tr>
+	  </table>
+
+	</div>
+  </div>
+</body>
+
+</html>
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE includes FOR Application»
+	«FILE "WEB-INF/jsp/includes.jsp" TO_WEBROOT»
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE uncaughtException FOR Application»
+	«FILE "WEB-INF/jsp/uncaughtException.jsp" TO_WEBROOT»
+<h2/>Internal error</h2>
+<p/>
+
+<% 
+try {
+	// The Servlet spec guarantees this attribute will be available
+	Throwable exception = (Throwable) request.getAttribute("javax.servlet.error.exception"); 
+
+	if (exception != null) {
+		if (exception instanceof ServletException) {
+			// It's a ServletException: we should extract the root cause
+			ServletException sex = (ServletException) exception;
+			Throwable rootCause = sex.getRootCause();
+			if (rootCause == null)
+				rootCause = sex;
+			out.println("** Root cause is: "+ rootCause.getMessage());
+			rootCause.printStackTrace(new java.io.PrintWriter(out)); 
+		}
+		else {
+			// It's not a ServletException, so we'll just show it
+			exception.printStackTrace(new java.io.PrintWriter(out)); 
+		}
+	} 
+	else  {
+    	out.println("No error information available");
+	} 
+
+	// Display cookies
+	out.println("\nCookies:\n");
+	Cookie[] cookies = request.getCookies();
+	if (cookies != null) {
+    	for (int i = 0; i < cookies.length; i++) {
+      		out.println(cookies[i].getName() + "=[" + cookies[i].getValue() + "]");
+		}
+	}
+	    
+} catch (Exception ex) { 
+	ex.printStackTrace(new java.io.PrintWriter(out));
+}
+%>
+
+<p/>
+<br/>
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE jsp FOR Resource»
+	«LET operations.selectFirst(e | e.httpMethod == HttpMethod::POST) AS postOperation»
+	«LET operations.selectFirst(e | e.httpMethod == HttpMethod::PUT) AS putOperation»
+	«LET operations.selectFirst(e | e.httpMethod == HttpMethod::DELETE) AS deleteOperation»
+	«LET operations.selectFirst(e | e.httpMethod == HttpMethod::GET && e.name == "createForm" && e.returnString != null) 
+		AS createFormOperation»
+	«LET operations.selectFirst(e | e.httpMethod == HttpMethod::GET && e.name == "updateForm" && e.returnString != null) 
+		AS updateFormOperation»
+	«LET operations.reject(e | e == createFormOperation || e == updateFormOperation)
+		.selectFirst(e | e.httpMethod == HttpMethod::GET && e.domainObjectType != null && e.collectionType == null && e.returnString != null)
+		AS getOperation»
+	«LET operations.reject(e | e == createFormOperation || e == updateFormOperation)
+		.selectFirst(e | e.httpMethod == HttpMethod::GET && e.domainObjectType != null && e.collectionType != null && e.returnString != null)
+		AS listOperation»
+	
+		«IF createFormOperation != null && postOperation != null»
+			«EXPAND createForm(postOperation) FOR createFormOperation»
+		«ENDIF»
+		«IF updateFormOperation != null && putOperation != null»
+			«EXPAND updateForm(putOperation) FOR updateFormOperation»
+		«ENDIF»
+		«IF getOperation != null»
+			«EXPAND show FOR getOperation»
+		«ENDIF»
+		«IF listOperation != null»
+			«EXPAND list(getOperation, updateFormOperation, deleteOperation, createFormOperation) FOR listOperation»
+		«ENDIF»
+		«EXPAND emptyPage FOREACH 
+				operations.reject(e | e == createFormOperation || e == updateFormOperation || e == getOperation || e == listOperation)
+					.select(e | e.httpMethod == HttpMethod::GET && e.returnString != null && !e.returnString.startsWith("redirect:"))»
+	«ENDLET»
+	«ENDLET»
+	«ENDLET»
+	«ENDLET»
+	«ENDLET»
+	«ENDLET»
+	«ENDLET»
+«ENDDEFINE»
+
+«DEFINE emptyPage FOR ResourceOperation»
+	«FILE "WEB-INF/jsp/" + returnString + ".jsp" TO_WEBROOT»
+<jsp:directive.include file="/WEB-INF/jsp/includes.jsp"/>
+<jsp:directive.include file="/WEB-INF/jsp/header.jsp"/>
+<div>
+<p>
+TODO: page for «resource.name».«name»  ...
+</p>
+«IF path == "/front"»
+	<p>Resources:</p>
+	<ul>
+	«FOREACH resource.module.application.getAllResources(false).reject(e|e == this.resource) AS r»
+		<li><a href="<c:url value="/rest/«r.getDomainResourceName().toFirstLower()»" />">«r.getDomainResourceName().plural()»</a></li>
+	«ENDFOREACH»
+	</ul>
+«ENDIF»  
+</div>
+<jsp:directive.include file="/WEB-INF/jsp/footer.jsp"/>
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE createForm(ResourceOperation postOperation) FOR ResourceOperation»
+	«FILE "WEB-INF/jsp/" + returnString + ".jsp" TO_WEBROOT»
+<jsp:directive.include file="/WEB-INF/jsp/includes.jsp"/>
+<jsp:directive.include file="/WEB-INF/jsp/header.jsp"/>
+<div>
+	<h2>New «resource.getDomainResourceName()»</h2>
+    <form:form action="/rest«postOperation.path»" method="POST" modelAttribute="«postOperation.parameters.first().name»">
+    «LET postOperation.parameters.select(e | e.domainObjectType != null).collect(e|e.domainObjectType).first() AS formClass»
+    	«IF formClass != null-»
+		«FOREACH formClass.attributes.select(e | !e.isSystemAttribute()) AS att-»
+		<div id="«att.getDomainObject().name.toFirstLower()»_«att.name»">
+            <label for="_«att.name»">«att.name.toFirstUpper()»:</label>
+            <form:input cssStyle="width:300px" id="_«att.name»" path="«att.name»"/>
+            <br/>
+            <form:errors cssClass="errors" id="_«att.name»" path="«att.name»"/>
+        </div>
+		«ENDFOREACH-»
+        <div class="submit" id="«formClass.name.toFirstLower()»_submit">
+            <input id="proceed" type="submit" value="Save"/>
+        </div>
+		«ENDIF-»        
+	«ENDLET»        
+    </form:form>
+</div>
+<jsp:directive.include file="/WEB-INF/jsp/footer.jsp"/>
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE updateForm(ResourceOperation putOperation) FOR ResourceOperation»
+	«FILE "WEB-INF/jsp/" + returnString + ".jsp" TO_WEBROOT»
+<jsp:directive.include file="/WEB-INF/jsp/includes.jsp"/>
+<jsp:directive.include file="/WEB-INF/jsp/header.jsp"/>
+<div>
+	<h2>Edit «resource.getDomainResourceName()»</h2>
+	«LET putOperation.parameters.select(e | e.domainObjectType != null).collect(e|e.domainObjectType).first() AS formClass»
+	«IF formClass != null-»
+    <form:form action="/rest«putOperation.path.replacePlaceholder('{id}', '${' + putOperation.parameters.first().name + '}' ) »" method="PUT" modelAttribute="«putOperation.parameters.first().name»">
+        «FOREACH formClass.attributes AS att-»
+        «IF att.isAuditableAttribute() -»
+        «ELSEIF !att.isChangeable() || att.isSystemAttribute()-»
+        <form:hidden path="«att.name»"/>
+        «ELSE-»
+		<div id="«att.getDomainObject().name.toFirstLower()»_«att.name»">
+            <label for="_«att.name»">«att.name.toFirstUpper()»:</label>
+            <form:input cssStyle="width:300px" id="_«att.name»" path="«att.name»"/>
+            <br/>
+            <form:errors cssClass="errors" id="_«att.name»" path="«att.name»"/>
+        </div>
+        «ENDIF-»
+		«ENDFOREACH-»
+		<div class="submit" id="«formClass.name.toFirstLower()»_submit">
+            <input id="proceed" type="submit" value="Save"/>
+        </div>
+    </form:form>
+    «ENDIF»
+    «ENDLET»
+</div>
+<jsp:directive.include file="/WEB-INF/jsp/footer.jsp"/>
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE show FOR ResourceOperation»
+	«FILE "WEB-INF/jsp/" + returnString + ".jsp" TO_WEBROOT»
+<jsp:directive.include file="/WEB-INF/jsp/includes.jsp"/>
+<jsp:directive.include file="/WEB-INF/jsp/header.jsp"/>
+<div>
+    <c:if test="${not empty result}">
+    	«IF domainObjectType != null-»
+    	«FOREACH domainObjectType.attributes.select(e | !e.isSystemAttribute()) AS att-»
+	        <div id="«resource.getDomainResourceName().toFirstLower()»_«att.name»">
+	            <label for="_«att.name»">«att.name.toFirstUpper()»:</label>
+	            <div class="box" id="_«att.name»">${result.«att.name»}</div>
+	        </div>
+	        <br/>
+        «ENDFOREACH-»
+        «ENDIF-»
+    </c:if>
+    <c:if test="${empty result}">No «resource.getDomainResourceName()» found with this id.</c:if>
+</div>
+<jsp:directive.include file="/WEB-INF/jsp/footer.jsp"/>
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE list(ResourceOperation getOperation, ResourceOperation updateFormOperation, ResourceOperation deleteOperation, ResourceOperation createFormOperation)
+	 FOR ResourceOperation»
+	«FILE "WEB-INF/jsp/" + returnString + ".jsp" TO_WEBROOT»
+<jsp:directive.include file="/WEB-INF/jsp/includes.jsp"/>
+<jsp:directive.include file="/WEB-INF/jsp/header.jsp"/>
+«IF createFormOperation != null»
+<div>
+<a href="<c:url value="/rest«createFormOperation.path»" />">New «resource.getDomainResourceName()»</a>
+</div>
+«ENDIF»
+<div>
+    <c:if test="${not empty result}">
+    «IF domainObjectType != null-»
+    «LET domainObjectType.getIdAttribute() AS idAttribute-»
+    <table>
+    	<thead>
+    	«IF idAttribute != null-»
+	    	<th>«idAttribute.name.toFirstUpper()»</th>
+    	«ENDIF-»
+    	«FOREACH domainObjectType.attributes.select(e | !e.isSystemAttribute()) AS att-»
+    		<th>«att.name.toFirstUpper()»</th>
+    	«ENDFOREACH-»
+    	«IF getOperation != null-»
+    		<th/>
+    	«ENDIF-»
+    	«IF updateFormOperation != null-»	
+    		<th/>
+    	«ENDIF-»
+    	«IF deleteOperation != null-»
+    		<th/>
+    	«ENDIF-»
+    	</thead>
+    	<c:forEach items="${result}" var="each" >
+    		<tr>
+    			«IF idAttribute != null-»
+    			<td>
+    				«IF getOperation != null-»
+    				<a href="<c:url value="/rest«path»/${each.id«IF isJpaProviderAppEngine()».id«ENDIF»}" />">${each.id«IF isJpaProviderAppEngine()».id«ENDIF»}</a>
+    				«ELSE-»
+    				${each.id«IF isJpaProviderAppEngine()».id«ENDIF»}
+    				«ENDIF-»
+    			</td>
+    			«ENDIF-»
+    			«FOREACH domainObjectType.attributes.select(e | !e.isSystemAttribute()) AS att-»
+    			<td>
+    				${each.«att.name»}
+    			</td>
+    			«ENDFOREACH-»
+    			«IF getOperation != null-»
+    			<td>
+    				<a href="<c:url value="/rest«path»/${each.id«IF isJpaProviderAppEngine()».id«ENDIF»}" />">Show</a>
+                </td>
+                «ENDIF-»
+                «IF updateFormOperation != null-»
+    			<td>
+    				<a href="<c:url value="/rest«path»/${each.id«IF isJpaProviderAppEngine()».id«ENDIF»}/form" />">Edit</a>
+    			</td>
+    			«ENDIF-»
+    			«IF deleteOperation != null-»
+    			<td>
+                    <form:form action="/rest«path»/${each.id«IF isJpaProviderAppEngine()».id«ENDIF»}" method="DELETE">
+                    	<input id="delete" type="submit" value="Delete"/>
+                    </form:form>
+                </td>
+                «ENDIF-»
+    		</tr>
+    	</c:forEach>
+    </table>
+    «ENDLET-»
+    «ENDIF-»
+    </c:if>
+    <c:if test="${empty result}"><p>There are no «resource.getDomainResourceName().plural()» yet.</p></c:if>
+</div>
+<jsp:directive.include file="/WEB-INF/jsp/footer.jsp"/>
+
+	«ENDFILE»
+«ENDDEFINE»
+

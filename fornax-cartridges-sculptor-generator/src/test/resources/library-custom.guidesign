@@ -1,0 +1,14 @@
+import "classpath:/library-person.btdesign"
+import 'classpath:/library.btdesign' 
+
+gui LibraryWeb for Library {
+	Module for person {
+		ViewTask for Person {
+			- name.first
+			- name.last
+			- birthDate
+			- sex
+		}
+	}
+
+}

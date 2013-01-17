@@ -1,0 +1,461 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::dbhelper»
+«EXTENSION extensions::properties»
+
+«DEFINE domainObject FOR DomainObject»
+	«IF gapClass»
+ 	   «EXPAND domainObjectSubclass»
+    «ENDIF»
+    «EXPAND domainObjectBase»
+    «IF getBooleanProperty("generate.domainObject.conditionalCriteriaProperties")»
+    	«EXPAND DomainObjectProperties::domainObjectProperties»
+    «ENDIF»
+    «IF getBooleanProperty("generate.domainObject.nameConstants")»
+    	«EXPAND DomainObjectNames::propertyNamesInterface»
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE domainObjectSubclass FOR DataTransferObject»
+«FILE javaFileName(getDomainPackage() + "." + name) TO_SRC»
+«javaHeader()»
+package «getDomainPackage()»;
+
+«IF formatJavaDoc() == "" -»
+/**
+ * Data transfer object for «name». Properties and associations are
+ * implemented in the generated base class {@link «getDomainPackage()».«name»Base}.
+ */
+«ELSE -»
+«formatJavaDoc()»
+«ENDIF -»
+«EXPAND DomainObjectAnnotation::domainObjectSubclassAnnotations»
+public «getAbstractLitteral()»class «name» extends «name»Base {
+	«EXPAND serialVersionUID»
+    «IF isJpaProviderDataNucleus() || getLimitedConstructorParameters().isEmpty || getMinimumConstructorParameters().isEmpty»public«ELSE»protected«ENDIF» «name»() {
+    }
+
+    «EXPAND DomainObjectConstructor::propertyConstructorSubclass»
+    «EXPAND DomainObjectConstructor::limitedConstructor»
+    «EXPAND DomainObjectConstructor::minimumConstructor»
+
+}
+«ENDFILE»
+«ENDDEFINE»
+
+
+
+«DEFINE domainObjectSubclass FOR DomainObject»
+«FILE javaFileName(getDomainPackage() + "." + name) TO_SRC»
+«javaHeader()»
+package «getDomainPackage()»;
+
+«EXPAND domainObjectSubclassJavaDoc»
+«IF isJpaAnnotationToBeGenerated()»
+	«EXPAND DomainObjectAnnotation::domainObjectAnnotations»
+«ENDIF»
+«EXPAND DomainObjectAnnotation::domainObjectSubclassAnnotations»
+public «getAbstractLitteral()»class «name» extends «name»Base {
+	«EXPAND serialVersionUID»
+    «IF isJpaProviderDataNucleus() || getLimitedConstructorParameters().isEmpty»public«ELSE»protected«ENDIF» «name»() {
+    }
+
+    «EXPAND DomainObjectConstructor::propertyConstructorSubclass»
+    «EXPAND DomainObjectConstructor::limitedConstructor»
+    «IF isPersistent() && (isJpaProviderAppEngine() || nosql())»
+    	«EXPAND DomainObjectConstructor::propertyConstructorBaseIdReferencesSubclass»
+    «ENDIF»
+
+    «EXPAND domainObjectSubclassImplMethod FOREACH operations.select(e | e.isImplementedInGapClass())»
+}
+
+«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE domainObjectSubclass FOR Trait»
+	«EXPAND DomainObjectTrait::domainObjectSubclass»
+«ENDDEFINE»
+
+«DEFINE domainObjectSubclassJavaDoc FOR DomainObject»
+«IF formatJavaDoc() == "" -»
+/**
+ * «docMetaTypeName()» representing «name».
+ * <p>
+ * This class is responsible for the domain object related
+ * business logic for «name». Properties and associations are
+ * implemented in the generated base class {@link «getDomainPackage()».«name»Base}.
+ */
+«ELSE -»
+«formatJavaDoc()»
+«ENDIF -»
+«ENDDEFINE»
+
+«DEFINE domainObjectBase FOR DomainObject»
+    «LET attributes.exists(a | a.isUuid())  AS hasUuidAttribute -»
+    «FILE javaFileName(getDomainPackage() + "." + name + (gapClass ? "Base" : ""))»
+«javaHeader()»
+package «getDomainPackage()»;
+
+«EXPAND domainObjectBaseJavaDoc»
+«IF !gapClass && isJpaAnnotationToBeGenerated()»
+«EXPAND DomainObjectAnnotation::domainObjectAnnotations -»
+«ENDIF»
+«EXPAND DomainObjectAnnotation::domainObjectBaseAnnotations»
+public «IF gapClass || abstract»abstract «ENDIF»class «name»«IF gapClass»Base«ENDIF» «getExtendsAndImplementsLitteral()» {
+	«EXPAND serialVersionUID»
+   	«EXPAND DomainObjectAttribute::attribute FOREACH attributes»
+
+    «EXPAND DomainObjectReference::oneReferenceAttribute FOREACH references.select(r | !r.many)»
+    «EXPAND DomainObjectReference::manyReferenceAttribute FOREACH references.select(r | r.many)»
+
+    «IF getLimitedConstructorParameters().isEmpty»public«ELSE»«getDefaultConstructorVisibility()»«ENDIF» «name»«IF gapClass»Base«ENDIF»() {
+    }
+
+    «EXPAND DomainObjectConstructor::propertyConstructorBase»
+    «IF isPersistent() && (isJpaProviderAppEngine() || nosql())»
+    	«EXPAND DomainObjectConstructor::propertyConstructorBaseIdReferences»
+    «ENDIF»
+    «IF !gapClass»
+    	«EXPAND DomainObjectConstructor::limitedConstructor»
+    «ENDIF»
+    «IF isImmutable() && !abstract»
+    	«EXPAND DomainObjectConstructor::factoryMethod»
+    «ENDIF»
+
+    «EXPAND DomainObjectAttribute::propertyAccessors FOREACH attributes.select(a | !a.isUuid()) »
+    «IF hasUuidAttribute -»
+	    «EXPAND DomainObjectAttribute::uuidAccessor»
+    «ENDIF-»
+
+    «EXPAND DomainObjectReference::oneReferenceAccessors FOREACH references.select(r | !r.many)»
+    «EXPAND DomainObjectReference::manyReferenceAccessors FOREACH references.select(r | r.many)»
+
+    «IF isImmutable() && abstract»
+    	«EXPAND DomainObjectConstructor::abstractCopyModifier FOREACH attributes.reject(a | a.isSystemAttribute()) »
+    	«EXPAND DomainObjectConstructor::abstractCopyModifier FOREACH references.reject(r | r.many || r.isUnownedReference())»
+    «ENDIF»
+    «IF isImmutable() && !abstract»
+    	«EXPAND DomainObjectConstructor::copyModifier(this) FOREACH getAllAttributes().reject(a | a.isSystemAttribute()) »
+    	«EXPAND DomainObjectConstructor::copyModifier(this) FOREACH getAllReferences().reject(r | r.many || r.isUnownedReference())»
+    «ENDIF»
+
+    «IF isFullyAuditable() -»
+        «EXPAND generateFullAudit»
+    «ENDIF-»
+
+    «IF isJpaAnnotationToBeGenerated()»
+    	«EXPAND prePersist»
+	«ENDIF»
+
+    «EXPAND toStringStyle»
+    «EXPAND acceptToString»
+    «EXPAND DomainObjectKey::keyGetter»
+
+    «EXPAND DomainObjectTrait::traitInstance(this) FOREACH traits.select(e | !e.operations.isEmpty)»
+    «EXPAND DomainObjectTrait::delegateToTraitMethod FOREACH operations.select(e | !e.abstract && e.hasHint("trait"))»
+    «EXPAND abstractMethod FOREACH operations.reject(e | !e.abstract && e.hasHint("trait"))»
+
+    «EXPAND domainObjectHook»
+}
+    «ENDFILE»
+    «ENDLET»
+«ENDDEFINE»
+
+«DEFINE domainObjectBase FOR Trait»
+	«EXPAND DomainObjectTrait::domainObjectBase»
+«ENDDEFINE»
+
+«DEFINE domainObjectBaseJavaDoc FOR DomainObject»
+«IF gapClass»
+/**
+ * Generated base class, which implements properties and
+ * associations for the domain object.
+	«IF isJpaAnnotationToBeGenerated() -»
+ * <p>Make sure that subclass defines the following annotations:
+ * <pre>
+		«EXPAND DomainObjectAnnotation::domainObjectAnnotations -»
+ * </pre>
+ *	«ENDIF»
+ */
+	«IF isJpaAnnotationToBeGenerated() && isPersistent()»
+@javax.persistence.MappedSuperclass
+	«ENDIF»
+«ELSEIF formatJavaDoc() == "" -»
+ /**
+ * «docMetaTypeName()» representing «name».
+ */
+«ELSE -»
+«formatJavaDoc()»
+«ENDIF -»
+«ENDDEFINE»
+
+«DEFINE domainObjectBase FOR DataTransferObject»
+    «FILE javaFileName(getDomainPackage() + "." + name + (gapClass ? "Base" : ""))»
+«javaHeader()»
+package «getDomainPackage()»;
+
+«IF gapClass»
+/**
+ * Generated base class, which implements properties and
+ * associations for the data transfer object.
+ */
+«ELSEIF formatJavaDoc() == "" -»
+ /**
+ * Data transfer object for «name».
+ */
+«ELSE -»
+«formatJavaDoc()»
+«ENDIF -»
+«EXPAND DomainObjectAnnotation::domainObjectBaseAnnotations»
+public «IF gapClass || abstract»abstract «ENDIF»class «name»«IF gapClass»Base«ENDIF» «getExtendsAndImplementsLitteral()» {
+	«EXPAND serialVersionUID»
+
+   	«EXPAND DomainObjectAttribute::attribute FOREACH attributes»
+
+    «EXPAND DomainObjectReference::oneReferenceAttribute FOREACH references.select(r | !r.many)»
+    «EXPAND DomainObjectReference::manyReferenceAttribute FOREACH references.select(r | r.many)»
+
+    «IF getLimitedConstructorParameters().isEmpty || getMinimumConstructorParameters().isEmpty»public«ELSE»protected«ENDIF» «name»«IF gapClass»Base«ENDIF»() {
+    }
+
+    «EXPAND DomainObjectConstructor::propertyConstructorBase»
+    «IF !gapClass»
+    	«EXPAND DomainObjectConstructor::limitedConstructor»
+    	«EXPAND DomainObjectConstructor::minimumConstructor»
+    «ENDIF»
+    «IF isImmutable() && !abstract»
+    	«EXPAND DomainObjectConstructor::factoryMethod»
+    «ENDIF»
+
+    «EXPAND DomainObjectAttribute::propertyAccessors FOREACH attributes »
+
+    «EXPAND DomainObjectReference::oneReferenceAccessors FOREACH references.select(r | !r.many)»
+    «EXPAND DomainObjectReference::manyReferenceAccessors FOREACH references.select(r | r.many)»
+
+	«IF extends == null»
+		«EXPAND clone»
+	«ENDIF»
+
+	«EXPAND dataTransferObjectHook»
+}
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE serialVersionUID FOR DomainObject»
+    private static final long serialVersionUID = 1L;
+«ENDDEFINE»
+
+«DEFINE prePersist FOR DomainObject»
+	«LET attributes.exists(a | a.isUuid())  AS hasUuidAttribute »
+		«IF hasUuidAttribute && isJpaAnnotationOnFieldToBeGenerated()»
+    @javax.persistence.PrePersist
+    protected void prePersist() {
+        getUuid();
+    }
+		«ENDIF»
+	«ENDLET»
+«ENDDEFINE»
+
+«DEFINE generateFullAudit FOR DomainObject»
+    @javax.persistence.Transient
+    «fw("domain.AuditHandlerImpl")»<«name»> auditHandler = new «fw("domain.AuditHandlerImpl")»<«name»>();
+
+    public «fw("domain.AuditHandler")»<? extends «name»> receiveAuditHandler() {
+        return auditHandler;
+    }
+
+    protected «fw("domain.AuditHandlerImpl")»<? extends «name»> receiveInternalAuditHandler() {
+        return auditHandler;
+    }
+
+    @javax.persistence.PostLoad
+    protected void startAuditing() {
+        auditHandler.startAuditing();
+    }
+«ENDDEFINE»
+
+«DEFINE acceptToString FOR DomainObject»
+    «IF !getBasicTypeReferences().isEmpty || !getEnumReferences().isEmpty -»
+        /**
+         * This method is used by toString. It specifies what to
+         * include in the toString result.
+         * @return true if the field is to be included in toString
+         */
+        protected boolean acceptToString(java.lang.reflect.Field field) {
+            if (super.acceptToString(field)) {
+                return true;
+            } else {
+                «FOREACH getBasicTypeReferences() AS r»
+                if (field.getName().equals("«r.name»")) {
+                    return true;
+                }
+                «ENDFOREACH -»
+                «FOREACH getEnumReferences() AS r»
+                if (field.getName().equals("«r.name»")) {
+                    return true;
+                }
+                «ENDFOREACH -»
+                return false;
+            }
+        }
+    «ENDIF-»
+«ENDDEFINE»
+
+«DEFINE toStringStyle FOR DomainObject»
+	«IF toStringStyle() != null»
+		protected org.apache.commons.lang.builder.ToStringStyle toStringStyle() {
+			return org.apache.commons.lang.builder.ToStringStyle.«toStringStyle()»;
+		}
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE domainObject FOR Enum»
+    «FILE javaFileName(getDomainPackage() + "." + name)»
+«javaHeader()»
+package «getDomainPackage()»;
+
+«IF formatJavaDoc() == "" -»
+ /**
+ * Enum for «name»
+ */
+«ELSE -»
+«formatJavaDoc()»
+«ENDIF -»
+public enum «name» implements java.io.Serializable {
+	«EXPAND enumValue FOREACH values SEPARATOR ","»;
+
+	«EXPAND enumIdentifierMap»
+
+    «EXPAND DomainObjectAttribute::attribute FOREACH attributes»
+    «EXPAND enumConstructor»
+    «EXPAND enumFromIdentifierMethod»
+    «EXPAND DomainObjectAttribute::propertyGetter FOREACH attributes»
+    «EXPAND enumNamePropertyGetter»
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE enumValue FOR EnumValue -»
+	«formatJavaDoc()»
+	«name»«IF !parameters.isEmpty
+		»(«FOREACH parameters AS param SEPARATOR ","»«param.value»«ENDFOREACH»)«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE enumIdentifierMap FOR Enum»
+«LET getIdentifierAttribute() AS identifierAttribute »
+«IF identifierAttribute != null »
+    /**
+     */
+    private static java.util.Map<«identifierAttribute.getTypeName().getObjectTypeName()», «name»> identifierMap = new java.util.HashMap<«identifierAttribute.getTypeName().getObjectTypeName()», «name»>();
+    static {
+        for («name» value : «name».values()) {
+            identifierMap.put(value.«identifierAttribute.getGetAccessor()»(), value);
+        }
+    }
+«ENDIF»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE enumFromIdentifierMethod FOR Enum»
+«LET getIdentifierAttribute() AS identifierAttribute »
+«IF identifierAttribute != null »
+    public static «name» from«identifierAttribute.name.toFirstUpper()»(«identifierAttribute.getTypeName()» «identifierAttribute.name») {
+        «name» result = identifierMap.get(«identifierAttribute.name»);
+        if (result == null) {
+            throw new IllegalArgumentException("No «name» for «identifierAttribute.name»: " + «identifierAttribute.name»);
+        }
+        return result;
+    }
+	«REM»new enum handling«ENDREM»
+    public static «name» toEnum(java.lang.Object key) {
+        if (!(key instanceof «identifierAttribute.getTypeName().getObjectTypeName()»)) {
+            throw new IllegalArgumentException("key is not of type «identifierAttribute.getTypeName().getObjectTypeName()»");
+        }
+        return from«identifierAttribute.name.toFirstUpper()»((«identifierAttribute.getTypeName().getObjectTypeName()») key);
+    }
+
+    public Object toData() {
+        return get«identifierAttribute.name.toFirstUpper()»();
+    }
+«ENDIF»
+«ENDLET»
+«ENDDEFINE»
+
+
+«DEFINE enumConstructor FOR Enum»
+	/**
+	 */
+	private «name»(«EXPAND DomainObjectConstructor::parameterTypeAndName FOREACH attributes SEPARATOR ","») {
+        «FOREACH attributes AS a-»
+        this.«a.name» = «a.name»;
+        «ENDFOREACH -»
+    }
+«ENDDEFINE»
+
+«DEFINE enumNamePropertyGetter FOR Enum»
+	public String getName() {
+		return name();
+    }
+«ENDDEFINE»
+
+«DEFINE clone FOR DomainObject»
+    @Override
+    public Object clone() {
+        try {
+            return super.clone();
+        } catch (CloneNotSupportedException e) {
+            // this shouldn't happen, since we are Cloneable
+            throw new InternalError();
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE domainObjectSubclassImplMethod FOR DomainObjectOperation»
+	«getVisibilityLitteral()» «getTypeName()» «name»(«EXPAND methodParameterTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws» {
+    	// TODO Auto-generated method stub
+        throw new UnsupportedOperationException("«name» not implemented");
+     }
+«ENDDEFINE»
+
+«DEFINE abstractMethod FOR DomainObjectOperation»
+	«formatJavaDoc()»
+	abstract «getVisibilityLitteral()» «getTypeName()» «name»(«EXPAND methodParameterTypeAndName FOREACH parameters SEPARATOR ", "») «
+    EXPAND templates::common::Exception::throws»;
+«ENDDEFINE»
+
+«DEFINE methodParameterTypeAndName FOR Parameter»
+«getTypeName()» «name»
+«ENDDEFINE»
+
+«REM»Extension point to generate more stuff in DomainObjects.
+Use AROUND templates::domain::DomainObject::domainObjectHook FOR DomainObject
+in SpecialCases.xpt«ENDREM»
+«DEFINE domainObjectHook FOR DomainObject»
+«ENDDEFINE»
+
+«REM»Extension point to generate more stuff in DataTransferObjects
+Use AROUND templates::domain::DomainObject::dataTransferObjectHook FOR DataTransferObject
+in SpecialCases.xpt«ENDREM»
+«DEFINE dataTransferObjectHook FOR DataTransferObject»
+«ENDDEFINE»
+
+
+

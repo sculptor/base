@@ -1,0 +1,588 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptormetamodel;
+
+extension extensions::helper;
+extension extensions::dbhelper;
+extension extensions::properties;
+extension transformation::RestTransformation;
+
+modify(Application app) :
+	initPropertiesHook() ->
+	app.modules.domainObjects.typeSelect(Trait).modifyChangeable() ->
+	app.modules.domainObjects.mixin() ->
+	app.modules.getNonEnumDomainObjects().modifyUuid() ->
+    app.getAllRepositories().operations.select(e | !e.delegateToAccessObject && !e.isGenericAccessObject() && e.isGeneratedFinder()).modifyDynamicFinderOperations() ->
+    app.getAllRepositories().modifyPagingOperations() ->
+    app.getAllRepositories().addDefaultValues() ->
+    app.getAllRepositories().modifySubscriber() ->
+    app.modules.serviceAddDefaultValues() ->
+    app.modules.resourceAddDefaultValues() ->
+    app.modules.domainObjects.modifyExtends() ->
+    app.modules.domainObjects.modifyBelongsToAggregate() ->
+    app.modules.domainObjects.typeSelect(ValueObject).modifySubclassesPersistent() ->
+    app.modules.domainObjects.typeSelect(ValueObject).modifyAbstractPersistent() ->
+    app.modules.domainObjects.typeSelect(Trait).modifyTrait() ->
+    app.modules.modify() ->
+    app.modules.modifyDatabaseNames() ->
+    app.modules.modifyReferencesDatabaseNames() ->
+    app.modules.resources.operations.addRestDefaults()->
+    app;
+
+mixin(DomainObject domainObject) :
+	domainObject.traits.reverse().mixin(domainObject);
+
+mixin(Trait trait, DomainObject domainObject) :
+	trait.attributes.mixin(domainObject) ->
+	trait.references.mixin(domainObject) ->
+	trait.operations.mixin(domainObject);
+
+mixin(Attribute att, DomainObject domainObject) :
+	domainObject.addIfNotExists(att.mixinClone(domainObject));
+
+mixin(Reference ref, DomainObject domainObject) :
+	domainObject.addIfNotExists(ref.mixinClone(domainObject));
+
+mixin(DomainObjectOperation op, DomainObject domainObject) :
+	domainObject.addIfNotExists(op.mixinClone(domainObject));
+
+addIfNotExists(DomainObject domainObject, Attribute a) :
+	if domainObject.attributes.notExists(e | e.name == a.name) then
+		domainObject.attributes.add(a);
+
+addIfNotExists(DomainObject domainObject, Reference r) :
+	if domainObject.references.notExists(e | r.name == r.name) then
+		domainObject.references.add(r);
+
+addIfNotExists(DomainObject domainObject, DomainObjectOperation op) :
+	if ((op.parameters.size != 1) || domainObject.attributes.notExists(e | "set" + e.name.toFirstUpper() == op.name)) &&
+		(!op.parameters.isEmpty || domainObject.attributes.notExists(e | e.getGetAccessor() == op.name)) &&
+		domainObject.operations.notExists(e | e.name == op.name && e.type == op.type && e.parameters.size == op.parameters.size) then
+		domainObject.operations.add(op);
+
+create Attribute this mixinClone(Attribute att, DomainObject domainObject) :
+	this.setChangeable(att.changeable) ->
+	this.setCollectionType(att.collectionType) ->
+	this.setDatabaseColumn(att.databaseColumn) ->
+	this.setDatabaseType(att.databaseType) ->
+	this.setDoc(att.doc) ->
+	this.setHint(att.hint) ->
+	this.addHint("trait=" + att.getDomainObject().name) ->
+	this.setIndex(att.index) ->
+	this.setLength(att.length) ->
+	this.setMapKeyType(att.mapKeyType) ->
+	this.setName(att.name) ->
+	this.setNaturalKey(att.naturalKey) ->
+	this.setNullable(att.nullable) ->
+	this.setRequired(att.required) ->
+	this.setTransient(att.transient) ->
+	this.setType(att.type) ->
+	this.setValidate(att.validate) ->
+	this.setVisibility(att.visibility);
+
+create Reference this mixinClone(Reference ref, DomainObject domainObject) :
+	this.setCache(ref.cache) ->
+	this.setCascade(ref.cascade) ->
+	this.setChangeable(ref.changeable) ->
+	this.setCollectionType(ref.collectionType) ->
+	this.setDatabaseColumn(ref.databaseColumn) ->
+	this.setDatabaseJoinColumn(ref.databaseJoinColumn) ->
+	this.setDatabaseJoinTable(ref.databaseJoinTable) ->
+	this.setDoc(ref.doc) ->
+	this.setFetch(ref.fetch) ->
+	this.setFrom(domainObject) ->
+	this.setHint(ref.hint) ->
+	this.addHint("trait=" + ref.getDomainObject().name) ->
+	this.setInverse(ref.inverse) ->
+	this.setMany(ref.many) ->
+	this.setName(ref.name) ->
+	this.setNaturalKey(ref.naturalKey) ->
+	this.setNullable(ref.nullable) ->
+	// opposite not supported
+	this.setOrderBy(ref.orderBy) ->
+	this.setRequired(ref.required) ->
+	this.setTransient(ref.transient) ->
+	this.setTo(ref.to) ->
+	this.setValidate(ref.validate) ->
+	this.setVisibility(ref.visibility);
+
+create DomainObjectOperation this mixinClone(DomainObjectOperation op, DomainObject domainObject) :
+	this.setAbstract(op.abstract) ->
+	this.setCollectionType(op.collectionType) ->
+	this.setDoc(op.doc) ->
+	this.setDomainObjectType(op.domainObjectType) ->
+	this.setHint(op.hint) ->
+	this.addHint("trait=" + op.domainObject.name) ->
+	this.setMapKeyType(op.mapKeyType) ->
+	this.setName(op.name) ->
+	this.parameters.addAll(op.parameters.mixinClone(op, domainObject)) ->
+	this.setPublish(op.publish) ->
+	this.setThrows(op.throws) ->
+	this.setType(op.type) ->
+	this.setVisibility(op.visibility);
+
+create Parameter this mixinClone(Parameter param, DomainObjectOperation op, DomainObject domainObject) :
+	this.setCollectionType(param.collectionType) ->
+	this.setDoc(param.doc) ->
+	this.setDomainObjectType(param.domainObjectType) ->
+	this.setHint(param.hint) ->
+	this.setMapKeyType(param.mapKeyType) ->
+	this.setName(param.name) ->
+	this.setType(param.type);
+
+serviceAddDefaultValues(Module module) :
+    module.services.addDefaultValues();
+
+resourceAddDefaultValues(Module module) :
+    module.resources.addDefaultValues();
+
+modify(Module module) :
+	module.setPersistenceUnit(module.hasHint("persistenceUnit") ? module.getHint("persistenceUnit") : module.application.persistenceUnitName()) ->
+    isServiceContextToBeGenerated() ? module.services.modifyServiceContextParameter() : null ->
+    module.services.modifySubscriber() ->
+    module.services.modifyApplicationException() ->
+    module.services.modifyGapClass() ->
+    module.resources.modifyGapClass() ->
+    module.domainObjects.modifyGapClass() ->
+    module.getNonEnumDomainObjects().select(d | d.extends == null).modifyIdAttribute() ->
+    module.getNonEnumDomainObjects().modifyAuditable() ->
+    module.getNonEnumDomainObjects().modifyChangeable() ->
+    module.getNonEnumDomainObjects().modifyTransient() ->
+    module.getNonEnumDomainObjects().modifyOptimisticLocking() ->
+    module.domainObjects.typeSelect(DomainEvent).modifyDomainEvent() ->
+    module.domainObjects.typeSelect(CommandEvent).modifyCommandEvent() ->
+
+    module.domainObjects.typeSelect(Enum).modifyEnum() ->
+    module.domainObjects.modifyInheritance();
+
+modifyDatabaseNames(Module module) :
+	module.getNonEnumDomainObjects().modifyDatabaseNames();
+
+modifyReferencesDatabaseNames(Module module) :
+	module.getNonEnumDomainObjects().modifyReferencesDatabaseNames();
+
+modifyServiceContextParameter(Service service) :
+	if (!service.webService) then
+		service.operations.modifyServiceContextParameter();
+
+modifyServiceContextParameter(ServiceOperation operation) :
+	if !operation.isEventSubscriberOperation() then
+    	// no method in ext language to add obj first in a list, using Java instead
+    	addServiceContextParameter(operation);
+
+Collection[Parameter] addServiceContextParameter(ServiceOperation operation) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addServiceContextParameter(sculptormetamodel.ServiceOperation);
+
+modifyApplicationException(Service service) :
+    service.operations.modifyApplicationException();
+
+modifyApplicationException(ServiceOperation operation) :
+    operation.throws == "ApplicationException" ?
+        operation.setThrows(applicationExceptionClass()) :
+        null;
+
+// when using scaffold method names gapClass is wrong and must be redefined
+modifyGapClass(Service service) :
+    if !service.gapClass && !service.operations.isEmpty && service.operations.exists(op | op.isImplementedInGapClass()) then
+    	service.setGapClass(true);
+
+modifyGapClass(Resource resource) :
+    if !resource.gapClass && !resource.operations.isEmpty && resource.operations.exists(op | op.isImplementedInGapClass()) then
+    	resource.setGapClass(true);
+
+modifyGapClass(DomainObject domainObject) :
+	if domainObject.operations.exists(op | op.isImplementedInGapClass()) then
+		domainObject.setGapClass(true);
+
+modifyTransient(DomainObject domainObject) :
+    if domainObject.isPersistent() then
+    	domainObject.references.select(e | !e.isEnumReference() && !e.to.isPersistent()).modifyTransientToTrue();
+
+modifyTransientToTrue(Reference reference) :
+    reference.setTransient(true);
+
+modifyChangeable(DomainObject domainObject) :
+    defaultModifyChangeable(domainObject);
+
+modifyChangeable(ValueObject valueObject) :
+	defaultModifyChangeable(valueObject) ->
+    (valueObject.immutable ?
+        (valueObject.attributes.select(a | a.name != "uuid").modifyChangeableToFalse() ->
+        valueObject.references.select(r | !r.many).modifyChangeableToFalse()) :
+        null);
+
+modifyChangeable(DataTransferObject dto) :
+	dto.attributes.select(a | a.naturalKey).modifyChangeableToFalse() ->
+    dto.references.select(r | r.naturalKey).modifyChangeableToFalse();
+
+modifyChangeable(Trait trait) :
+	trait.attributes.select(a | a.naturalKey).modifyChangeableToFalse() ->
+    trait.references.select(r | r.naturalKey).modifyChangeableToFalse();
+
+defaultModifyChangeable(DomainObject domainObject) :
+	domainObject.attributes.select(a | a == domainObject.getIdAttribute()).modifyChangeableToFalse() ->
+    domainObject.attributes.select(a | a.naturalKey).modifyChangeableToFalse() ->
+    domainObject.references.select(r | r.naturalKey).modifyChangeableToFalse();
+
+modifyChangeableToFalse(Attribute attribute) :
+    attribute.setChangeable(false);
+
+modifyChangeableToFalse(Reference reference) :
+    reference.setChangeable(false);
+
+modifyAuditable(Entity entity) :
+	if (!isAuditableToBeGenerated()) then entity.setAuditable(false) ->
+    (entity.auditable && (entity.extends == null || !(((Entity) entity.extends).auditable)) ?
+        addAuditable(entity) :
+        null);
+
+modifyAuditable(DomainObject domainObject) :
+    null;
+
+Entity addAuditable(Entity entity) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addAuditable(sculptormetamodel.Entity);
+
+modifyDomainEvent(DomainEvent event) :
+	if event.extends != null then
+		((DomainEvent) event.extends).modifyDomainEvent() ->
+	if event.getAllAttributes().notExists(e|e.name == "recorded") then
+		event.attributes.addFirst(createEventTimestamp(event, "recorded")) ->
+	if event.getAllAttributes().notExists(e|e.name == "occurred") then
+		event.attributes.addFirst(createEventTimestamp(event, "occurred"));
+
+modifyCommandEvent(CommandEvent event) :
+	let newOccurred = createEventTimestamp(event, "occurred") :
+	newOccurred.setIndex(true) ->
+	if event.extends != null then
+		((CommandEvent) event.extends).modifyCommandEvent() ->
+	if event.getAllAttributes().notExists(e|e.name == "recorded") then
+		event.attributes.addFirst(createEventTimestamp(event, "recorded")) ->
+	if event.getAllAttributes().notExists(e|e.name == "occurred") then
+		event.attributes.addFirst(newOccurred);
+
+create Attribute this createEventTimestamp(DomainObject event, String name) :
+	this.setName(name) ->
+	this.setType("Timestamp") ->
+	this.setChangeable(false);
+
+modifySubscriber(Service service) :
+	if (service.subscribe != null && service.operations.notExists(e|e.name == "receive")) then
+		service.operations.add(createSubscriberRecieve(service));
+
+create ServiceOperation this createSubscriberRecieve(Service service) :
+	setName("receive") ->
+	parameters.add(createSubscriberRecieveEventParam(this));
+
+modifySubscriber(Repository repository) :
+	if (repository.subscribe != null && repository.operations.notExists(e|e.name == "receive")) then
+		repository.operations.add(createSubscriberRecieve(repository));
+
+create RepositoryOperation this createSubscriberRecieve(Repository repository) :
+	setName("receive") ->
+	parameters.add(createSubscriberRecieveEventParam(this));
+
+create Parameter this createSubscriberRecieveEventParam(Operation op) :
+	setName("event") ->
+	setType(fw("event.Event"));
+
+modifyOptimisticLocking(DomainObject domainObject) :
+    isOptimisticLockingToBeGenerated() && domainObject.optimisticLocking && (domainObject.extends == null || !domainObject.extends.optimisticLocking) ?
+        addVersionAttribute(domainObject) :
+        null;
+
+modifyOptimisticLocking(ValueObject valueObject) :
+    isOptimisticLockingToBeGenerated() && valueObject.persistent && !valueObject.immutable && valueObject.optimisticLocking && (valueObject.extends == null || !valueObject.extends.optimisticLocking) ?
+        addVersionAttribute(valueObject) :
+        null;
+
+modifyOptimisticLocking(Trait trait) :
+    null;
+
+modifyOptimisticLocking(BasicType basicType) :
+    null;
+
+modifyDatabaseNames(DomainObject domainObject) :
+	(domainObject.databaseTable == null ?
+        domainObject.setDatabaseTable(domainObject.getDefaultDatabaseName()) :
+        null) ->
+	domainObject.attributes.modifyDatabaseColumn();
+
+
+modifyDatabaseNames(ValueObject valueObject) :
+    valueObject.persistent ?
+    	((valueObject.databaseTable == null ?
+        	valueObject.setDatabaseTable(valueObject.getDefaultDatabaseName()) :
+        	null) ->
+    	valueObject.attributes.modifyDatabaseColumn()) :
+        null;
+
+modifyDatabaseNames(BasicType basicType) :
+	basicType.attributes.modifyDatabaseColumn();
+
+modifyReferencesDatabaseNames(DomainObject domainObject) :
+	domainObject.isPersistent() ?
+		domainObject.references.modifyDatabaseColumn() :
+		null;
+
+modifyDatabaseColumn(Attribute attribute) :
+	if (attribute.databaseColumn == null) then
+		((attribute.name == "id" && getBooleanProperty("db.useTablePrefixedIdColumn")) ?
+			attribute.setDatabaseColumn(attribute.getDomainObject().getDatabaseName() + "_" + attribute.getDefaultDatabaseName()) :
+			attribute.setDatabaseColumn(attribute.getDefaultDatabaseName()));
+
+modifyDatabaseColumn(Reference reference) :
+	reference.databaseColumn == null ?
+		reference.setDatabaseColumn(reference.getDefaultForeignKeyName()) :
+		null;
+
+DomainObject addVersionAttribute(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addVersionAttribute(sculptormetamodel.DomainObject);
+
+modifyIdAttribute(BasicType basicType) :
+    null;
+
+modifyIdAttribute(DataTransferObject dto) :
+	null;
+
+modifyIdAttribute(Trait trait) :
+	null;
+
+modifyIdAttribute(ValueObject valueObject) :
+    valueObject.persistent ?
+        addIdAttribute(valueObject) :
+        null;
+
+modifyIdAttribute(DomainObject domainObject) :
+    addIdAttribute(domainObject);
+
+DomainObject addIdAttribute(DomainObject domainObject) :
+    domainObject.attributes.exists(a | a.name == "id") ?
+        null :
+        addIdAttributeJava(domainObject);
+
+DomainObject addIdAttributeJava(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addIdAttribute(sculptormetamodel.DomainObject);
+
+modifyExtends(DomainObject domainObject) :
+    if (domainObject.extendsName != null) then
+        (let matchingDomainObject = findDomainObjectByName(domainObject.module.application, domainObject.extendsName) :
+        if (matchingDomainObject != null) then
+            (domainObject.setExtends(matchingDomainObject) ->
+            domainObject.setExtendsName(null)));
+
+modifyBelongsToAggregate(DomainObject domainObject) :
+	if (domainObject.belongsToAggregate == null) then
+		domainObject.setBelongsToAggregate(domainObject.getAggregateRootObject());
+
+private DomainObject findDomainObjectByName(Application app, String domainObjectName) :
+    let match = app.modules.domainObjects.select(e | e.name == domainObjectName) :
+    match.isEmpty ? null : match.first();
+
+modifySubclassesPersistent(ValueObject domainObject) :
+    if (!domainObject.persistent) then
+        domainObject.getAllSubclasses().typeSelect(ValueObject).setPersistent(false);
+
+// different defaults for DomainEvent
+modifySubclassesPersistent(DomainEvent domainObject) :
+    if (domainObject.persistent) then
+        domainObject.getAllSubclasses().typeSelect(ValueObject).setPersistent(true);
+
+modifyAbstractPersistent(ValueObject domainObject) :
+    if (domainObject.abstract && domainObject.getAllSubclasses().typeSelect(ValueObject).notExists(e|e.persistent)) then
+        domainObject.setPersistent(false);
+
+modifyTrait(Trait trait) :
+	trait.attributes.addDerivedTraitPropertyAccessors(trait) ->
+	trait.references.addDerivedTraitPropertyAccessors(trait);
+
+addDerivedTraitPropertyAccessors(Attribute att, Trait trait) :
+	let getter = createDerivedTraitGetter(trait, att) :
+	let setter = createDerivedTraitSetter(trait, att) :
+	if trait.operations.notExists(e|e.name == getter.name && e.type == getter.type && e.parameters.isEmpty) then
+		trait.operations.add(getter) ->
+	if att.changeable && trait.operations.notExists(e|e.name == setter.name && e.type == setter.type && e.parameters.size == 1 && e.parameters.get(0).type == att.type) then
+		trait.operations.add(setter);
+
+addDerivedTraitPropertyAccessors(Reference ref, Trait trait) :
+	let getter = createDerivedTraitGetter(trait, ref) :
+	let setter = createDerivedTraitSetter(trait, ref) :
+	if trait.operations.notExists(e|e.name == getter.name && e.domainObjectType == getter.domainObjectType && e.parameters.isEmpty) then
+		trait.operations.add(getter) ->
+	if ref.changeable && !ref.many && trait.operations.notExists(e|e.name == setter.name && e.domainObjectType == setter.domainObjectType && e.parameters.size == 1 && e.parameters.get(0).domainObjectType == ref.to) then
+		trait.operations.add(setter);
+
+create DomainObjectOperation this createDerivedTraitGetter(Trait trait, Attribute att) :
+	this.setName(att.getGetAccessor()) ->
+	this.setAbstract(true) ->
+	this.addHint("trait=" + trait.name) ->
+	this.setType(att.type) ->
+	this.setCollectionType(att.collectionType) ->
+	this.setMapKeyType(att.mapKeyType) ->
+	this.setDoc(att.doc) ->
+	this.setVisibility(att.visibility);
+
+create DomainObjectOperation this createDerivedTraitGetter(Trait trait, Reference ref) :
+	this.setName("get" + ref.name.toFirstUpper()) ->
+	this.setAbstract(true) ->
+	this.addHint("trait=" + trait.name) ->
+	this.setDomainObjectType(ref.to) ->
+	this.setCollectionType(ref.collectionType) ->
+	this.setDoc(ref.doc) ->
+	this.setVisibility(ref.visibility);
+
+create DomainObjectOperation this createDerivedTraitSetter(Trait trait, Attribute att) :
+	this.setName("set" + att.name.toFirstUpper()) ->
+	this.setAbstract(true) ->
+	this.setDoc(att.doc) ->
+	this.setVisibility(att.visibility) ->
+	this.parameters.add(createDerivedTraitSetterParameter(trait, att));
+
+create DomainObjectOperation this createDerivedTraitSetter(Trait trait, Reference ref) :
+	this.setName("set" + ref.name.toFirstUpper()) ->
+	this.setAbstract(true) ->
+	this.setDoc(ref.doc) ->
+	this.setVisibility(ref.visibility) ->
+	this.parameters.add(createDerivedTraitSetterParameter(trait, ref));
+
+create Parameter this createDerivedTraitSetterParameter(Trait trait, Attribute att) :
+	this.setName(att.name) ->
+	this.setType(att.type) ->
+	this.setCollectionType(att.collectionType) ->
+	this.setMapKeyType(att.mapKeyType);
+
+create Parameter this createDerivedTraitSetterParameter(Trait trait, Reference ref) :
+	this.setName(ref.name) ->
+	this.setDomainObjectType(ref.to) ->
+	this.setCollectionType(ref.collectionType);
+
+modifyUuid(DomainObject domainObject) :
+    if (domainObject.extends != null) then
+        domainObject.extends.modifyUuid() ->
+    if (domainObject.hasOwnDatabaseRepresentation() &&
+            !domainObject.hasUuidAttribute() &&
+            !domainObject.hasNaturalKey() &&
+            (!domainObject.abstract || domainObject.getSubclasses().isEmpty || !domainObject.getSubclasses().forAll(sub | sub.hasNaturalKey()))) then
+        domainObject.addUuidAttribute();
+
+private boolean hasUuidAttribute(DomainObject domainObject) :
+    domainObject.getAllAttributes().exists(e | e.name == "uuid");
+
+DomainObject addUuidAttribute(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addUuidAttribute(sculptormetamodel.DomainObject);
+
+Repository addDefaultValues(Repository repository) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addDefaultValues(sculptormetamodel.Repository);
+
+Service addDefaultValues(Service service) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addDefaultValues(sculptormetamodel.Service);
+
+Service addDefaultValues(Resource resource) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addDefaultValues(sculptormetamodel.Resource);
+
+Enum modifyEnum(Enum enumObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.modifyEnum(sculptormetamodel.Enum);
+
+modifyInheritance(DomainObject domainObject) :
+	(if !domainObject.hasSubClass() then domainObject.setInheritance(null)) ->
+	(if domainObject.hasSuperClass() && domainObject.getRootExtends().isInheritanceTypeSingleTable() then domainObject.setInheritance(null)) ->
+	(if !domainObject.hasSuperClass() then domainObject.setDiscriminatorColumnValue(null));
+
+modifyPagingOperations(Repository repository) :
+    let pagingOperations = repository.operations.select(e | e.hasPagingParameter()) :
+    let pagedFindAll = pagingOperations.selectFirst(e|e.name == "findAll") :
+    let pagedFindByQuery = pagingOperations.selectFirst(e|e.name == "findByQuery") :
+    pagingOperations.modifyPagingOperation() ->
+    if (!isJpa2() && pagedFindAll != null && !pagedFindAll.hasHint("countQuery") && !pagedFindAll.hasHint("countOperation")) then
+        (
+            pagedFindAll.addCountAllHint() ->
+            if (repository.operations.notExists(e|e.name == "countAll")) then
+                repository.operations.add(createCountAll(repository))
+        ) ->
+    if (!isJpa2() && (pagedFindByQuery != null || pagingOperations.exists(e|e.hasHint("countQuery"))) &&
+        repository.operations.notExists(e|e.name == "findByQuery" && e.parameters.exists(p|p.name == "useSingleResult"))) then
+        repository.operations.add(createFindByQuerySingleResult(repository, true));
+
+private addCountAllHint(RepositoryOperation pagedFindAll) :
+	let base = pagedFindAll.hint == null ? "" : (pagedFindAll.hint + ", ") :
+	pagedFindAll.setHint(base + "countOperation=countAll");
+
+private create RepositoryOperation this createFindByQuerySingleResult(Repository repository, boolean useSingleResult) :
+	this.setName("findByQuery") ->
+	this.setVisibility("protected") ->
+	this.setRepository(repository) ->
+	if (useSingleResult) then
+	   this.parameters.add(createUseSingleResultParameter(this));
+
+private create Parameter this createUseSingleResultParameter(RepositoryOperation operation) :
+    this.setName("useSingleResult") ->
+    this.setType("boolean");
+
+private create RepositoryOperation this createCountAll(Repository repository) :
+	this.setName("countAll") ->
+	this.setVisibility("protected") ->
+	this.setRepository(repository);
+
+modifyPagingOperation(RepositoryOperation op) :
+	if ((op.type == "PagedResult" || op.type == null) && op.domainObjectType == null) then
+		(op.setType("PagedResult") ->
+		op.setDomainObjectType(op.repository.aggregateRoot));
+
+modifyDynamicFinderOperations(RepositoryOperation op) :
+    if (op.type == null && op.domainObjectType == null) then (
+        op.setDomainObjectType(op.repository.aggregateRoot) ->
+        op.setCollectionType("List")
+    ) ->
+    if (op.hasHint("paged")) then (
+        op.parameters.add(createParameter(op, "pagingParameter", "PagingParameter")) ->
+        op.setCollectionType("List") ->
+        op.setType("PagedResult") ->
+        op.setDomainObjectType(op.repository.aggregateRoot)
+    ) ->
+    if (op.isQueryBased()) then
+        op.modifyQueryOperations()
+    else
+        op.modifyConditionOperations()
+    ;
+
+modifyQueryOperations(RepositoryOperation op) :
+    if (op.collectionType == null && op.repository.operations.notExists(e|e.name == "findByQuery" && e.parameters.exists(p|p.name == "useSingleResult"))) then
+        op.repository.operations.add(createFindByQuerySingleResult(op.repository, true)) ->
+    if (op.collectionType != null && op.repository.operations.notExists(e|e.name == "findByQuery")) then
+        op.repository.operations.add(createFindByQuerySingleResult(op.repository, false));
+
+modifyConditionOperations(RepositoryOperation op) :
+    if (op.collectionType == null && op.repository.operations.notExists(e|e.name == "findByCondition" && e.parameters.exists(p|p.name == "useSingleResult"))) then
+        op.repository.operations.add(createFindByCondition(op.repository, true)) ->
+    if (op.collectionType != null && op.repository.operations.notExists(e|e.name == "findByCondition")) then
+        op.repository.operations.add(createFindByCondition(op.repository, false));
+
+private create RepositoryOperation this createFindByCondition(Repository repository, boolean useSingleResult) :
+    this.setName("findByCondition") ->
+    this.setVisibility("protected") ->
+    this.setRepository(repository) ->
+    this.parameters.add(createParameter(this, "condition", "java.util.List<org.fornax.cartridges.sculptor.framework.accessapi.ConditionalCriteria>")) ->
+    if (useSingleResult) then
+    (
+       this.setDomainObjectType(repository.aggregateRoot) ->
+       this.setCollectionType(null) ->
+       this.parameters.add(createParameter(this, "useSingleResult", "boolean"))
+    );
+
+private create Parameter this createParameter(RepositoryOperation operation, String name, String type) :
+    this.setName(name) ->
+    this.setType(type);

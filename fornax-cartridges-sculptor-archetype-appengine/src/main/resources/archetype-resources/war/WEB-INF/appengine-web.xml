@@ -1,0 +1,21 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+<?xml version="1.0" encoding="utf-8"?>
+<appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
+	<application>${artifactId}</application>
+	<version>1</version>
+	
+	<system-properties>
+		<!-- Configure java.util.logging -->
+		<property name="java.util.logging.config.file" value="WEB-INF/logging.properties"/>
+		<!-- Possibility to define appUrl, included in ServiceContext. 
+		     Default is http://<appId>.appspot.com.
+		     When running locally it is http://localhost:<port>
+		-->
+		<!-- 
+		<property name="appUrl" value="http://myapp.foobar.com"/>
+		-->
+	</system-properties>
+	
+</appengine-web-app>

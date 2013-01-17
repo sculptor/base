@@ -1,0 +1,441 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptorguidsl;
+import sculptordsl;
+import sculptormetamodel;
+import sculptorguimetamodel;
+ 
+extension transformation::DslTransformation;
+extension transformation::Transformation;
+
+extension extensions::helper;
+extension extensions::guihelper;
+extension extensions::properties;
+
+extension org::fornax::cartridges::sculptor::dsl::ModelLoadExtensions;
+extension org::fornax::cartridges::sculptor::dsl::Extensions;
+
+
+addDefault(DslGuiApplication gui, Application app) :
+	debugTrace("Adding defaults to GUI") ->
+	
+	// if no modules have been added in the gui dsl, add default based on business dsl
+	addDefaultModules(gui) ->
+
+	// TODO - future release
+	//moveTopTasks(gui) ->
+
+	// Basic types might need modification if the shortcut syntax have been used, for example:
+	// 'ssn' instead of 'ssn.country' and ssn.number'. In that case 'ssn' is removed and
+	// 'ssn.country' and 'ssn.number' are added.
+	gui.modules.userTasks.modifyBasicTypes() ->
+	
+	// if no tasks have been added in the gui dsl, add default based on business dsl
+	gui.modules.addDefaultTasks(gui) ->
+	
+	// if no view properties have been added in the gui dsl, add default based on business dsl
+	gui.modules.userTasks.addDefaultDslGuiViewProperties() ->
+	
+	// if user has added a spec for listing a reference, this reference should also be in the 
+	// viewProperties list for the task
+	gui.modules.userTasks.addMissingReferences() ->
+
+	// if no list subtasks have been added in the gui dsl, add default based on business dsl
+	gui.modules.userTasks.addDefaultListSubtasks() ->
+	
+	// add system attributes
+	gui.modules.userTasks.addSystemAttributes();
+	
+	
+addDefaultModules(DslGuiApplication gui) :
+    let dslModel = (DslModel) gui.guiForApplication.eContainer :
+    // allElements will include imported elements also
+    let allBusinessModules = gui.guiForApplication.allElements().typeSelect(DslModule) :
+	gui.modules.addAll(
+		allBusinessModules.reject(
+			m | gui.modules.select(e | e.for == m).size > 0
+		).createDefaultModule()
+	);
+
+removeEmptyModules(DslGuiApplication gui) :
+	gui.modules.removeAll(gui.modules.select(m | m.userTasks.size == 0));
+
+// TODO - future release
+//moveTopTasks(DslGuiApplication gui) :
+//	let topUserTasksListCopy = {}.addAll(gui.topUserTasks) :
+//	((List[DslUserTask]) topUserTasksListCopy).moveTopTask(gui);
+//moveTopTask(DslUserTask task, DslGuiApplication gui) :
+//	let moduleName = ((DslModule) task.for.eContainer).name :
+//	let module = gui.modules.typeSelect(DslGuiModule).selectFirst(e | e.for.name  == moduleName) :
+//	module.userTasks.add(task) ->
+
+addMissingReferences(DslUserTask task) :
+	task.subtasks.reference.addMissingReference(task);
+	
+addMissingReference(DslAnyProperty ref, DslUserTask task) :
+	if (!task.viewProperties.for.contains(ref)) then
+		task.viewProperties.addAll(ref.createDslGuiViewProperties(task))
+	;
+	
+addDefaultTasks(DslGuiModule dslGuiModule, DslGuiApplication dslGuiApp) :
+	addDefaultViewTasks(dslGuiModule, dslGuiApp) ->
+	addDefaultCreateTasks(dslGuiModule, dslGuiApp) ->
+	addDefaultUpdateTasks(dslGuiModule, dslGuiApp) ->
+	addDefaultDeleteTasks(dslGuiModule, dslGuiApp) ->
+	addDefaultListTasks(dslGuiModule, dslGuiApp);
+
+addDefaultViewTasks(DslGuiModule dslGuiModule, DslGuiApplication gui) :
+	// add view tasks
+	dslGuiModule.userTasks.addAll(allTaskPotentialDomainObjects(dslGuiModule, gui)
+			// reject all domain objects that are specified in gui dsl
+			.reject(d| gui.modules.userTasks.typeSelect(DslViewTask).select(e|e.for == d).size > 0)
+			.createDefaultViewTask(dslGuiModule));
+
+addDefaultCreateTasks(DslGuiModule module, DslGuiApplication gui) :
+	// add create tasks
+	module.userTasks.addAll(allTaskPotentialDomainObjects(module, gui)
+			// reject all domain objects that are specified in gui dsl
+			.reject(d| gui.modules.userTasks.typeSelect(DslCreateTask).select(e|e.for == d).size > 0)
+			// reject all domain objects that has a 'skip' in the gui dsl
+			.reject(d | gui.modules.skipUserTasks.typeSelect(DslSkipCreateTask).select(e|e.for == d).size > 0)
+			.createDefaultCreateTask(module));
+
+addDefaultUpdateTasks(DslGuiModule module, DslGuiApplication gui) :
+	// add update tasks
+	module.userTasks.addAll(allTaskPotentialDomainObjects(module, gui)
+			// reject all domain objects that are specified in gui dsl
+			.reject(d| gui.modules.userTasks.typeSelect(DslUpdateTask).select(e|e.for == d).size > 0)
+			// reject all domain objects that has a 'skip' in the gui dsl
+			.reject(d | gui.modules.skipUserTasks.typeSelect(DslSkipUpdateTask).select(e|e.for == d).size > 0)
+			// reject all domain objects that are immutable
+			.reject(d | d.metaType == DslValueObject && (((DslValueObject) d).notImmutable == false))
+			.createDefaultUpdateTask(module));
+
+addDefaultDeleteTasks(DslGuiModule module, DslGuiApplication gui) :
+	// add delete tasks
+	module.userTasks.addAll(allTaskPotentialDomainObjects(module, gui)
+			// reject all domain objects that are specified in gui dsl
+			.reject(d | gui.modules.userTasks.typeSelect(DslDeleteTask).select(e|e.for == d).size > 0)
+			// reject all domain objects that has a 'skip' in the gui dsl
+			.reject(d | gui.modules.skipUserTasks.typeSelect(DslSkipDeleteTask).select(e|e.for == d).size > 0)
+			// reject all domain objects that doesn't have a delete method
+			.reject(d | !isDeleteMethodAvailable(d.transform())) 
+			.createDefaultDeleteTask(module));
+
+addDefaultListTasks(DslGuiModule module, DslGuiApplication gui) :
+	// add list tasks
+	module.userTasks.addAll(allTaskPotentialDomainObjects(module, gui)
+			// reject all domain objects that are specified in gui dsl
+			.reject(d | gui.modules.userTasks.typeSelect(DslListTask).select(e|e.for == d).size > 0)
+			// reject all domain objects that has a 'skip' in the gui dsl
+			.reject(d | gui.modules.skipUserTasks.typeSelect(DslSkipListTask).select(e|e.for == d).size > 0)
+			// reject all domain objects that doesn't have a find all method
+			.reject(d | !isFindAllMethodAvailable(d.transform())) 
+			.createDefaultListTask(module));
+
+
+cached List[sculptordsl::DslSimpleDomainObject] allTaskPotentialDomainObjects(DslGuiModule module, DslGuiApplication gui) :
+	// allElements will include imported elements also
+	let allBusinessModules = gui.guiForApplication.allElements().typeSelect(DslModule) :
+	let objects1 = allBusinessModules
+			// select the right module
+			.select(m|m == module.for)
+			.domainObjects.typeSelect(DslDomainObject)
+			// reject domain objects that doesn't have their own persistens representation except if they have an id specified
+			.reject(d | d.metaType == DslValueObject && (((DslValueObject) d).notPersistent && d.attributes.notExists(e|e.name == 'id')))
+			// we are not interested in abstract objects since we are not going to have tasks for them
+			.reject(d | d.abstract)
+			// filter out domain objects that has been marked as skiped
+			.reject(d | module.skipDomainObjects.select(e|e.do == d).size > 0)
+			// filter out subclasses to domain objects that has been marked as skiped
+			.reject(d | module.skipDomainObjects.do.getAllSubclasses().select(sub|sub == d).size > 0) :
+	let objects2 = allBusinessModules
+			// select the right module
+			.select(m|m == module.for)
+			.domainObjects.typeSelect(DslDataTransferObject)
+			// reject if id not specified
+			.reject(d | d.attributes.notExists(e|e.name == 'id'))
+			// we are not interested in abstract objects since we are not going to have tasks for them
+			.reject(d | d.abstract)
+			// filter out domain objects that has been marked as skiped
+			.reject(d | module.skipDomainObjects.select(e|e.do == d).size > 0)
+			// filter out subclasses to domain objects that has been marked as skiped
+			.reject(d | module.skipDomainObjects.do.getAllSubclasses().select(sub|sub == d).size > 0) :
+	{}.addAll(objects1).addAll(objects2);
+	
+create DslGuiModule this createDefaultModule(DslModule module) :
+	this.setFor(module);
+
+create DslViewTask this createDefaultViewTask(DslSimpleDomainObject dslDomainObject, DslGuiModule dslGuiModule) :
+	setFor(dslDomainObject) ->
+	setGapClass(isGapClassToBeGenerated()) ->
+	this.viewProperties.addAll(dslDomainObject.defaultDslGuiViewProperties(this, dslGuiModule));
+
+create DslCreateTask this createDefaultCreateTask(DslSimpleDomainObject dslDomainObject, DslGuiModule dslGuiModule) :
+	setFor(dslDomainObject) ->
+	setGapClass(isGapClassToBeGenerated()) ->
+	this.viewProperties.addAll(dslDomainObject.defaultDslGuiViewProperties(this, dslGuiModule));
+
+create DslUpdateTask this createDefaultUpdateTask(DslSimpleDomainObject dslDomainObject, DslGuiModule dslGuiModule) :
+	setFor(dslDomainObject) ->
+	setGapClass(isGapClassToBeGenerated()) ->
+	this.viewProperties.addAll(dslDomainObject.defaultDslGuiViewProperties(this, dslGuiModule));
+
+create DslDeleteTask this createDefaultDeleteTask(DslSimpleDomainObject dslDomainObject, DslGuiModule dslGuiModule) :
+	setFor(dslDomainObject) ->
+	setGapClass(isGapClassToBeGenerated()) ->
+	this.viewProperties.addAll(dslDomainObject.defaultDslGuiViewProperties(this, dslGuiModule));
+
+create DslListTask this createDefaultListTask(DslSimpleDomainObject dslDomainObject, DslGuiModule dslGuiModule) :
+	setFor(dslDomainObject) ->
+	setGapClass(isGapClassToBeGenerated()) ->
+	this.viewProperties.addAll(dslDomainObject.defaultDslGuiViewProperties(this, dslGuiModule));
+
+create DslAddTask this createDefaultAddTask(DslSimpleDomainObject dslDomainObject, DslGuiModule dslGuiModule) :
+	setFor(dslDomainObject) ->
+	setGapClass(isGapClassToBeGenerated()) ->
+	this.viewProperties.addAll(dslDomainObject.defaultDslGuiViewProperties(this, dslGuiModule));
+
+
+
+List[DslGuiViewProperty] defaultDslGuiViewProperties(DslSimpleDomainObject dslDomainObject, DslUserTask task, DslGuiModule dslGuiModule) :
+	let dslDomainObjects = {dslDomainObject}.addAll(dslDomainObject.getSubclasses()) :
+		{}.addAll(dslDomainObjects.getAllAttributes().createDslGuiViewProperties(task))
+			.addAll(dslDomainObjects.selectReferencesForGuiViewProperties(dslGuiModule).createDslGuiViewProperties(task));
+
+
+List[DslGuiViewProperty] defaultDslGuiViewProperties(DslSimpleDomainObject dslDomainObject, DslListTask task, DslGuiModule dslGuiModule) :
+	let dslDomainObjects = {dslDomainObject}.addAll(dslDomainObject.getSubclasses()) :
+		{}.addAll(dslDomainObjects.getAllAttributes().createDslGuiViewProperties(task))
+			.addAll(dslDomainObjects.selectReferencesForGuiViewProperties(dslGuiModule)
+				// special for list task, we only want view property for basic type references
+				.select(r | r.transform().to.metaType == BasicType)
+				.createDslGuiViewProperties(task));
+
+List[DslReference] selectReferencesForGuiViewProperties(DslSimpleDomainObject dslDomainObject, DslGuiModule dslGuiModule) :
+	error("Unexpected call to selectReferencesForGuiViewProperties(DslSimpleDomainObject): " + dslDomainObject);
+
+List[DslReference] selectReferencesForGuiViewProperties(DslDomainObject dslDomainObject, DslGuiModule dslGuiModule) :
+	let doSkips = ((DslGuiApplication) dslGuiModule.eContainer).modules.skipDomainObjects.do :
+	let dslDomainObjects = {dslDomainObject}.addAll(dslDomainObject.getSubclasses()) :
+	dslDomainObjects.getAllReferences()
+		// reject all references that points to a domain object that is in the skip list
+		.reject(r | doSkips.contains(r.domainObjectType));
+				
+List[DslDtoReference] selectReferencesForGuiViewProperties(DslDataTransferObject dslDomainObject, DslGuiModule dslGuiModule) :
+	let doSkips = ((DslGuiApplication) dslGuiModule.eContainer).modules.skipDomainObjects.do :
+	let dslDomainObjects = {dslDomainObject}.addAll(dslDomainObject.getSubclasses()) :
+	dslDomainObjects.getAllReferences()
+		// reject all references that points to a domain object that is in the skip list
+		.reject(r | doSkips.contains(r.domainObjectType));
+				
+addDefaultDslGuiViewProperties(DslUserTask task) :
+	if (task.viewProperties.isEmpty) then
+		task.viewProperties.addAll(task.for.defaultDslGuiViewProperties(task, ((DslGuiModule) task.eContainer)));
+ 
+List[DslGuiViewProperty] createDslGuiViewProperties(DslAnyProperty dslProp, DslUserTask task) :	
+	error("Unexpected call to createDslGuiViewProperties(DslAnyProperty dslProp, DslUserTask task) for " + task.metaType + " " + task.for.name + 
+		" : " + dslProp);
+	
+List[DslGuiViewProperty] createDslGuiViewProperties(DslAttribute dslAttr, DslUserTask task) :
+	{createDslGuiViewProperty(dslAttr, task)};
+	
+List[DslGuiViewProperty] createDslGuiViewProperties(DslDtoAttribute dslAttr, DslUserTask task) :
+	{createDslGuiViewProperty(dslAttr, task)};	
+	
+List[DslGuiViewProperty] createDslGuiViewProperties(DslReference dslRef, DslUserTask task) :
+	(dslRef.isBasicTypeProperty()) ?
+		({}.addAll(((DslBasicType) dslRef.domainObjectType).attributes.createDslGuiViewPropertyWithBasicType(dslRef, task))
+		   .addAll(((DslBasicType) dslRef.domainObjectType).references.createDslGuiViewPropertyWithBasicType(dslRef, task))) :
+
+    	{createDslGuiViewProperty(dslRef, task)};
+
+List[DslGuiViewProperty] createDslGuiViewProperties(DslDtoReference dslRef, DslUserTask task) :
+	(dslRef.isBasicTypeProperty()) ?
+		({}.addAll(((DslBasicType) dslRef.domainObjectType).attributes.createDslGuiViewPropertyWithBasicType(dslRef, task))
+		   .addAll(((DslBasicType) dslRef.domainObjectType).references.createDslGuiViewPropertyWithBasicType(dslRef, task))) :
+
+    	{createDslGuiViewProperty(dslRef, task)};
+
+
+addSystemAttributes(DslUserTask task) :
+	addSystemAttributes(task, task.for);
+
+addSystemAttributes(DslUserTask task, DslSimpleDomainObject taskFor) :
+	null;
+
+addSystemAttributes(DslUserTask task, DslDomainObject taskFor) :
+	let attribs = (task.for.transform().extends == null ?
+		task.for.transform().attributes :
+		task.for.transform().extends.attributes) :
+	let existing = task.viewProperties.for.typeSelect(DslAttribute).name :
+		// system attribute has been added to the business meta model in an earlier step, reverse them to DslAttribute and create DslGuiViewProperties for them 
+		task.viewProperties.addAll(
+			attribs.select(a | a.isSystemAttribute() && !existing.contains(a.name)).createDslGuiSystemAttributeViewProperty(task));	
+
+addSystemAttributes(DslAddTask task) :
+	null;
+
+// important to pass the task, otherwise there will be interference between the different tasks
+create DslAttribute this createSystemAttribute(Attribute att, DslUserTask task) :
+	setName(att.name) ->
+	setType(att.type) ->
+	setLength(att.length) ->
+	setNullable(att.nullable);
+
+// important to pass the task, otherwise there will be interference between the different tasks
+create DslGuiViewProperty this createDslGuiSystemAttributeViewProperty(Attribute attribute, DslUserTask task) :
+	setFor(attribute.createSystemAttribute(task));
+
+// important to pass the task, otherwise there will be interference between the different tasks
+create DslGuiViewProperty this createDslGuiViewProperty(DslAnyProperty dslProperty, DslUserTask task) :
+	setFor(dslProperty);
+
+create DslGuiViewProperty this createDslGuiViewPropertyWithBasicType(DslAnyProperty dslProperty, DslAnyProperty dslRef, DslUserTask task) :
+	error("Unexpected call to createDslGuiViewPropertyWithBasicType(DslAnyProperty dslProperty, DslAnyProperty dslRef, DslUserTask task) for " + dslRef);
+	
+// important to pass the task, otherwise there will be interference between the different tasks
+create DslGuiViewProperty this createDslGuiViewPropertyWithBasicType(DslAnyProperty dslProperty, DslReference dslRef, DslUserTask task) :
+	setFor(dslRef) ->
+	setBasicTypeProperty(dslProperty);
+	
+// important to pass the task, otherwise there will be interference between the different tasks
+create DslGuiViewProperty this createDslGuiViewPropertyWithBasicType(DslAnyProperty dslProperty, DslDtoReference dslRef, DslUserTask task) :
+	setFor(dslRef) ->
+	setBasicTypeProperty(dslProperty);
+	
+create DslGuiPreviewProperty this createDslGuiPreviewPropertyForBasicType(DslAnyProperty prop, DslAnyProperty dslRef, DslUserTask task, DslBasicType basicType) :
+	error("Unexpected call to createDslGuiPreviewPropertyForBasicType(DslAnyProperty prop, DslReference dslRef, DslUserTask task, DslBasicType basicType) for " + dslRef);
+
+create DslGuiPreviewProperty this createDslGuiPreviewPropertyForBasicType(DslAnyProperty prop, DslReference dslRef, DslUserTask task, DslBasicType basicType) :
+	this.setFor(dslRef) ->
+	this.setBasicTypeProperty(prop);
+
+create DslGuiPreviewProperty this createDslGuiPreviewPropertyForBasicType(DslAnyProperty prop, DslDtoReference dslRef, DslUserTask task, DslBasicType basicType) :
+	this.setFor(dslRef) ->
+	this.setBasicTypeProperty(prop);
+
+modifyBasicTypes(DslUserTask task) :
+	// modify gui properties, i.e. add properties for each attribute on the basic type
+	// for example, convert the basic type 'Ssn' and the reference 'ssn' to 'ssn.country' and 'ssn.number'
+	task.viewProperties.select(p | p.for.isBasicTypeProperty() && p.basicTypeProperty == null).modifyBasicType(task) ->
+	// modify preview properties for each subtask also as above...
+	task.subtasks.modifyBasicTypes(task);
+	
+modifyBasicType(DslGuiViewProperty prop, DslUserTask task) :
+	modifyBasicType(prop, task, prop.for);
+
+modifyBasicType(DslGuiViewProperty prop, DslUserTask task, DslAnyProperty propFor) :
+	error("Unexpected call to modifyBasicType(DslGuiViewProperty prop, DslUserTask task, DslAnyProperty): " + propFor);
+
+modifyBasicType(DslGuiViewProperty prop, DslUserTask task, DslReference propFor) :
+	let basicType = (DslBasicType) propFor.domainObjectType :
+	modifyBasicType(prop, task, basicType);
+
+modifyBasicType(DslGuiViewProperty prop, DslUserTask task, DslDtoReference propFor) :
+	let basicType = (DslBasicType) propFor.domainObjectType :
+	modifyBasicType(prop, task, basicType);
+	
+modifyBasicType(DslGuiViewProperty prop, DslUserTask task, DslBasicType basicType) :
+	task.viewProperties.addAll(basicType.attributes.createDslGuiViewPropertyWithBasicType(prop.for, task)) ->
+	task.viewProperties.addAll(basicType.references.createDslGuiViewPropertyWithBasicType(prop.for, task)) ->
+	// last, remove the original, i.e. (for example) 'ssn', since we have added 'children' to it, i.e. 'ssn.number' etc...
+	task.viewProperties.remove(prop);
+
+// TODO right now we only support list subtask, but the intention was to be able to have 
+//      different subtasks like this
+//modifyBasicTypes(DslGuiSubtask subtask, DslUserTask task) :
+//	error("Unexpected call to modifyBasicTypes(DslGuiSubtask subtask, DslUserTask task) for " + subtask.metaType + " " + subtask + 
+//		" : " + task);
+
+modifyBasicTypes(DslGuiListSubtask subtask, DslUserTask task) :
+	// go through each subtask and modify all preview properties
+	subtask.previewProperties.select(p | p.for.isBasicTypeProperty() && p.basicTypeProperty == null).modifyBasicType(subtask, task);
+
+modifyBasicType(DslGuiPreviewProperty prop, DslGuiListSubtask subtask, DslUserTask task) :
+	modifyBasicType(prop, subtask, task, prop.for);
+	
+modifyBasicType(DslGuiPreviewProperty prop, DslGuiListSubtask subtask, DslUserTask task, DslAnyProperty propFor) :
+	error("Unexpected call to modifyBasicType(DslGuiPreviewProperty prop, DslGuiListSubtask subtask, DslAnyProperty propFor): " + propFor);
+
+modifyBasicType(DslGuiPreviewProperty prop, DslGuiListSubtask subtask, DslUserTask task, DslReference propFor) :
+	let basicType = (DslBasicType) propFor.domainObjectType :
+	modifyBasicType(prop, subtask, task, basicType);
+
+modifyBasicType(DslGuiPreviewProperty prop, DslGuiListSubtask subtask, DslUserTask task, DslDtoReference propFor) :
+	let basicType = (DslBasicType) propFor.domainObjectType :
+	modifyBasicType(prop, subtask, task, basicType);
+	
+modifyBasicType(DslGuiPreviewProperty prop, DslGuiListSubtask subtask, DslUserTask task, DslBasicType basicType) :
+	subtask.previewProperties.addAll(basicType.attributes.createDslGuiPreviewPropertyForBasicType(prop.for, task, basicType)) ->
+	subtask.previewProperties.addAll(basicType.references.createDslGuiPreviewPropertyForBasicType(prop.for, task, basicType)) ->
+	// last, remove the original, i.e. (for example) 'ssn', since we have added 'children' to it, i.e. 'ssn.number' etc...
+	subtask.previewProperties.remove(prop);
+
+addDefaultListSubtasks(DslUserTask task) :
+	let definedReferences = task.subtasks.collect(e|e.reference) :
+	let undefinedReferences = task.viewProperties.collect(e|e.for).typeSelect(DslReference)
+		.reject(r | r.domainObjectType.metaType  == DslBasicType || r.domainObjectType.metaType  == DslEnum) 
+		.reject(r | definedReferences.contains(r)) :
+	let undefinedDtoReferences = task.viewProperties.collect(e|e.for).typeSelect(DslDtoReference)
+		.reject(r | r.domainObjectType.metaType  == DslBasicType || r.domainObjectType.metaType  == DslEnum) 
+		.reject(r | definedReferences.contains(r)) :
+	task.subtasks
+		.addAll(undefinedReferences.defaultDslGuiListSubtasks(task))
+		.addAll(undefinedDtoReferences.defaultDslGuiListSubtasks(task));
+
+List[DslGuiListSubtask] defaultDslGuiListSubtasks(DslReference dslRef, DslUserTask task) :
+	defaultDslGuiListSubtasks(dslRef, task, dslRef.domainObjectType);
+	
+List[DslGuiListSubtask] defaultDslGuiListSubtasks(DslDtoReference dslRef, DslUserTask task) :
+	defaultDslGuiListSubtasks(dslRef, task, dslRef.domainObjectType);
+	
+List[DslGuiListSubtask] defaultDslGuiListSubtasks(DslAnyProperty dslRef, DslUserTask task, DslSimpleDomainObject targetDomainObject) :
+	let skipTargets = ((DslGuiApplication) task.eRootContainer).modules.skipDomainObjects :
+	let targets = {targetDomainObject}
+		.addAll(targetDomainObject.getAllSubclasses()) :
+	targets.createDefaultDslGuiListSubtask(dslRef, task);
+
+create DslGuiListSubtask this createDefaultDslGuiListSubtask(DslSimpleDomainObject dslTarget, DslAnyProperty dslRef, DslUserTask task) :
+	let dslGuiApplication = (DslGuiApplication) task.eRootContainer:
+	let allTasks = dslGuiApplication.modules.userTasks :
+	let viewTask = allTasks.typeSelect(DslViewTask).select(e | e.for == dslTarget).first() :
+	let viewTask2 = (viewTask == null ? createDefaultSurrogatePreviewTask(dslTarget, ((DslGuiModule) task.eContainer)) : viewTask) :
+	
+	this.setReference(dslRef) ->
+	this.setForTarget(createDefaultDslGuiListSubtaskForTarget(dslTarget, dslRef, task)) ->
+	previewProperties.addAll(viewTask2.viewProperties
+		.select(p | p.for.isAttributeProperty() || p.for.isEnumProperty() || p.for.isBasicTypeProperty())
+		.createDefaultDslGuiPreviewProperty(dslRef, task));
+
+create DslGuiListSubtaskForTarget this createDefaultDslGuiListSubtaskForTarget(DslSimpleDomainObject dslTarget, DslAnyProperty dslRef, DslUserTask task) :
+	setTarget(dslTarget);
+
+create DslGuiPreviewProperty this createDefaultDslGuiPreviewProperty(DslGuiViewProperty prop, DslAnyProperty dslRef, DslUserTask task) :
+	this.setFor(prop.for) ->
+	if (prop.basicTypeProperty != null) then 
+		this.setBasicTypeProperty(prop.basicTypeProperty);
+
+create DslViewTask this createDefaultSurrogatePreviewTask(DslSimpleDomainObject dslDomainObject, DslGuiModule dslGuiModule) :
+	setFor(dslDomainObject) ->
+	this.viewProperties.addAll(dslDomainObject.defaultDslGuiViewProperties(this, dslGuiModule));
+
+
+	
+	
+

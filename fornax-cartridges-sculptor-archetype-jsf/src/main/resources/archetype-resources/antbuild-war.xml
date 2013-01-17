@@ -1,0 +1,74 @@
+#set( $artifactIdBaseLength = $artifactId.length() - 4) 
+#set( $artifactIdBase =$artifactId.substring(0, $artifactIdBaseLength) )
+<?xml version="1.0"?>
+
+<project name="${artifactId}" default="deploy-copy" basedir=".">
+	
+	<!-- You must define environment variable JBOSS_HOME to be able to use this build script -->
+	<property name="jboss.home" value="${env.JBOSS_HOME}"/>
+	<property name="jboss.server.config" value="default"/>
+	<property name="system.name" value="${artifactIdBase}"/>
+	
+	<target name="explode-war" depends="check-exploded-war-exists" unless="exploded.war.exists">
+		<echo>Exploding WAR to ${jboss.home}/server/${jboss.server.config}/deploy/${system.name}-web.war ...</echo>
+		<copy
+			todir="${jboss.home}/server/${jboss.server.config}/deploy/${system.name}-web.war">
+			<fileset dir="target/${system.name}-web">
+				<include name="**/*"/>
+				<exclude name="WEB-INF/lib/${system.name}*.jar" />
+			</fileset>
+		</copy>
+	</target>	
+	
+	<target name="check-exploded-war-exists">
+		<available file="${jboss.home}/server/${jboss.server.config}/deploy/${system.name}-web.war/WEB-INF/web.xml" 
+			property="exploded.war.exists"/> 
+	</target>
+	
+	<target name="deploy-copy">
+		<copy
+			todir="${jboss.home}/server/${jboss.server.config}/deploy/${system.name}-web.war/WEB-INF/classes">
+			<fileset dir="target/classes">
+				<include name="**/*"/>
+			</fileset>
+		</copy>
+		<copy
+			todir="${jboss.home}/server/${jboss.server.config}/deploy/${system.name}-web.war/WEB-INF/lib">
+			<fileset dir="target/${system.name}-web/WEB-INF/lib">
+				<include name="**/*"/>
+			</fileset>
+		</copy>
+		<copy
+			todir="${jboss.home}/server/${jboss.server.config}/deploy/${system.name}-web.war">
+			<fileset dir="src/main/webapp">
+				<include name="**/*"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="touch-war">
+		<touch>
+			<fileset
+				dir="${jboss.home}/server/${jboss.server.config}/deploy/${system.name}-web.war"/>
+		</touch>
+	</target>
+	
+	<target name="delete-generated">
+		<delete includeemptydirs="true">
+			<fileset dir="src/test/generated/java" includes="**/*"/>
+			<fileset dir="src/test/generated/resources" includes="**/*"/>
+			<fileset dir="src/generated/java" includes="**/*"/>
+			<fileset dir="src/generated/resources" includes="**/*"/>
+			<fileset dir="src/main/webapp/themes" includes="**/*"/>
+			<fileset dir="src/main/webapp/WEB-INF/flows" includes="**/*"/>
+			<fileset dir="src/main/webapp/WEB-INF/jsp/generated" includes="**/*"/>
+			<fileset dir="src/main/webapp/WEB-INF/tld" includes="**/*"/>
+			<fileset dir="src/main/webapp/WEB-INF" includes="applicationContext.xml"/>
+			<fileset dir="src/main/webapp/WEB-INF" includes="*-servlet-config.xml"/>
+			<fileset dir="src/main/webapp/WEB-INF" includes="*-webflow-config.xml"/>
+			<fileset dir="src/main/webapp/WEB-INF" includes="web.xml"/>
+		</delete>
+	</target>
+
+	
+</project>

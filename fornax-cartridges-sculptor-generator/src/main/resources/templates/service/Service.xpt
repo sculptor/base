@@ -1,0 +1,294 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::dbhelper»
+
+«DEFINE service FOR Service»
+    «EXPAND serviceInterface»
+    
+    «IF pureEjb3()»
+    	«EXPAND ServiceEjb::service»
+    «ELSE»
+    	«EXPAND serviceImplBase»
+	    «IF gapClass»
+	    	«EXPAND serviceImplSubclass»
+	    «ENDIF»
+    «ENDIF»
+
+    «IF webService»
+    	«EXPAND ServiceEjb::webServiceInterface»
+    	«EXPAND ServiceEjb::webServicePackageInfo»
+    «ENDIF»
+
+	«IF isTestToBeGenerated()»
+	    «EXPAND ServiceTest::serviceJUnitBase»
+	    «IF pureEjb3()»
+	    	«EXPAND ServiceEjbTest::serviceJUnitSubclassOpenEjb»
+		«ELSEIF applicationServer() == "appengine"»
+			«EXPAND ServiceTest::serviceJUnitSubclassAppEngine»
+		«ELSEIF mongoDb()»
+			«EXPAND templates::mongodb::MongoDbServiceTest::serviceJUnitSubclassMongoDb»
+		«ELSE»
+	    	«EXPAND ServiceTest::serviceJUnitSubclassWithAnnotations»
+		«ENDIF»
+		«IF isDbUnitTestDataToBeGenerated()»
+			«EXPAND ServiceTest::dbunitTestData»
+		«ENDIF»
+	    «IF !otherDependencies.isEmpty»
+	        «EXPAND ServiceTest::serviceDependencyInjectionJUnit»
+	    «ENDIF»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE serviceInterface FOR Service»
+    «FILE javaFileName(getServiceapiPackage() + "." + name)»
+«javaHeader()»
+package «getServiceapiPackage()»;
+
+«IF formatJavaDoc() == "" -»
+/**
+ * Generated interface for the Service «name».
+ */
+«ELSE -»
+«formatJavaDoc()»
+«ENDIF -»
+public interface «name» «IF subscribe != null»extends «fw("event.EventSubscriber")» «ENDIF»{
+
+	«IF isSpringToBeGenerated()»
+    public final static String BEAN_ID = "«name.toFirstLower()»";
+    «ENDIF»
+
+    «EXPAND interfaceMethod FOREACH operations.select(op | op.isPublicVisibility())»
+    
+    «EXPAND serviceInterfaceHook»
+
+}
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE interfaceMethod FOR ServiceOperation»
+    «formatJavaDoc()»
+    public «getTypeName()» «name»(«EXPAND anotParamTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws»;
+«ENDDEFINE»
+
+
+
+«DEFINE serviceImplBase FOR Service»
+    «FILE javaFileName(getServiceimplPackage() + "." + name + "Impl" + (gapClass ? "Base" : ""))»
+«javaHeader()»
+package «getServiceimplPackage()»;
+
+«IF gapClass»
+/**
+ * Generated base class for implementation of «name».
+	«IF isSpringToBeGenerated() -»
+ * <p>Make sure that subclass defines the following annotations:
+ * <pre>
+«EXPAND springServiceAnnotation»
+ * </pre>
+ *	«ENDIF»
+ */
+«ELSE»
+ /**
+ * Implementation of «name».
+ */
+	«IF isSpringToBeGenerated()»
+		«EXPAND springServiceAnnotation»
+	«ENDIF»
+	«IF !gapClass && webService»
+		«EXPAND ServiceEjb::webServiceAnnotations»
+	«ENDIF»
+«ENDIF»
+«IF subscribe != null»«EXPAND templates::common::PubSub::subscribeAnnotation FOR subscribe»«ENDIF»
+public «IF gapClass»abstract «ENDIF»class «name»Impl«IF gapClass»Base«ENDIF» «extendsLitteral()» implements «getServiceapiPackage()».«name» {
+
+    public «name»Impl«IF gapClass»Base«ENDIF»() {
+    }
+
+    «EXPAND delegateRepositories »
+    «EXPAND delegateServices »
+
+    «EXPAND implMethod FOREACH operations.reject(op | op.isImplementedInGapClass()) »
+    
+    «EXPAND serviceHook»
+}
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE springServiceAnnotation FOR Service»
+@org.springframework.stereotype.Service("«name.toFirstLower()»")
+«ENDDEFINE»
+
+«DEFINE delegateRepositories FOR Service»
+	«FOREACH getDelegateRepositories() AS delegateRepository »
+		«IF isSpringToBeGenerated()»
+	    	@org.springframework.beans.factory.annotation.Autowired
+		«ENDIF»
+		«IF pureEjb3()»
+			@javax.ejb.EJB
+		«ENDIF»
+        private «getRepositoryapiPackage(delegateRepository.aggregateRoot.module)».«delegateRepository.name» «delegateRepository.name.toFirstLower()»;
+
+        protected «getRepositoryapiPackage(delegateRepository.aggregateRoot.module)».«delegateRepository.name» get«delegateRepository.name»() {
+            return «delegateRepository.name.toFirstLower()»;
+        }
+    «ENDFOREACH»
+«ENDDEFINE»
+
+«DEFINE delegateServices FOR Service»
+	«FOREACH getDelegateServices() AS delegateService »
+		«IF isSpringToBeGenerated()»
+	    	@org.springframework.beans.factory.annotation.Autowired
+		«ENDIF»
+		«IF pureEjb3()»
+			@javax.ejb.EJB
+		«ENDIF»
+        private «getServiceapiPackage(delegateService)».«delegateService.name»«IF pureEjb3()»Local«ENDIF» «delegateService.name.toFirstLower()»;
+
+        protected «getServiceapiPackage(delegateService)».«delegateService.name» get«delegateService.name»() {
+            return «delegateService.name.toFirstLower()»;
+        }
+    «ENDFOREACH»
+«ENDDEFINE»
+
+«DEFINE serviceImplSubclass FOR Service»
+    «FILE javaFileName(getServiceimplPackage() + "." + name + "Impl") TO_SRC»
+«javaHeader()»
+package «getServiceimplPackage()»;
+
+/**
+ * Implementation of «name».
+ */
+«IF isSpringToBeGenerated()»
+@org.springframework.stereotype.Service("«name.toFirstLower()»")
+«ENDIF»
+«IF webService»
+«EXPAND ServiceEjb::webServiceAnnotations»
+«ENDIF»
+public class «name»Impl extends «name»ImplBase {
+
+    public «name»Impl() {
+    }
+
+	«EXPAND otherDependencies»
+
+    «EXPAND implMethod FOREACH operations.select(op | op.isImplementedInGapClass()) »
+
+}
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE otherDependencies FOR Service»
+    «FOREACH otherDependencies AS dependency -»
+    /**
+     * Dependency injection
+     */
+	«IF isSpringToBeGenerated()»
+	@org.springframework.beans.factory.annotation.Autowired
+	«ENDIF»
+	«IF pureEjb3()»
+	@javax.ejb.EJB
+	«ENDIF»
+    public void set«dependency.toFirstUpper()»(Object «dependency») {
+        // TODO implement setter for dependency injection of «dependency»
+        throw new UnsupportedOperationException("Implement setter for dependency injection of «dependency» in «name»Impl");
+    }
+
+    «ENDFOREACH -»
+«ENDDEFINE»
+
+«DEFINE implMethod FOR ServiceOperation»
+    «IF delegate != null -»
+    /**
+     * Delegates to {@link «getRepositoryapiPackage(delegate.repository.aggregateRoot.module)».«delegate.repository.name»#«delegate.name»}
+     */
+    «ELSEIF serviceDelegate != null -»
+    /**
+     * Delegates to {@link «getServiceapiPackage(serviceDelegate.service)».«serviceDelegate.service.name»#«serviceDelegate.name»}
+     */
+    «ENDIF -»
+	«EXPAND serviceMethodAnnotation»
+    «getVisibilityLitteral()» «getTypeName()» «name»(«EXPAND paramTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws» {
+    «IF delegate != null »
+        «IF delegate.getTypeName() == "void" && getTypeName() != "void"»
+        	«REM»This is a special case which is used for save operations, when rcp nature«ENDREM»
+            «delegate.repository.name.toFirstLower()».«delegate.name»(«
+                	FOREACH parameters.select(p | p.type != serviceContextClass()) AS parameter SEPARATOR ", "»«parameter.name»«ENDFOREACH»);
+            return «parameters.get(isServiceContextToBeGenerated() ? 1 : 0).name»;
+        «ELSE»
+        	«IF getTypeName() != "void" »return «ENDIF»
+            	«delegate.repository.name.toFirstLower()».«delegate.name»(«
+                	FOREACH parameters.select(p | p.type != serviceContextClass()) AS parameter SEPARATOR ", "»«parameter.name»«ENDFOREACH»);
+        «ENDIF»
+    «ELSEIF serviceDelegate != null »
+        	«IF serviceDelegate.getTypeName() != "void" && getTypeName() != "void" »return «ENDIF»
+            	«serviceDelegate.service.name.toFirstLower()».«serviceDelegate.name»(«
+                	FOREACH parameters AS parameter SEPARATOR ", "»«parameter.name»«ENDFOREACH»);
+    «ELSE»
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("«name» not implemented");
+    «ENDIF»
+     }
+«ENDDEFINE»
+
+«DEFINE serviceMethodAnnotation FOR ServiceOperation»
+	«REM»spring transaction support«ENDREM»
+	«IF isSpringAnnotationTxToBeGenerated()»
+		«IF name.startsWith("get") || name.startsWith("find")»
+	@org.springframework.transaction.annotation.Transactional(readOnly=true)
+		«ELSE»
+	@org.springframework.transaction.annotation.Transactional(readOnly=false, rollbackFor=org.fornax.cartridges.sculptor.framework.errorhandling.ApplicationException.class)
+		«ENDIF»
+	«ENDIF»
+	«IF pureEjb3() && jpa() && !name.startsWith("get") && !name.startsWith("find")»
+	@javax.interceptor.Interceptors({«service.module.getJpaFlushEagerInterceptorClass()».class})
+	«ENDIF»
+	«IF service.webService»
+	@javax.jws.WebMethod
+	«ENDIF»
+	«IF publish != null»«EXPAND templates::common::PubSub::publishAnnotation FOR publish»«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE paramTypeAndName FOR Parameter»
+«getTypeName()» «name»
+«ENDDEFINE»
+
+«DEFINE anotParamTypeAndName FOR Parameter»
+«IF isGenerateParameterName()» @«fw("annotation.Name")»("«name»")«ENDIF» «getTypeName()» «name»
+«ENDDEFINE»
+
+«DEFINE serialVersionUID FOR Service»
+    private static final long serialVersionUID = 1L;
+«ENDDEFINE»
+
+
+«REM»Extension point to generate more stuff in service interface.
+User AROUND templates::service::Service::serviceInterfaceHook FOR Service
+in SpecialCases.xpt«ENDREM»
+«DEFINE serviceInterfaceHook FOR Service»
+«ENDDEFINE»
+
+«REM»Extension point to generate more stuff in service implementation.
+User AROUND templates::service::Service::serviceHook FOR Service
+in SpecialCases.xpt«ENDREM»
+«DEFINE serviceHook FOR Service»
+«ENDDEFINE»

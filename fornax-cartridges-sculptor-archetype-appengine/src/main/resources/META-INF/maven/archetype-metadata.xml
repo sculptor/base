@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="ISO-8859-1"?><archetype-descriptor name="sculptor-appengine">
+  <fileSets>
+    <fileSet filtered="true" packaged="true" encoding="ISO-8859-1">
+      <directory>src/main/java</directory>
+      <includes>
+        <include>**/*.java</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory>src/main/resources</directory>
+      <includes>
+        <include>**/*.xml</include>
+        <include>**/*.properties</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory>src/main/resources</directory>
+      <includes>
+        <include>**/*.mwe2</include>
+        <include>**/*.xpt</include>
+        <include>**/*.btdesign</include>
+        <include>**/*.ext</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" packaged="true" encoding="ISO-8859-1">
+      <directory>src/test/java</directory>
+      <includes>
+        <include>**/*.java</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory>src/test/generated</directory>
+      <includes>
+        <include>**/*.java</include>
+        <include>**/*.xml</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory>src/test/resources</directory>
+      <includes>
+        <include>**/*.xml</include>
+        <include>**/*.properties</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" packaged="true" encoding="ISO-8859-1">
+      <directory>src/generated/java</directory>
+      <includes>
+        <include>**/*.java</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory>WEB-INF/appengine-generated</directory>
+      <includes>
+        <include>**/*.xml</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory>war/WEB-INF/appengine-generated</directory>
+      <includes>
+        <include>**/*.xml</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory>war/WEB-INF/lib</directory>
+      <includes>
+        <include>**/*.txt</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory>war</directory>
+      <includes>
+        <include>**/*.jsp</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory>war/WEB-INF/classes</directory>
+      <includes>
+        <include>**/*.xml</include>
+        <include>**/*.properties</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory>src/generated/resources</directory>
+      <includes>
+        <include>**/*.xml</include>
+        <include>**/*.properties</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory>war/WEB-INF/jsp</directory>
+      <includes>
+        <include>**/*.jsp</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory>war/WEB-INF</directory>
+      <includes>
+        <include>**/*.xml</include>
+        <include>**/*.properties</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="ISO-8859-1">
+      <directory></directory>
+      <includes>
+        <include>**/*.txt</include>
+        <include>**/*.</include>
+      </includes>
+    </fileSet>
+    <fileSet encoding="ISO-8859-1">
+      <directory>war/WEB-INF/appengine-generated</directory>
+      <includes>
+        <include>**/*.bin</include>
+      </includes>
+    </fileSet>
+    <fileSet encoding="ISO-8859-1">
+      <directory>war/stylesheets</directory>
+      <includes>
+        <include>**/*.css</include>
+      </includes>
+    </fileSet>
+    <fileSet encoding="ISO-8859-1">
+      <directory>.settings</directory>
+      <includes>
+        <include>**/*.prefs</include>
+      </includes>
+    </fileSet>
+    <fileSet encoding="ISO-8859-1">
+      <directory>war/WEB-INF/lib</directory>
+      <includes>
+        <include>**/*.jar</include>
+      </includes>
+    </fileSet>
+    <fileSet encoding="ISO-8859-1">
+      <directory>war/images</directory>
+      <includes>
+        <include>**/*.png</include>
+        <include>**/*.jpg</include>
+      </includes>
+    </fileSet>
+    <fileSet encoding="ISO-8859-1">
+      <directory>war/WEB-INF/classes</directory>
+      <includes>
+        <include>**/*.mwe2</include>
+        <include>**/*.xpt</include>
+        <include>**/*.btdesign</include>
+        <include>**/*.class</include>
+        <include>**/*.ext</include>
+        <include>**/*.dot</include>
+      </includes>
+    </fileSet>
+    <fileSet encoding="ISO-8859-1">
+      <directory>src/generated/resources</directory>
+      <includes>
+        <include>**/*.dot</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+</archetype-descriptor>

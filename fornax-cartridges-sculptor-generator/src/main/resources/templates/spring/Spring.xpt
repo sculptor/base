@@ -1,0 +1,978 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+
+«DEFINE spring FOR Application»
+    «EXPAND applicationContext»
+    «EXPAND springProperties»
+    «EXPAND generatedSpringProperties»
+    «EXPAND beanRefContext»
+    «EXPAND more»
+    «IF isInjectDrools()»
+        «EXPAND templates::drools::Drools::droolsSupport»
+    «ENDIF»
+    «IF jpa()»
+		«EXPAND entityManagerFactory»
+	«ENDIF»
+	«IF isPubSubToBeGenerated()»
+		«EXPAND pubSub»
+		«IF getProperty("integration.product") == "camel"»
+			«EXPAND templates::camel::Camel::camelConfig»
+		«ELSEIF getProperty("integration.product") == "spring-integration"»
+			«EXPAND templates::springint::SpringIntegration::springIntegrationConfig»
+		«ENDIF»
+	«ENDIF»
+    «EXPAND interceptor»
+    «IF isSpringRemotingToBeGenerated()»
+    	«EXPAND springRemoting»
+    «ENDIF»
+
+    «EXPAND serviceContext»
+    «IF hasConsumers() && isEar()»
+        «EXPAND jms»
+    «ENDIF»
+
+    «IF cacheProvider() == "EhCache"»
+        «EXPAND ehcacheProperties»
+    «ENDIF»
+    
+    «IF mongoDb()»
+    	«EXPAND mongodb»
+    «ENDIF»
+
+    «IF isTestToBeGenerated()»
+    	«EXPAND applicationContextTest»
+    	«EXPAND springPropertiesTest»
+	    «EXPAND moreTest»
+	    «EXPAND interceptorTest»
+		«IF jpa()»
+			«IF !isJpaProviderAppEngine()»
+				«EXPAND entityManagerFactoryTest»
+			«ENDIF»
+	    	«IF !isJpaProviderAppEngine() || (cacheProvider() == "EhCache")»
+				«EXPAND testEhcacheProperties»
+			«ENDIF»
+		«ENDIF»
+		«IF isPubSubToBeGenerated()»
+			«IF getProperty("integration.product") == "camel"»
+				«EXPAND templates::camel::Camel::camelTestConfig»
+			«ELSEIF getProperty("integration.product") == "spring-integration"»
+				«EXPAND templates::springint::SpringIntegration::springIntegrationTestConfig»
+			«ENDIF»
+		«ENDIF»
+		«IF mongoDb()»
+			«EXPAND mongodbTest»
+		«ENDIF»
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE header FOR Object -»
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+«ENDDEFINE »
+
+«DEFINE headerWithMoreNamespaces FOR Object -»
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+		http://www.springframework.org/schema/jee
+		http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
+«ENDDEFINE »
+
+«DEFINE applicationContext FOR Application»
+    «FILE getResourceDir("spring") + "applicationContext.xml" TO_GEN_RESOURCES-»
+    «EXPAND headerWithMoreNamespaces»
+	«EXPAND serviceContext»
+
+    «EXPAND springPropertyConfig»
+
+	<!-- import additional spring configuration files -->
+	«IF jpa()»
+	    <import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("EntityManagerFactory.xml")»"/>
+	«ENDIF»
+	«IF isPubSubToBeGenerated()»
+		<import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("pub-sub.xml")»"/>
+		«IF getProperty("integration.product") == "camel"»
+			<import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("camel.xml")»"/>
+		«ELSEIF getProperty("integration.product") == "spring-integration"»
+			<import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("spring-integration.xml")»"/>
+		«ENDIF»
+	«ENDIF»
+    <import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("Interceptor.xml")»"/>
+    <import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("more.xml")»"/>
+    «IF hasConsumers() && isEar() -»
+    <import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("Jms.xml")»"/>
+	«ENDIF -»
+	«IF mongoDb()»
+	<import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("mongodb.xml")»"/>
+	«ENDIF»
+	«IF isSpringRemotingToBeGenerated()»
+    	<import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("remote-services.xml")»"/>
+    «ENDIF»
+
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE applicationContextTest FOR Application»
+    «FILE "applicationContext-test.xml" TO_GEN_RESOURCES_TEST-»
+    «EXPAND headerWithMoreNamespaces»
+	«EXPAND serviceContext»
+
+	«EXPAND springPropertyConfigTest»
+
+	«IF jpa()»
+		«IF isJpaProviderAppEngine()»
+		<import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("EntityManagerFactory.xml")»"/>
+		«ELSE»
+	    <import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("EntityManagerFactory-test.xml")»"/>
+		«ENDIF»
+	«ENDIF»
+	«IF isPubSubToBeGenerated()»
+		<import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("pub-sub.xml")»"/>
+		«IF getProperty("integration.product") == "camel"»
+			<import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("camel-test.xml")»"/>
+		«ELSEIF getProperty("integration.product") == "spring-integration"»
+			<import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("spring-integration-test.xml")»"/>
+		«ENDIF»
+	«ENDIF»
+    <import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("Interceptor-test.xml")»"/>
+    <import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("more-test.xml")»"/>
+    «IF mongoDb()»
+	<import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("mongodb-test.xml")»"/>
+	«ENDIF»
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE springPropertyConfig FOR Application»
+    <bean id="springPropertyConfig" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    	<property name="locations">
+    		<list>
+	      		<value>classpath:/«getResourceDir("spring")»generated-spring.properties</value>
+	      		<value>classpath:/«getResourceDir("spring")»spring.properties</value>
+      		</list>
+    	</property>
+    </bean>
+«ENDDEFINE»
+
+«DEFINE springPropertyConfigTest FOR Application»
+    <bean id="springPropertyConfig" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    	<property name="locations">
+    		<list>
+	      		<value>classpath:/«getResourceDir("spring")»generated-spring.properties</value>
+	      		<value>classpath:/«getResourceDir("spring")»spring-test.properties</value>
+      		</list>
+    	</property>
+    </bean>
+«ENDDEFINE»
+
+«DEFINE springProperties FOR Application»
+    «FILE getResourceDir("spring") + "spring.properties" TO_RESOURCES-»
+«IF applicationServer() == "jboss"»
+jndi.port=1099
+«ENDIF»
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE springPropertiesTest FOR Application»
+    «FILE getResourceDir("spring") + getApplicationContextFile("spring-test.properties") TO_RESOURCES_TEST-»
+# Spring properties for test
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE generatedSpringProperties FOR Application»
+    «FILE getResourceDir("spring") + "generated-spring.properties" TO_GEN_RESOURCES-»
+# Default configuration properties, possible to override in spring.properties
+«IF applicationServer() == "jboss"»
+jndi.port=1099
+«ENDIF»
+«IF getSpringRemotingType() == "rmi" -»
+rmiRegistry.port=1199
+«ENDIF-»
+«IF mongoDb()»
+mongodb.dbname=«name»
+mongodb.url1=localhost:27017
+mongodb.url2=
+mongodbOptions.connectionsPerHost=10
+mongodbOptions.threadsAllowedToBlockForConnectionMultiplier=5
+mongodbOptions.connectTimeout=0
+mongodbOptions.socketTimeout=0
+mongodbOptions.autoConnectRetry=false
+«ENDIF»
+«IF isSpringDataSourceSupportToBeGenerated()»
+# datasource provider
+jdbc.dataSourceClassName=org.apache.commons.dbcp.BasicDataSource
+	«IF dbProduct() == "mysql"»
+# datasource properties for MySQL
+jdbc.driverClassName=com.mysql.jdbc.Driver
+jdbc.url=jdbc:mysql://localhost/«name.toFirstLower()»
+jdbc.username=«name.toFirstLower()»
+	«ELSEIF dbProduct() == "oracle"»
+# datasource properties for Oracle
+jdbc.driverClassName=oracle.jdbc.OracleDriver
+jdbc.url=jdbc:oracle:thin:@localhost:1521:XE
+jdbc.username=«name.toFirstLower()»
+	«ELSEIF dbProduct() == "hsqldb-inmemory"»
+# datasource properties for HSQLDB
+jdbc.driverClassName=org.hsqldb.jdbcDriver
+jdbc.url=jdbc:hsqldb:mem:«name.toFirstLower()»
+jdbc.username=sa
+	«ELSEIF dbProduct() == "postgresql"»
+# datasource properties for PostgreSQL
+jdbc.driverClassName=org.postgresql.Driver
+jdbc.url=jdbc:postgresql://localhost/«name.toFirstLower()»
+jdbc.username=«name.toFirstLower()»
+	«ELSE»
+jdbc.driverClassName=
+jdbc.url=
+jdbc.username=
+	«ENDIF-»
+jdbc.password=
+«ENDIF»
+«IF isInjectDrools()-»
+# Drools properties
+drools.rule-source=/CompanyPolicy.xml
+drools.rule-refresh=300
+drools.catch-all-exceptions=false
+«ENDIF»
+«IF hasConsumers() && isEar() -»
+connectionFactory.jndiName=ConnectionFactory
+invalidMessageDestination.jndiName=queue/«name.toLowerCase()».invalidMessageQueue
+java.naming.factory.initial=org.jnp.interfaces.NamingContextFactory
+java.naming.provider.url=localhost
+java.naming.factory.url.pkgs=org.jnp.interfaces:org.jboss.naming
+«ENDIF-»
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE serviceContext FOR Application»
+
+	<!-- activates annotation-based bean configuration -->
+	<context:annotation-config />
+
+	«EXPAND componentScan»
+
+	«IF isJpaProviderEclipseLink()»
+		«EXPAND loadTimeWeaving»
+	«ENDIF»
+
+«ENDDEFINE»
+
+«DEFINE componentScan FOR Application»
+	<!-- scans for @Components, @Repositories, @Services, ... -->
+	<context:component-scan base-package="«basePackage»">
+		«EXPAND componentScanExclusionFilter»
+	</context:component-scan>
+«ENDDEFINE»
+
+«DEFINE componentScanExclusionFilter FOR Application»
+<context:exclude-filter type="regex" expression=".*web.*"/>
+«ENDDEFINE»
+
+«DEFINE loadTimeWeaving FOR Application»
+	«REM»
+	<context:load-time-weaver/>
+	«ENDREM»
+«ENDDEFINE»
+
+«DEFINE more FOR Application»
+    «FILE getResourceDir("spring") + getApplicationContextFile("more.xml") TO_RESOURCES-»
+«EXPAND headerWithMoreNamespaces»
+    <!-- Import more custom beans
+    <import resource="classpath:/«getResourceDir("spring")»moreBeans.xml"/>
+    -->
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE moreTest FOR Application»
+    «FILE getResourceDir("spring") + getApplicationContextFile("more-test.xml") TO_RESOURCES_TEST-»
+«EXPAND headerWithMoreNamespaces»
+    <!-- Import more custom beans for test
+    <import resource="classpath:/«getResourceDir("spring")»moreTestBeans.xml"/>
+    -->
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE beanRefContext FOR Application»
+    «FILE "beanRefContext.xml" TO_GEN_RESOURCES-»
+«EXPAND header»
+    <bean id="«basePackage»" lazy-init="true"
+        class="org.springframework.context.support.ClassPathXmlApplicationContext">
+        <constructor-arg>
+            <value>«getResourceDir("spring")»applicationContext.xml</value>
+        </constructor-arg>
+    </bean>
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE interceptor FOR Application»
+    «FILE getResourceDir("spring") + getApplicationContextFile("Interceptor.xml") TO_GEN_RESOURCES-»
+«IF isWar() -»
+«EXPAND headerWithMoreNamespaces»
+«ELSE -»
+«EXPAND headerWithMoreNamespaces»
+«ENDIF -»
+
+	«EXPAND aspectjAutoproxy»
+
+	«IF jpa()»
+	    «EXPAND jpaInterceptor »
+	«ENDIF»
+
+	«IF nosql()»
+	<bean id="errorHandlingAdvice" class="«fw("errorhandling.BasicErrorHandlingAdvice")»" />
+	«ELSE»
+    <bean id="errorHandlingAdvice" class="«fw("errorhandling.ErrorHandlingAdvice")»" />
+    «ENDIF»
+    «IF isJpaProviderHibernate()»
+    <bean id="hibernateErrorHandlingAdvice" class="«fw("errorhandling.HibernateErrorHandlingAdvice")»" />
+    «ELSEIF isValidationAnnotationToBeGenerated()»
+    <bean id="hibernateValidatorErrorHandlingAdvice" class="«fw("errorhandling.HibernateValidatorErrorHandlingAdvice")»" />
+    «ENDIF»
+    «IF isServiceContextToBeGenerated()»
+    <bean id="serviceContextStoreAdvice" class="«serviceContextStoreAdviceClass()»" />
+    «ENDIF -»
+    «IF mongoDb()»
+    <bean id="mongodbManagerAdvice" class="«fw("accessimpl.mongodb.DbManagerAdvice")»" >
+    	<property name="dbManager" ref="mongodbManager" />
+    </bean>
+    «ENDIF -»
+    «IF isInjectDrools()»
+    <bean id="droolsAdvice" class="«fw('drools.DroolsAdvice')»">
+        <property name="droolsRuleSet" value="${drools.rule-source}"/>
+        <property name="updateInterval" value="${drools.rule-refresh}"/>
+        <property name="catchAllExceptions" value="${drools.catch-all-exceptions}"/>
+    </bean>
+    «ENDIF »
+
+    «IF jpa() && (isWar() || !isSpringAnnotationTxToBeGenerated())»
+       «EXPAND txAdvice»
+    «ENDIF»
+
+  «EXPAND aopConfig »
+
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE aspectjAutoproxy FOR Application »
+	<aop:aspectj-autoproxy/>
+«ENDDEFINE »
+
+«DEFINE jpaInterceptor FOR Application »
+  <bean id="jpaInterceptorFlushEager" class="org.springframework.orm.jpa.JpaInterceptor">
+    <property name="entityManagerFactory" ref="entityManagerFactory"/>
+      <!-- Need to flush to detect OptimisticLockingException and do proper rollback. -->
+    <property name="flushEager" value="true"/>
+  </bean>
+«ENDDEFINE»
+
+«DEFINE txAdvice FOR Application»
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<!-- all methods starting with 'get' or 'find' are read-only -->
+			<tx:method name="get*" read-only="true"/>
+			<tx:method name="find*" read-only="true"/>
+			<!-- all other methods are transactional and ApplicationException will cause rollback -->
+			<tx:method name="*" read-only="false"
+				rollback-for="«applicationExceptionClass()»"/>
+		</tx:attributes>
+	</tx:advice>
+«ENDDEFINE»
+
+«DEFINE aopConfig FOR Application»
+	<aop:config>
+
+	  <aop:pointcut id="businessService"
+	        expression="execution(public * «basePackage»..«subPackage("serviceInterface")».*.*(..))"/>
+	  <aop:pointcut id="readOnlyBusinessService"
+	        expression="execution(public * «basePackage»..«subPackage("serviceInterface")».*.get*(..)) or execution(public * «basePackage»..«subPackage("serviceInterface")».*.find*(..))"/>
+	  <!-- Repeating the expression, since I can't find a way to refer to the other pointcuts. -->
+	  <aop:pointcut id="updatingBusinessService"
+	        expression="execution(public * «basePackage»..«subPackage("serviceInterface")».*.*(..)) and not (execution(public * «basePackage»..«subPackage("serviceInterface")».*.get*(..)) or execution(public * «basePackage»..«subPackage("serviceInterface")».*.find*(..)))"/>
+	  «IF hasConsumers()»
+	  <aop:pointcut id="messageConsumer"
+	  		expression="execution(public * «basePackage»..«subPackage("consumer")».*.*(..))"/>
+	  «ENDIF »
+
+	  «IF jpa() && (isWar() || !isSpringAnnotationTxToBeGenerated())»
+	  <aop:advisor pointcut-ref="businessService" advice-ref="txAdvice" order="1" />
+	  «ENDIF »
+	  «IF isServiceContextToBeGenerated()»
+	  <aop:advisor pointcut-ref="businessService" advice-ref="serviceContextStoreAdvice" order="2" />
+	  «ENDIF »
+	  <aop:advisor pointcut-ref="businessService" advice-ref="errorHandlingAdvice" order="3" />
+	  «IF isJpaProviderHibernate()»
+	  <aop:advisor pointcut-ref="businessService" advice-ref="hibernateErrorHandlingAdvice" order="4" />
+	  «ELSEIF isValidationAnnotationToBeGenerated()»
+	  <aop:advisor pointcut-ref="businessService" advice-ref="hibernateValidatorErrorHandlingAdvice" order="4" />
+	  «ENDIF»
+	  «IF jpa()»
+		  <aop:advisor pointcut-ref="updatingBusinessService" advice-ref="jpaInterceptorFlushEager" order="5" />
+	  «ENDIF»
+	  «IF mongoDb()»
+	  	<aop:advisor pointcut-ref="businessService" advice-ref="mongodbManagerAdvice" order="5" />
+	  «ENDIF»
+
+	  «IF isInjectDrools()»
+	  <aop:advisor pointcut-ref="businessService" advice-ref="droolsAdvice" order="6" />
+	  «ENDIF »
+
+	  «IF hasConsumers()»
+	  	«IF jpa() && (isWar() || !isSpringAnnotationTxToBeGenerated())»
+	  <aop:advisor pointcut-ref="messageConsumer" advice-ref="txAdvice" order="1" />
+	  	«ENDIF »
+	  	«IF isServiceContextToBeGenerated()»
+	  <aop:advisor pointcut-ref="messageConsumer" advice-ref="serviceContextStoreAdvice" order="2" />
+	  	«ENDIF »
+	  <aop:advisor pointcut-ref="messageConsumer" advice-ref="errorHandlingAdvice" order="3" />
+	  	«IF isJpaProviderHibernate()»
+	  <aop:advisor pointcut-ref="messageConsumer" advice-ref="hibernateErrorHandlingAdvice" order="4" />
+	  	«ELSEIF isValidationAnnotationToBeGenerated()»
+	  <aop:advisor pointcut-ref="messageConsumer" advice-ref="hibernateValidatorErrorHandlingAdvice" order="4" />
+	    «ENDIF»
+	    «IF mongoDb()»
+	  <aop:advisor pointcut-ref="messageConsumer" advice-ref="mongodbManagerAdvice" order="5" />
+	    «ENDIF»
+	  «ENDIF »
+
+	</aop:config>
+«ENDDEFINE »
+
+«DEFINE interceptorTest FOR Application»
+    «FILE getResourceDir("spring") + getApplicationContextFile("Interceptor-test.xml") TO_GEN_RESOURCES_TEST-»
+«EXPAND headerWithMoreNamespaces»
+    <import resource="classpath:/«getResourceDir("spring")»Interceptor.xml"/>
+
+    «EXPAND aopConfigTest »
+
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE aopConfigTest FOR Application»
+	«REM»When isWar txAdvice is already included in included Interceptor.xml, but otherwise we need it for testing«ENDREM»
+	«REM»TODO remove
+	«IF !isWar() »
+		«EXPAND txAdvice »
+	«ENDIF»
+	«ENDREM»
+
+	<aop:config>
+
+	  <aop:pointcut id="repository"
+	        expression="execution(public * «basePackage»..*Repository*.*(..))"/>
+
+	  «REM»TODO remove
+	  «IF !isWar()»
+	  <aop:advisor pointcut-ref="businessService" advice-ref="txAdvice" order="1" />
+	  «ENDIF»
+	  «ENDREM»
+
+	  <!-- Need this when JUnit directly to Repository -->
+	  <aop:advisor pointcut-ref="repository" advice-ref="errorHandlingAdvice" order="3" />
+	  «IF isJpaProviderHibernate()»
+      <aop:advisor pointcut-ref="repository" advice-ref="hibernateErrorHandlingAdvice" order="4" />
+      «ELSEIF isValidationAnnotationToBeGenerated()»
+      <aop:advisor pointcut-ref="repository" advice-ref="hibernateValidatorErrorHandlingAdvice" order="4" />
+      «ENDIF»
+
+	</aop:config>
+«ENDDEFINE »
+
+«DEFINE sessionFactory FOR Application»
+    «FILE getResourceDir("spring") + getApplicationContextFile("SessionFactory.xml") TO_GEN_RESOURCES-»
+    «IF dbProduct() == "hsqldb-inmemory" && !isSpringDataSourceSupportToBeGenerated()»
+    	«EXPAND sessionFactoryInMemory(false)»
+    «ELSE»
+		«EXPAND header»
+		    «IF isWar() -»
+		      «EXPAND txManager»
+		    «ENDIF -»
+
+		«IF isSpringDataSourceSupportToBeGenerated()»
+		      «EXPAND dataSource»
+		«ENDIF»
+
+		«IF isJpaAnnotationToBeGenerated()»
+		    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+			    <property name="configLocation" value="hibernate.cfg.xml"/>
+	    «ENDIF»
+		        <property name="entityInterceptor">
+		            <ref bean="auditInterceptor" />
+		        </property>
+		«IF isSpringDataSourceSupportToBeGenerated()»
+		        <property name="dataSource" ref="dataSource"/>
+		«ENDIF»
+				«REM»extension point for adding additional configuration«ENDREM»
+				«EXPAND sessionFactoryAdditions»
+		    </bean>
+		«IF isAuditableToBeGenerated()»
+		    <bean id="auditInterceptor" class="«auditInterceptorClass()»"/>
+		«ENDIF»
+		</beans>
+
+	«ENDIF»
+    «ENDFILE »
+«ENDDEFINE »
+
+«REM»extension point for adding additional configuration«ENDREM»
+«DEFINE sessionFactoryAdditions FOR Application»
+«ENDDEFINE»
+
+«DEFINE txManager FOR Application»
+    <bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory" />
+    </bean>
+«ENDDEFINE»
+
+«DEFINE sessionFactoryTest FOR Application»
+    «FILE getResourceDir("spring") + "SessionFactory-test.xml" TO_GEN_RESOURCES_TEST-»
+	«EXPAND sessionFactoryInMemory(true)»
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE sessionFactoryInMemory(boolean test) FOR Application»
+«EXPAND header»
+
+    «IF isWar() -»
+      «EXPAND txManager»
+    «ENDIF -»
+
+    «EXPAND hsqldbDataSource»
+
+	«IF isJpaAnnotationToBeGenerated()»
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+        <property name="dataSource" ref="hsqldbDataSource"/>
+        «IF test»
+		<property name="configLocation" value="hibernate-test.cfg.xml"></property>
+		«ELSE»
+		<property name="configLocation" value="hibernate.cfg.xml"></property>
+        «ENDIF»
+        «REM»add additional configuration by aop«ENDREM»
+		«EXPAND additionalSessionFactoryPropertiesTest»
+	«ENDIF»
+
+        <property name="entityInterceptor">
+            <ref bean="auditInterceptor" />
+        </property>
+    </bean>
+    «IF isAuditableToBeGenerated()»
+    <bean id="auditInterceptor" class="«auditInterceptorClass()»"/>
+    «ENDIF»
+
+</beans>
+«ENDDEFINE»
+
+«REM»extension point for adding additional configuration by aop«ENDREM»
+«DEFINE additionalSessionFactoryPropertiesTest FOR Application»
+«ENDDEFINE»
+
+«DEFINE hsqldbDataSource FOR Application»
+    <bean id="hsqldbDataSource" class="org.apache.commons.dbcp.BasicDataSource">
+        <property name="driverClassName" value="org.hsqldb.jdbcDriver"/>
+        <property name="url" value="jdbc:hsqldb:mem:«name.toFirstLower()»"/>
+        <property name="username" value="sa"/>
+        <property name="password" value=""/>
+    </bean>
+«ENDDEFINE »
+
+«DEFINE dataSource FOR Application»
+    <bean id="dataSource" class="${jdbc.dataSourceClassName}">
+        <property name="driverClassName" value="${jdbc.driverClassName}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+		<!-- add additional properties by extending Spring::dataSourceAdditions -->
+	    «EXPAND dataSourceAdditions»
+    </bean>
+«ENDDEFINE »
+
+«DEFINE dataSourceAdditions FOR Application»
+«ENDDEFINE »
+
+«DEFINE hibernateResource FOR Module»
+	«IF !domainObjects.typeSelect(Enum).isEmpty -»
+		«EXPAND hibernateEnumTypedefResource»
+	«ENDIF-»
+«ENDDEFINE »
+
+«DEFINE hibernateEnumTypedefResource FOR Module»
+                <value>«getResourceDir("hibernate")»«getEnumTypeDefFileName()»</value>
+«ENDDEFINE »
+
+«DEFINE jms FOR Application»
+    «FILE getResourceDir("spring") + getApplicationContextFile("Jms.xml") TO_GEN_RESOURCES-»
+«EXPAND header»
+  «IF isEar() -»
+    «EXPAND jndiTemplate»
+    «EXPAND jndiTemplateLocal»
+    «EXPAND jmsQueueConnectionFactory»
+    «EXPAND invalidMessageQueue»
+  «ELSE -»
+    <!-- JMS requires deployment in EAR -->
+  «ENDIF-»
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE jndiTemplate FOR Application»
+    <bean id="jndiTemplate" class="org.springframework.jndi.JndiTemplate">
+        <property name="environment">
+            <props>
+                <prop key="java.naming.factory.initial">${java.naming.factory.initial}</prop>
+                <prop key="java.naming.provider.url">${java.naming.provider.url}</prop>
+                <prop key="java.naming.factory.url.pkgs">${java.naming.factory.url.pkgs}</prop>
+            </props>
+        </property>
+    </bean>
+«ENDDEFINE »
+
+«DEFINE jndiTemplateLocal FOR Application»
+    <bean id="jndiTemplateLocal" class="org.springframework.jndi.JndiTemplate" />
+«ENDDEFINE »
+
+«DEFINE jmsQueueConnectionFactory FOR Application»
+    <bean id="jmsQueueConnectionFactory"
+          class="org.springframework.jndi.JndiObjectFactoryBean">
+        <property name="jndiTemplate">
+            <ref bean="jndiTemplateLocal"/>
+        </property>
+        <property name="resourceRef">
+            <value type="boolean">false</value>
+        </property>
+        <property name="jndiName">
+            <value>${connectionFactory.jndiName}</value>
+        </property>
+    </bean>
+«ENDDEFINE »
+
+«DEFINE invalidMessageQueue FOR Application»
+    «EXPAND invalidMessageQueueJmsTemplate»
+    «EXPAND invalidMessageDestination»
+«ENDDEFINE »
+
+«DEFINE invalidMessageQueueJmsTemplate FOR Application»
+    <bean id="invalidMessageQueueJmsTemplate"
+          class="org.springframework.jms.core.JmsTemplate">
+        <property name="connectionFactory">
+            <ref bean="jmsQueueConnectionFactory"/>
+        </property>
+        <property name="defaultDestination">
+            <ref bean="invalidMessageDestination"/>
+        </property>
+    </bean>
+«ENDDEFINE »
+
+«DEFINE invalidMessageDestination FOR Application»
+    <bean id="invalidMessageDestination"
+        class="org.springframework.jndi.JndiObjectFactoryBean">
+        <property name="jndiTemplate">
+            <ref bean="jndiTemplateLocal"/>
+        </property>
+        <property name="jndiName">
+            <value>${invalidMessageDestination.jndiName}</value>
+        </property>
+    </bean>
+«ENDDEFINE »
+
+
+«DEFINE ehcacheProperties FOR Application»
+    «FILE "ehcache.xml" TO_RESOURCES-»
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache>
+    <diskStore path="java.io.tmpdir"/>
+    <defaultCache
+        maxElementsInMemory="100000"
+        eternal="false"
+        timeToIdleSeconds="120"
+        timeToLiveSeconds="120"
+        overflowToDisk="false"
+        diskPersistent="false"
+     />
+</ehcache>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE testEhcacheProperties FOR Application»
+    «FILE "ehcache.xml" TO_RESOURCES_TEST-»
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache>
+    <diskStore path="java.io.tmpdir"/>
+    <defaultCache
+        maxElementsInMemory="10000"
+        eternal="false"
+        timeToIdleSeconds="120"
+        timeToLiveSeconds="120"
+        overflowToDisk="false"
+        diskPersistent="false"
+     />
+</ehcache>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE entityManagerFactory FOR Application»
+    «FILE getResourceDir("spring") + getApplicationContextFile("EntityManagerFactory.xml")  TO_GEN_RESOURCES-»
+
+	«EXPAND headerWithMoreNamespaces»
+
+	«IF isEar() && (!isSpringDataSourceSupportToBeGenerated() || applicationServer() == "jboss")»
+	<jee:jndi-lookup id="entityManagerFactory" jndi-name="java:/«persistenceUnitName()»"/>
+		«EXPAND entityManagerFactoryTx(false)»
+	«ELSE»
+		<!-- Creates a EntityManagerFactory for use with a JPA provider -->
+		«IF isJpaProviderAppEngine()»
+			<bean id="appEngineEntityManagerFactory" class="«fw("persistence.AppEngineEntityManagerFactory")»" />
+			<bean id="entityManagerFactory" factory-bean="appEngineEntityManagerFactory" factory-method="entityManagerFactory" />
+		«ELSE»
+			«IF isSpringDataSourceSupportToBeGenerated()»
+		    	«EXPAND dataSource»
+			«ENDIF»
+	<bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+			«IF isSpringDataSourceSupportToBeGenerated()»
+	        <property name="dataSource" ref="dataSource"/>
+			«ENDIF»
+			«IF persistenceXml() != "META-INF/persistence.xml"»
+			<property name="persistenceXmlLocation" value="«persistenceXml()»"/>
+			«ENDIF»
+	</bean>
+		«ENDIF»
+		«EXPAND entityManagerFactoryTx(false)»
+	«ENDIF»
+
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE entityManagerFactoryTest FOR Application»
+    «FILE getResourceDir("spring") + getApplicationContextFile("EntityManagerFactory-test.xml")  TO_GEN_RESOURCES_TEST-»
+
+	«EXPAND headerWithMoreNamespaces»
+
+	«EXPAND hsqldbDataSource»
+
+	<!-- Creates a EntityManagerFactory for use with the Hibernate JPA provider -->
+	<bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+	    <property name="dataSource" ref="hsqldbDataSource"/>
+    	<property name="persistenceXmlLocation" value="META-INF/persistence-test.xml"/>
+		«IF isJpaProviderEclipseLink()»
+    	<property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
+		«ENDIF»
+	</bean>
+
+	«IF isJpaProviderEclipseLink()»
+	<bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.EclipseLinkJpaVendorAdapter">
+	   <property name="databasePlatform" value="org.eclipse.persistence.platform.database.HSQLPlatform" />
+	   <property name="showSql" value="true" />
+	   <property name="generateDdl" value="true" />
+	</bean>
+	«ENDIF»
+
+	«EXPAND entityManagerFactoryTx(true)»
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE entityManagerFactoryTx(boolean test) FOR Application»
+    «IF isWar() || test || (isSpringDataSourceSupportToBeGenerated() && applicationServer() != "jboss")»
+    	«EXPAND jpaTxManager»
+	«ELSE»
+		«EXPAND jtaTxManager»
+   	«ENDIF»
+
+    «IF isSpringAnnotationTxToBeGenerated()»
+	    <!-- enables @Transactional support -->
+		<tx:annotation-driven transaction-manager="txManager"/>
+	«ENDIF»
+
+	«EXPAND persistenceExceptionTranslationPostProcessor»
+
+«ENDDEFINE»
+
+«DEFINE persistenceExceptionTranslationPostProcessor FOR Application»
+	«IF !isJpaProviderAppEngine()»
+		«REM»TODO: Problem when using jndi lookup of persistent unit, instead of LocalContainerEntityManagerFactoryBean.
+				   PersistenceExceptionTranslationPostProcessor needs a PersistenceExceptionTranslator, e.g. LocalContainerEntityManagerFactoryBean
+		«ENDREM»
+		«IF !isEar()»
+	  	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
+	  	«ENDIF»
+  	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE jpaTxManager FOR Application»
+    <bean id="txManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory" />
+    </bean>
+«ENDDEFINE»
+
+«DEFINE jtaTxManager FOR Application»
+	<tx:jta-transaction-manager/>
+  	<alias name="transactionManager" alias="txManager"/>
+«ENDDEFINE»
+
+«DEFINE mongodb FOR Application»
+    «FILE getResourceDir("spring") + "mongodb.xml" TO_GEN_RESOURCES-»
+    	«EXPAND header»
+    	«EXPAND mongodbManager»
+    	«EXPAND mongodbOptions»
+    	</beans>
+    «ENDFILE»
+«ENDDEFINE»    
+
+«DEFINE mongodbManager FOR Application»
+	<bean id="mongodbManager" class="«fw("accessimpl.mongodb.DbManager")»">
+		<property name="dbname" value="${mongodb.dbname}" />
+		<property name="dbUrl1" value="${mongodb.url1}" />
+		<property name="dbUrl2" value="${mongodb.url2}" />
+		<property name="options" ref="mongodbOptions" />
+	</bean>
+«ENDDEFINE»
+
+«DEFINE mongodbOptions FOR Application»
+	<bean id="mongodbOptions" class="«fw("accessimpl.mongodb.MongoOptionsWrapper")»">
+		<property name="connectionsPerHost" value="${mongodbOptions.connectionsPerHost}" />
+		<property name="threadsAllowedToBlockForConnectionMultiplier" value="${mongodbOptions.threadsAllowedToBlockForConnectionMultiplier}" />
+		<property name="connectTimeout" value="${mongodbOptions.connectTimeout}" />
+		<property name="socketTimeout" value="${mongodbOptions.socketTimeout}" />
+		<property name="autoConnectRetry" value="${mongodbOptions.autoConnectRetry}" />
+	</bean>
+«ENDDEFINE»
+
+«DEFINE mongodbTest FOR Application»
+    «FILE getResourceDir("spring") + "mongodb-test.xml" TO_GEN_RESOURCES_TEST-»
+    	«EXPAND header»
+    	«EXPAND mongodbManagerTest»
+    	«EXPAND mongodbOptions»
+    	</beans>
+    «ENDFILE»
+«ENDDEFINE»    
+
+«DEFINE mongodbManagerTest FOR Application»
+	<bean id="mongodbManager" class="«fw("accessimpl.mongodb.DbManager")»">
+		<property name="dbname" value="«name»-test" />
+		<property name="dbUrl1" value="${mongodb.url1}" />
+		<property name="dbUrl2" value="${mongodb.url2}" />
+		<property name="options" ref="mongodbOptions" />
+	</bean>
+«ENDDEFINE»
+
+«DEFINE pubSub FOR Application»
+    «FILE getResourceDir("spring") + getApplicationContextFile("pub-sub.xml") TO_GEN_RESOURCES-»
+    	«EXPAND header»
+    		<bean id="publishAdvice" class="«fw("event.annotation.PublishAdvice")»" />
+  
+  			<bean id="subscribeBeanPostProcessor" class="«fw("event.annotation.SubscribeBeanPostProcessor")»" />
+  			
+  			«EXPAND simpleEventBus»
+  			«IF getAllDomainObjects().exists(e|e.metaType == CommandEvent)»
+  				«EXPAND simpleCommandBus»
+  			«ENDIF»
+    	</beans>
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE simpleEventBus FOR Application»
+	<bean id="simpleEventBusImpl" class="«fw("event.SimpleEventBusImpl")»" />
+	<alias name="simpleEventBusImpl" alias="eventBus" />
+«ENDDEFINE»
+
+«DEFINE simpleCommandBus FOR Application»
+	<bean id="simpleCommandBusImpl" class="«fw("event.SimpleEventBusImpl")»" >
+		<constructor-arg value="true" />
+	</bean>
+	<alias name="simpleCommandBusImpl" alias="commandBus" />
+«ENDDEFINE»
+
+«DEFINE springRemoting FOR Application»
+	«LET getAllServices().select(e|e.remoteInterface) AS remoteServices»
+    «FILE getResourceDir("spring") + getApplicationContextFile("remote-services.xml") TO_GEN_RESOURCES-»
+    	«EXPAND header»
+    		«IF getSpringRemotingType() == "rmi"»
+				«EXPAND rmiServiceExporter FOREACH remoteServices »
+			«ELSEIF getSpringRemotingType() == "httpinvoker"»
+				«EXPAND httpInvokerServiceExporter FOREACH remoteServices »
+			«ELSEIF getSpringRemotingType() == "hessian"»
+				«EXPAND hessianServiceExporter FOREACH remoteServices »
+			«ELSEIF getSpringRemotingType() == "burlap"»
+				«EXPAND burlapServiceExporter FOREACH remoteServices »
+			«ENDIF»		
+    	</beans>
+    «ENDFILE»
+    «ENDLET»
+«ENDDEFINE»
+
+«DEFINE rmiServiceExporter FOR Service»
+    <bean class="org.springframework.remoting.rmi.RmiServiceExporter">
+	    <property name="serviceName" value="«module.application.name»/«name.toFirstLower()»"/>
+	    <property name="service" ref="«name.toFirstLower()»"/>
+	    <property name="serviceInterface" value="«getServiceapiPackage()».«name»"/>
+	    <property name="registryPort" value="${rmiRegistry.port}"/>
+	</bean>
+«ENDDEFINE»
+
+«DEFINE hessianServiceExporter FOR Service»
+	«EXPAND serviceExporter("org.springframework.remoting.caucho.HessianExporter")»
+«ENDDEFINE»
+
+«DEFINE burlapServiceExporter FOR Service»
+	«EXPAND serviceExporter("org.springframework.remoting.caucho.BurlapExporter")»
+«ENDDEFINE»
+
+«DEFINE httpInvokerServiceExporter FOR Service»
+	«EXPAND serviceExporter("org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter")»
+«ENDDEFINE»
+
+«DEFINE serviceExporter(String exporterClass) FOR Service»
+    <bean name="«name.toFirstLower()»Exporter" class="«exporterClass»">
+	    <property name="service" ref="«name.toFirstLower()»"/>
+	    <property name="serviceInterface" value="«getServiceapiPackage()».«name»"/>
+	</bean>
+	<!-- You need to define corresponding servlet in web.xml -->
+	<!--
+	<servlet>
+	    <servlet-name>«name.toFirstLower()»Exporter</servlet-name>
+	    <servlet-class>org.springframework.web.context.support.HttpRequestHandlerServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+	    <servlet-name>«name.toFirstLower()»Exporter</servlet-name>
+	    <url-pattern>/remoting/«name»</url-pattern>
+	</servlet-mapping>
+	-->
+«ENDDEFINE»

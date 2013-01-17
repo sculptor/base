@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.newWizards">
+      <category
+            name="Sculptor"
+            id="org.fornax.cartridges.sculptor.newWizards">
+      </category>
+      <wizard
+            category="org.fornax.cartridges.sculptor.newWizards"
+            class="org.fornax.cartridges.sculptor.wizard.richclient.RichClientProjectWizard"
+            icon="icons/project.gif"
+            id="org.fornax.cartridges.sculptor.richclient.wizard.XtextProjectsWizard"
+            name="Sculptor Rich Client Project"
+            project="true">
+      </wizard>
+   </extension>
+
+</plugin>

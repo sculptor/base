@@ -1,0 +1,1364 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptormetamodel;
+
+extension extensions::properties;
+extension extensions::dbhelper;
+
+String javaFileName(String name) :
+    name.replaceAll("\\.", "/") + ".java";
+
+Collection[Repository] getAllRepositories(Application app) :
+    app.getAllRepositories(true);
+
+// Use this witha includeExternal=false to retrieve all DomainObjects except those belonging
+// to external modules
+Collection[Repository] getAllRepositories(Application app, boolean includeExternal) :
+    app.modules.getAllRepositories().reject(e | !includeExternal && e.aggregateRoot.module.external).sortBy(e|e.name);
+
+Collection[Repository] getAllRepositories(Module module) :
+    module.domainObjects.select(d | d.repository != null).collect(d | d.repository).sortBy(e|e.name);
+
+// All DomainObjects in the Applications, including those belonging to external modules
+Collection[DomainObject] getAllDomainObjects(Application app) :
+    app.getAllDomainObjects(true);
+
+// Use this witha includeExternal=false to retrieve all DomainObjects except those belonging
+// to external modules
+Collection[DomainObject] getAllDomainObjects(Application app, boolean includeExternal) :
+    app.collectChangedModules().reject(m | !includeExternal && m.external).domainObjects .sortBy(e|e.name);
+
+cached Collection[Module] collectChangedModules(Application app) :
+	if !isGenerateQuick() then
+		app.modules
+	else
+	(
+		let changed = changedModulesWithDependingModules(app) :
+		(changed.isEmpty ?
+			app.modules :
+			(
+				debugTrace("Partial: " + app.modules.select(e | changed.contains(e)).collect(m | m.name)) ->
+				app.modules.select(e | changed.contains(e))
+			)
+		)
+	);
+
+
+List[Module] changedModulesWithDependingModules(Application app) :
+	app.changedModules().getModulesDependingOn();
+
+List[Module] changedModules(Application app) :
+	let result = getChangedModules().collect(e | e.moduleFor(app)) :
+	result.contains(null) ? {} : result;
+
+Module moduleFor(String name, Application app) :
+	app.modules.selectFirst(e|e.name == name);
+
+List[Module] getModulesDependingOn(Module module) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.DependencyConstraints.getModulesDependingOn(sculptormetamodel.Module);
+
+Collection[DomainObject] getNonEnumDomainObjects(Module module) :
+	module.domainObjects.reject(d | d.metaType == Enum).sortBy(e|e.name);
+
+Collection[Service] getAllServices(Application app) :
+    app.getAllServices(true);
+
+// Use this witha includeExternal=false to retrieve all DomainObjects except those belonging
+// to external modules
+Collection[Service] getAllServices(Application app, boolean includeExternal) :
+    app.modules.services.reject(e | !includeExternal && e.module.external).sortBy(e|e.name);
+
+Collection[Resource] getAllResources(Application app) :
+    app.getAllResources(true);
+
+// Use this witha includeExternal=false to retrieve all DomainObjects except those belonging
+// to external modules
+Collection[Resource] getAllResources(Application app, boolean includeExternal) :
+    app.modules.resources.reject(e | !includeExternal && e.module.external).sortBy(e|e.name);
+
+Collection[Consumer] getAllConsumers(Application app) :
+    app.getAllConsumers(true);
+
+// Use this witha includeExternal=false to retrieve all DomainObjects except those belonging
+// to external modules
+Collection[Consumer] getAllConsumers(Application app, boolean includeExternal) :
+    app.modules.consumers.reject(e | !includeExternal && e.module.external).sortBy(e|e.name);
+
+String getBasePackage(Module module) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getBasePackage(sculptormetamodel.Module);
+
+String getAccessapiPackage(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getAccessapiPackage(sculptormetamodel.Module);
+
+String getAccessimplPackage(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getAccessimplPackage(sculptormetamodel.Module);
+
+String getDomainPackage(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getDomainPackage(sculptormetamodel.Module);
+
+cached String getDomainPackage(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getDomainPackage(sculptormetamodel.DomainObject);
+
+String getDomainPackage(DataTransferObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getDomainPackage(sculptormetamodel.DataTransferObject);
+
+String getDomainPackage(DomainEvent event) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getDomainPackage(sculptormetamodel.DomainEvent);
+
+String getDomainPackage(CommandEvent event) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getDomainPackage(sculptormetamodel.CommandEvent);
+
+String getRepositoryapiPackage(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getRepositoryapiPackage(sculptormetamodel.Module);
+
+String getRepositoryimplPackage(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getRepositoryimplPackage(sculptormetamodel.Module);
+
+String getServiceapiPackage(Service service) :
+    getServiceapiPackage(service.module);
+
+String getServiceapiPackage(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getServiceapiPackage(sculptormetamodel.Module);
+
+String getServiceimplPackage(Service service) :
+    getServiceimplPackage(service.module);
+
+String getServiceimplPackage(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getServiceimplPackage(sculptormetamodel.Module);
+
+String getRestPackage(Resource resource) :
+    getRestPackage(resource.module);
+
+String getRestPackage(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getRestPackage(sculptormetamodel.Module);
+
+String getServiceproxyPackage(Service service) :
+    getServiceproxyPackage(service.module);
+
+String getServicestubPackage(Service service) :
+    getServicestubPackage(service.module);
+
+String getServiceproxyPackage(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getServiceproxyPackage(sculptormetamodel.Module);
+
+String getServicestubPackage(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getServicestubPackage(sculptormetamodel.Module);
+
+String getConsumerPackage(Consumer consumer) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getConsumerPackage(sculptormetamodel.Consumer);
+
+String getXmlMapperPackage(Consumer consumer) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getXmlMapperPackage(sculptormetamodel.Consumer);
+
+String getExceptionPackage(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getExceptionPackage(sculptormetamodel.Module);
+
+String getMapperPackage(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getMapperPackage(sculptormetamodel.Module);
+
+boolean isPagedResult(TypedElement e) :
+	e.type == "PagedResult";
+
+String getAccessObjectResultTypeName(RepositoryOperation op) :
+	op.isPagedResult() ?
+		"java.util.List<" + op.domainObjectType.getDomainPackage() + "." + op.domainObjectType.name + ">" :
+		op.getTypeName();
+
+String getTypeName(NamedElement e) :
+	"";
+
+String getTypeName(TypedElement e) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getTypeName(sculptormetamodel.TypedElement);
+
+String getTypeName(DomainObjectTypedElement e) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getTypeName(sculptormetamodel.DomainObjectTypedElement);
+
+String getTypeName(Reference ref) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getTypeName(sculptormetamodel.Reference);
+
+String getImplTypeName(TypedElement e) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getImplTypeName(sculptormetamodel.TypedElement);
+
+String getExtendsAndImplementsLitteral(DomainObject domainObject) :
+     domainObject.getExtendsLitteral() + domainObject.getImplementsLitteral();
+
+String getExtendsLitteral(DomainObject domainObject) :
+	domainObject.getExtendsClassName() == "" ?
+		"" :
+     	"extends " + domainObject.getExtendsClassName();
+
+String getExtendsClassNameIfExists(DomainObject domainObject) :
+    (domainObject.extends == null) ?
+        domainObject.getDomainPackage() + "." + domainObject.name :
+        domainObject.extends.getDomainPackage() + "." + domainObject.extends.name;
+
+String getExtendsClassName(DomainObject domainObject) :
+    (domainObject.extends == null) ?
+        (domainObject.extendsName == null ? domainObject.defaultExtendsClassName() : domainObject.extendsName) :
+        domainObject.extends.getDomainPackage() + "." + domainObject.extends.name;
+
+String defaultExtendsClassName(DomainObject domainObject) :
+	let result = defaultExtendsClass(domainObject.simpleMetaTypeName()) :
+	(result == "" ? abstractDomainObjectClass() : result);
+
+String defaultExtendsClassName(DataTransferObject domainObject) :
+	defaultExtendsClass(domainObject.simpleMetaTypeName());
+
+String defaultExtendsClassName(Trait domainObject) :
+	defaultExtendsClass(domainObject.simpleMetaTypeName());
+
+String getImplementsLitteral(DomainObject domainObject) :
+    if (domainObject.getImplementsInterfaceNames() == "") then
+      ""
+    else if (domainObject.extends != null && !domainObject.traitInterfaceNames().isEmpty) then
+      " implements " + domainObject.traitInterfaceNames().toCommaSeparatedString()
+    else if (domainObject.extends != null) then
+      ""
+    else
+      " implements " + domainObject.getImplementsInterfaceNames();
+
+String getImplementsInterfaceNames(DomainObject domainObject) :
+	let list = {} :
+	list.addAll(domainObject.traitInterfaceNames()) ->
+	if (domainObject.isIdentifiable()) then
+    	list.add(identifiableInterface()) ->
+    list.toCommaSeparatedString();
+
+String getImplementsInterfaceNames(DataTransferObject domainObject) :
+	"java.io.Serializable, java.lang.Cloneable";
+
+String getImplementsInterfaceNames(Trait domainObject) :
+	domainObject.getDomainPackage() + "." + domainObject.name + ", java.io.Serializable";
+
+String getImplementsInterfaceNames(DomainEvent domainObject) :
+	fw("event.Event") + ", java.io.Serializable";
+
+String getImplementsInterfaceNames(CommandEvent domainObject) :
+	fw("event.Event");
+
+String getImplementsInterfaceNames(Entity entity) :
+	let list = {} :
+	list.addAll(entity.traitInterfaceNames()) ->
+    if (entity.auditable) then
+    	list.add(auditableInterface()) ->
+    if (entity.isIdentifiable()) then
+    	list.add(identifiableInterface()) ->
+    if (isFullyAuditable()) then
+    	list.add(fw("domain.FullAuditLog") + "<" + entity.getDomainPackage() + "." + entity.name + ">") ->
+    list.toCommaSeparatedString();
+
+List[String] traitInterfaceNames(DomainObject domainObject) :
+	domainObject.traits.collect(e | e.getDomainPackage() + "." + e.name);
+
+String getEjbInterfaces(Service service) :
+	let pkg = service.getServiceapiPackage() :
+	let list = {} :
+	(
+	if (!service.localInterface && !service.remoteInterface) then
+		list.add(pkg + "." + service.name) ->
+	if (service.localInterface) then
+		list.add(pkg + "." + service.name + "Local") ->
+	if (service.remoteInterface) then
+		list.add(pkg + "." + service.name + "Remote") ->
+	if (service.webService) then
+		list.add(pkg + "." + service.name + "Endpoint")
+	) ->
+	list.toCommaSeparatedString();
+
+String getAccessObjectInterfaceExtends(RepositoryOperation op) :
+  let list = {} :
+  (
+	if (op.hasPagingParameter()) then
+		list.add(fw("accessapi.Pageable")) ->
+    if (op.hasHint("cache")) then
+        list.add(fw("accessapi.Cacheable"))
+  ) ->
+  list.toCommaSeparatedString();
+
+String getVisibilityLitteralGetter(Attribute attribute) :
+        visibilityImpl(attribute.visibility);
+
+boolean isSetterNeeded(Reference ref) :
+	jpa() ?
+		(ref.changeable || (ref.isBasicTypeReference()) || (ref.isEnumReference()) ?
+			!ref.isSetterPrivate() :
+			notChangeableReferenceSetterVisibility() != "private")
+			:
+		true;
+
+boolean isSetterNeeded(Attribute attribute) :
+	jpa() ?
+		(attribute.changeable ?
+			!attribute.isSetterPrivate() :
+			notChangeablePropertySetterVisibility() != "private")
+			:
+		true;
+
+boolean isSetterPrivate(Attribute attribute) :
+	attribute.getVisibilityLitteralSetter() == "private ";
+
+boolean isSetterPrivate(Reference ref) :
+	ref.getVisibilityLitteralSetter() == "private ";
+
+String getVisibilityLitteralSetter(Attribute attribute) :
+	attribute.changeable
+		? (hasHint(attribute, "readonly") ? "protected " : visibilityImpl(attribute.visibility))
+		: "private ";
+
+String getVisibilityLitteral(Operation op)    :
+    visibilityImpl(op.visibility);
+
+boolean isPublicVisibility(Attribute att) :
+	att.getVisibilityLitteralGetter().startsWith("public");
+
+boolean isPublicVisibility(Reference ref) :
+	ref.getVisibilityLitteralGetter().startsWith("public");
+
+boolean isPublicVisibility(Operation op) :
+    op.getVisibilityLitteral().startsWith("public");
+
+String getVisibilityLitteralGetter(Reference ref) :
+        visibilityImpl(ref.visibility);
+
+String getVisibilityLitteralSetter(Reference ref) :
+	ref.changeable
+		? (hasHint(ref, "readonly") ? "protected " : visibilityImpl(ref.visibility))
+		: "private ";
+
+private String visibilityImpl(String visibility) :
+    switch (visibility) {
+        case null : "public "
+        case "" : "public "
+        case "package" : ""
+        default : visibility + " "
+    };
+
+String getAbstractLitteral(DomainObject domainObject) :
+    (domainObject.abstract)    ?
+        "abstract " :
+        "";
+
+private Collection[Attribute] getSuperAllAttributes(DomainObject domainObject) :
+    (domainObject.extends == null) ?
+        {} :
+        domainObject.extends.getAllAttributes();
+
+Collection[Attribute] getAllAttributes(DomainObject domainObject) :
+    domainObject.getSuperAllAttributes().
+        addAll(domainObject.attributes);
+
+private Collection[Reference] getSuperAllReferences(DomainObject domainObject) :
+    (domainObject.extends == null) ?
+        {} :
+        domainObject.extends.getAllReferences();
+
+Collection[Reference] getAllReferences(DomainObject domainObject) :
+    domainObject.getSuperAllReferences().
+        addAll(domainObject.references);
+
+List[NamedElement] getSuperConstructorParameters(DomainObject domainObject) :
+    (domainObject.extends == null) ?
+        {} :
+        domainObject.extends.getConstructorParameters();
+
+List[NamedElement] getLimitedConstructorParameters(DomainObject domainObject) :
+	domainObject.getConstructorParameters().reject(e|e.isNullable() && !e.isRequired());
+
+List[NamedElement] getMinimumConstructorParameters(DomainObject domainObject) :
+	domainObject.getConstructorParameters().reject(e|e.isChangeable());
+
+List[NamedElement] getConstructorParameters(DomainObject domainObject) :
+    domainObject.getSuperConstructorParameters().
+        addAll(domainObject.attributes.select(a | (!a.changeable || a.required))).
+        select(a | a != domainObject.getIdAttribute()).
+        addAll(domainObject.references.select(r | (!r.changeable || r.required)));
+
+String getDefaultConstructorVisibility(DomainObject domainObject) :
+    "protected";
+
+boolean isNullable(NamedElement element) :
+    false;
+
+boolean isNullable(Attribute att) :
+    att.nullable;
+
+boolean isNullable(Reference ref) :
+    ref.nullable;
+
+boolean isRequired(NamedElement element) :
+    false;
+
+boolean isRequired(Attribute att) :
+    att.required;
+
+boolean isRequired(Reference ref) :
+    ref.required;
+
+boolean isChangeable(NamedElement element) :
+    false;
+
+boolean isChangeable(Attribute att) :
+    att.changeable;
+
+boolean isChangeable(Reference ref) :
+    ref.changeable;
+
+boolean isImmutable(DomainObject domainObject) :
+	false;
+
+boolean isImmutable(Enum domainObject) :
+	true;
+
+boolean isImmutable(ValueObject domainObject) :
+	domainObject.immutable;
+
+Collection[Repository] getDelegateRepositories(Service service) :
+    service.operations.select(op | op.delegate != null).collect(op | op.delegate.repository).
+      addAll(service.repositoryDependencies).toSet();
+
+Collection[Service] getDelegateServices(Service service) :
+    service.operations.select(op | op.serviceDelegate != null).collect(op | op.serviceDelegate.service)
+        .addAll(service.serviceDependencies).toSet();
+
+Collection[Service] getDelegateServices(Resource resource) :
+    resource.operations.select(op | op.delegate != null).collect(op | op.delegate.service)
+        .addAll(resource.serviceDependencies).toSet();
+
+String getCollectionType(Reference ref) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getCollectionType(sculptormetamodel.Reference);
+
+String getCollectionInterfaceType(Reference ref) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getCollectionInterfaceType(sculptormetamodel.Reference);
+
+String getCollectionImplType(Reference ref) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getCollectionImplType(sculptormetamodel.Reference);
+
+String getGetAccessor(NamedElement element) :
+    "get" + element.name.toFirstUpper();
+
+String getGetAccessor(TypedElement e) :
+    e.getGetAccessor("");
+
+String getGetAccessor(TypedElement e, String prefix) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getGetAccessor(sculptormetamodel.TypedElement, java.lang.String);
+
+String getSetAccessor(NamedElement element) :
+    "set" + element.name.toFirstUpper();
+
+cached String getRepositoryBaseName(Repository repository) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getRepositoryBaseName(sculptormetamodel.Repository);
+
+String getGenericType(RepositoryOperation op)    :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getGenericType(sculptormetamodel.RepositoryOperation);
+
+boolean isGenericAccessObject(RepositoryOperation op) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.isGenericAccessObject(sculptormetamodel.RepositoryOperation);
+
+boolean hasAccessObjectPersistentClassConstructor(RepositoryOperation op) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.hasAccessObjectPersistentClassConstructor(sculptormetamodel.RepositoryOperation);
+
+String getAccessObjectName(RepositoryOperation op) :
+    (op.accessObjectName == null || op.accessObjectName == "") ?
+        op.name.toFirstUpper() + "Access" :
+        op.accessObjectName.toFirstUpper();
+
+String getAccessBase(RepositoryOperation op) :
+    let className = ((op.throws == null || op.throws == "") ?
+        accessBaseClass() :
+        accessBaseWithExceptionClass()) :
+    className.endsWith(">") ?
+    	className :
+    	className + "<Object>";
+
+boolean hasPagingParameter(RepositoryOperation op) :
+	op.getPagingParameter() != null;
+
+Parameter getPagingParameter(RepositoryOperation op) :
+	op.parameters.selectFirst(e | e.isPagingParameter());
+
+boolean hasPagingParameter(ServiceOperation op) :
+	op.getPagingParameter() != null;
+
+Parameter getPagingParameter(ServiceOperation op) :
+	op.parameters.selectFirst(e | e.isPagingParameter());
+
+boolean isPagingParameter(Parameter param) :
+    param.type == "PagingParameter";
+
+boolean isPaged(Operation op) :
+    op.hasHint("paged");
+
+Attribute getIdAttribute(DomainObject domainObject) :
+    domainObject.getAllAttributes().selectFirst(a | a.name == "id");
+
+String getIdAttributeType(DomainObject domainObject) :
+	let idAttribute = domainObject.getIdAttribute() :
+	idAttribute == null ? null : idAttribute.getTypeName();
+
+Collection[DomainObject] getSubclasses(DomainObject domainObject) :
+    domainObject.module.application.getAllDomainObjects().select(d | d.extends == domainObject);
+
+cached Collection[DomainObject] getAllSubclasses(DomainObject domainObject) :
+    domainObject.getSubclasses().
+      addAll(domainObject.getSubclasses().getAllSubclasses());
+
+boolean hasOwnDatabaseRepresentation(DomainObject domainObject) :
+    domainObject.isEntityOrPersistentValueObject();
+
+// Include Entity and persistent ValueObject,
+// skip BasicType, Enum and non persistent ValueObject
+boolean isEntityOrPersistentValueObject(DomainObject domainObject) :
+	(domainObject.isPersistent() && domainObject.metaType != BasicType);
+
+boolean isPersistent(DomainObject domainObject) :
+	false;
+
+boolean isPersistent(Entity domainObject) :
+	true;
+
+boolean isPersistent(ValueObject domainObject) :
+	domainObject.persistent;
+
+boolean isPersistent(DataTransferObject domainObject) :
+	false;
+
+boolean isPersistent(BasicType domainObject) :
+	true;
+
+boolean isOneToOne(Reference ref) :
+	!ref.many && ref.opposite != null && !ref.opposite.many;
+
+boolean isOneToMany(Reference ref) :
+    ref.many && ((ref.opposite != null && !ref.opposite.many) || (ref.opposite == null && ref.isInverse()));
+
+boolean isManyToMany(Reference ref) :
+    ref.many && ((ref.opposite != null && ref.opposite.many) || (ref.opposite == null && !ref.isInverse()));
+
+boolean checkCyclicDependencies(Module module) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DependencyConstraints.checkCyclicDependencies(sculptormetamodel.Module);
+
+boolean checkAggregateReferences(Application app) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.AggregateConstraints.checkAggregateReferences(sculptormetamodel.Application);
+
+Collection[RepositoryOperation] getDistinctOperations(Repository repository) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.distinctOperations(sculptormetamodel.Repository);
+
+Collection[String] getExceptions(Operation op) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.exceptions(sculptormetamodel.Operation);
+
+Collection[String] getAllGeneratedExceptions(Module module) :
+    module.services.operations.getGeneratedExceptions().addAll(
+        module.getAllRepositories().operations.getGeneratedExceptions()).toSet() ;
+
+Collection[String] getAllGeneratedWebServiceExceptions(Module module) :
+    module.services.select(e | e.webService).operations.getGeneratedExceptions().toSet();
+
+Collection[String] getGeneratedExceptions(Operation op) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.generatedExceptions(sculptormetamodel.Operation);
+
+boolean hasNotFoundException(RepositoryOperation op) :
+	op.getExceptions().contains(getExceptionPackage(op.repository.aggregateRoot.module) + "." + op.repository.aggregateRoot.name + "NotFoundException");
+
+boolean hasNotFoundException(ServiceOperation op) :
+	op.getExceptions().exists(e|e.endsWith("NotFoundException"));
+
+String debugTrace(String msg) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.debugTrace(java.lang.String);
+
+String error(String msg) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.error(java.lang.String);
+
+Integer currentTimeMillis() :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.currentTimeMillis();
+
+String formatJavaDoc(NamedElement element) :
+    formatJavaDocString(element.doc);
+
+String formatJavaDocString(String doc) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.formatJavaDoc(java.lang.String);
+
+// removes last s to make the word into singular
+String singular(String str) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.SingularPluralConverter.toSingular(java.lang.String);
+
+// adds s to the end to make the word into plural
+String plural(String str) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.SingularPluralConverter.toPlural(java.lang.String);
+
+DomainObject getRootExtends(DomainObject domainObject) :
+    domainObject.extends == null ?
+        domainObject :
+        domainObject.extends.getRootExtends();
+
+List[Reference] getNaturalKeyReferences(DomainObject domainObject) :
+    domainObject.references.select(a | a.naturalKey);
+
+List[Reference] getAllNaturalKeyReferences(DomainObject domainObject) :
+    domainObject.extends == null ?
+        domainObject.getNaturalKeyReferences() :
+        domainObject.extends.getAllNaturalKeyReferences().addAll(domainObject.getNaturalKeyReferences());
+
+boolean hasNaturalKey(DomainObject domainObject) :
+    !domainObject.getAllNaturalKeyAttributes().isEmpty || !domainObject.getAllNaturalKeyReferences().isEmpty;
+
+List[Attribute] getNaturalKeyAttributes(DomainObject domainObject) :
+    domainObject.attributes.select(a | a.naturalKey);
+
+List[Attribute] getAllNaturalKeyAttributes(DomainObject domainObject) :
+    domainObject.extends == null ?
+        domainObject.getNaturalKeyAttributes() :
+        domainObject.extends.getAllNaturalKeyAttributes().addAll(domainObject.getNaturalKeyAttributes());
+
+List[NamedElement] getAllNaturalKeys(DomainObject domainObject) :
+	getAllNaturalKeyAttributes(domainObject).addAll(getAllNaturalKeyReferences(domainObject));
+
+boolean isBasicTypeReference(NamedElement ref) :
+	false;
+
+boolean isBasicTypeReference(Reference ref) :
+    !ref.many && (ref.to.metaType == BasicType);
+
+List[Reference] getAllBasicTypeReferences(DomainObject domainObject) :
+    domainObject.getAllReferences().select(r | r.isBasicTypeReference());
+
+List[Reference] getBasicTypeReferences(DomainObject domainObject) :
+    domainObject.references.select(r | r.isBasicTypeReference());
+
+boolean isEnumReference(NamedElement ref) :
+    false;
+
+boolean isEnumReference(Reference ref) :
+    !ref.many && (ref.to.metaType == Enum);
+
+Collection[Reference] getEnumReferences(DomainObject domainObject) :
+    domainObject.references.select(r | r.isEnumReference());
+
+Collection[Reference] getAllEnumReferences(DomainObject domainObject) :
+    domainObject.getSuperAllEnumReferences().
+        addAll(domainObject.getEnumReferences());
+
+private Collection[Reference] getSuperAllEnumReferences(DomainObject domainObject) :
+    (domainObject.extends == null) ?
+        {} :
+        domainObject.extends.getAllEnumReferences();
+
+cached Set[Reference] getAllReferences(Application app) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getAllReferences(sculptormetamodel.Application);
+
+boolean hasConsumers(Application app) :
+    !app.modules.consumers.isEmpty;
+
+boolean isPrimitiveType(String typeName) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.isPrimitiveType(java.lang.String);
+
+String getObjectTypeName(String typeName) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getObjectTypeName(java.lang.String);
+
+Attribute getIdentifierAttribute(Enum enum) :
+	enum.hasNaturalKey() ?
+		enum.attributes.select(a | a.naturalKey).get(0) :
+		null;
+
+Void setGlobalApplication(Application app) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.setApp(sculptormetamodel.Application);
+
+Application getGlobalApplication() :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getApp();
+
+boolean isEmbeddable(DomainObject domainObject) :
+    // Only BasicType is embeddable
+    ((domainObject.metaType == BasicType));
+
+boolean isDataTranferObject(DomainObject domainObject) :
+    ((domainObject.metaType == DataTransferObject));
+
+boolean hasSubClass(DomainObject domainObject) :
+	((getSubclasses(domainObject) != null) && (!getSubclasses(domainObject).isEmpty));
+
+boolean hasSuperClass(DomainObject domainObject) :
+	(domainObject.extends != null);
+
+DomainObject getDomainObject(NamedElement elem) :
+	error("NamedElement doesn't belong to a DomainObject: " + elem) ->
+	null;
+
+DomainObject getDomainObject(Attribute attribute) :
+    (DomainObject) attribute.eContainer;
+
+Operation getOperation(Parameter parameter) :
+    (Operation) parameter.eContainer;
+
+RepositoryOperation getRepositoryOperation(Parameter parameter) :
+    (parameter.getOperation().metaType == RepositoryOperation) ?
+        ((RepositoryOperation) parameter.getOperation()) :
+            null;
+
+ServiceOperation getServiceOperation(Parameter parameter) :
+    (parameter.getOperation().metaType == ServiceOperation) ?
+        ((ServiceOperation) parameter.getOperation()) :
+            null;
+
+DomainObject getDomainObject(Reference ref) :
+	(DomainObject) ref.eContainer;
+
+boolean hasSimpleNaturalKey(DomainObject domainObject) :
+    !domainObject.hasCompositeNaturalKey();
+
+boolean hasCompositeNaturalKey(DomainObject domainObject) :
+    domainObject.getAllNaturalKeys().size > 1;
+
+boolean isSimpleNaturalKey(Attribute attribute) :
+    (attribute.naturalKey && hasSimpleNaturalKey(attribute.getDomainObject()));
+
+boolean isSimpleNaturalKey(Reference ref) :
+    (ref.naturalKey && hasSimpleNaturalKey(ref.from));
+
+Attribute getUuid(DomainObject domainObject) :
+	domainObject.getAllAttributes().selectFirst(e | e.isUuid());
+
+boolean isUuid(Attribute attribute) :
+	attribute.name == "uuid";
+
+Collection[Enum] getAllEnums(Application app) :
+	app.modules.domainObjects.select(d | d.metaType == Enum);
+
+boolean isValueObjectReference(Reference ref) :
+    !ref.many && (ref.to.metaType == ValueObject);
+
+List[String] getEntityListeners(DomainObject domainObject) :
+	((domainObject.metaType == Entity) || (domainObject.metaType == ValueObject)) ?
+		validationEntityListener() :
+		null;
+
+String getValidationEntityListener(DomainObject domainObject) :
+	(isValidationAnnotationToBeGenerated() && (domainObject.metaType == Entity) || (domainObject.metaType == ValueObject)) ?
+		validationEntityListener() :
+		null;
+
+String getAuditEntityListener(DomainObject domainObject) :
+		null;
+
+String getAuditEntityListener(Entity entity) :
+	entity.auditable ?
+		auditEntityListener() :
+		null;
+
+String formatAnnotationParameters(List[Object] list) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.formatAnnotationParameters(java.util.List);
+
+String formatAnnotationParameters(String annotation, List[Object] list) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.formatAnnotationParameters(java.lang.String, java.util.List);
+
+String dataSourceName(Application app, String persistenceUnitName) :
+	if (dbProduct() == "hsqldb-inmemory" && applicationServer() == "jetty") then
+		"applicationDS"
+	else if app.isDefaultPersistenceUnitName(persistenceUnitName) then
+		app.name + "DS"
+	else
+		persistenceUnitName + "DS";
+
+String dataSourceName(Application app) :
+	app.dataSourceName(app.persistenceUnitName());
+
+boolean isXmlElementToBeGenerated(Attribute attr) :
+	isXmlBindAnnotationToBeGenerated() &&
+		isXmlBindAnnotationToBeGenerated(attr.getDomainObject().simpleMetaTypeName());
+
+boolean isXmlElementToBeGenerated(Reference ref) :
+	isXmlBindAnnotationToBeGenerated() &&
+		isXmlBindAnnotationToBeGenerated(ref.from.simpleMetaTypeName());
+
+boolean isXmlRootToBeGenerated(DomainObject domainObject) :
+	isXmlBindAnnotationToBeGenerated() &&
+		isXmlBindAnnotationToBeGenerated(domainObject.simpleMetaTypeName()) &&
+		("true" == domainObject.getHint("xmlRoot"));
+
+List[String] reversePackageName(String packageName) :
+	packageName.split('\\.').reverse();
+
+List[String] supportedCollectionTypes() :
+	{"List", "Set", "Bag", "Map"};
+
+List[String] supportedTemporalTypes() :
+	{"Date", "DateTime", "Timestamp"};
+
+List[String] supportedNumericTypes() :
+	{"integer", "long", "float", "double", "Integer", "Long", "Float", "Double", "BigInteger", "BigDecimal"};
+
+boolean isString(Attribute attribute) :
+	(attribute.type == "String") && !attribute.isCollection();
+
+boolean isBoolean(Attribute attribute) :
+	{"Boolean", "boolean"}.contains(attribute.type) && !attribute.isCollection();
+
+boolean isNumeric(Attribute attribute) :
+	supportedNumericTypes().contains(attribute.type) && !attribute.isCollection();
+
+boolean isTemporal(Attribute attribute) :
+	supportedTemporalTypes().contains(attribute.type) && !attribute.isCollection();
+
+boolean isDate(Attribute attribute) :
+	attribute.type == "Date";
+
+boolean isDateTime(Attribute attribute) :
+	attribute.type == "DateTime" || attribute.type == "Timestamp";
+
+boolean isPrimitive(Attribute attribute) :
+	isPrimitiveType(attribute.getTypeName()) && !attribute.isCollection();
+
+boolean isCollection(Attribute attribute) :
+	attribute.collectionType != null && supportedCollectionTypes().contains(attribute.collectionType);
+
+boolean isCollection(Reference reference) :
+	reference.collectionType != null && supportedCollectionTypes().contains(reference.collectionType);
+
+boolean isList(Reference ref) :
+    "list" == ref.getCollectionType();
+
+/*
+ * Hint support
+ */
+cached boolean hasHint(NamedElement element, String parameterName) :
+    hasHintImpl(element.hint, parameterName);
+
+cached boolean hasHint(NamedElement element, String parameterName, String separator) :
+    getHintImpl(element.hint, parameterName, separator) != null;
+
+boolean hasHintImpl(String hint, String parameterName) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.hasHint(java.lang.String, java.lang.String);
+
+String getHint(NamedElement element, String parameterName) :
+    getHintImpl(element.hint, parameterName, ",;");
+
+String getHintOrDefault(NamedElement element, String parameterName, String defaultValue) :
+    ifNull(element.getHint(parameterName), defaultValue);
+
+String getHintOrDefault(NamedElement element, String parameterName, String separator, String defaultValue) :
+    ifNull(element.getHint(parameterName, separator), defaultValue);
+
+String ifNull(String value, String defaultValue) :
+    (value == null) ? defaultValue : value;
+
+String ifEmpty(String value, String defaultValue) :
+    (value != null && value.length == 0) ? defaultValue : value;
+
+String ifNullOrEmpty(String value, String defaultValue) :
+    (value == null || value.length == 0) ? defaultValue : value;
+
+String getHint(NamedElement element, String parameterName, String separator) :
+    getHintImpl(element.hint, parameterName, separator);
+
+String getHintImpl(String hint, String parameterName, String separator) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getHint(java.lang.String, java.lang.String, java.lang.String);
+
+Void addHint(NamedElement element, String hint) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addHint(sculptormetamodel.NamedElement, java.lang.String);
+
+Void addHint(NamedElement element, String hint, String separator) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addHint(sculptormetamodel.NamedElement, java.lang.String, java.lang.String);
+
+List addFirst(List keys, Object value) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addFirst(java.util.List, java.lang.Object);
+
+List filter(List keys, List values) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.filter(java.util.List, java.util.List);
+
+String toCommaSeparatedString(List values) :
+	toSeparatedString(values, ",");
+
+String toSeparatedString(List values, String separator) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.toSeparatedString(java.util.List, java.lang.String);
+
+String persistenceUnitName(Application app) :
+	isJpaProviderAppEngine() ?
+		"transactions-optional" :
+		app.name + "EntityManagerFactory";
+
+boolean isDefaultPersistenceUnitName(Application app, String unitName) :
+	unitName == app.persistenceUnitName();
+
+String persistenceContextUnitName(Repository repository) :
+	(usePersistenceContextUnitName() && repository.aggregateRoot.module.persistenceUnit != "null") ?
+		repository.aggregateRoot.module.persistenceUnit :
+		"";
+
+boolean isUnownedReference(NamedElement elem) :
+	false;
+
+boolean isUnownedReference(Reference ref) :
+	(isJpaProviderAppEngine() || nosql()) && ref.from.isPersistent() && !ref.transient && ref.to.hasOwnDatabaseRepresentation()
+		&& !ref.hasOwnedHint() && (!ref.from.getAggregate().contains(ref.to) || ref.hasUnownedHint());
+
+boolean hasOwnedHint(Reference ref) :
+	ref.hasHint("owned") || (ref.opposite != null && ref.opposite.hasHint("owned"));
+
+boolean hasUnownedHint(Reference ref) :
+	ref.hasHint("unowned") || (ref.opposite != null && ref.opposite.hasHint("unowned"));
+
+String unownedReferenceSuffix(NamedElement elem) :
+	"";
+
+String unownedReferenceSuffix(Reference ref) :
+	ref.isUnownedReference() ?
+		(ref.many ? "Ids" : "Id") :
+		"";
+
+boolean useJpaBasicAnnotation(Attribute attr) :
+	isJpaProviderAppEngine() && (attr.getTypeName() == "com.google.appengine.api.datastore.Key");
+
+boolean useJpaLobAnnotation(Attribute attr) :
+	(attr.type == "Clob" || attr.type == "Blob");
+
+String extendsLitteral(Repository repository) :
+	let prop = defaultExtendsClass(repository.simpleMetaTypeName()) :
+	prop != '' ?
+		("extends " + prop) :
+		(
+			if (!isSpringToBeGenerated()) then ""
+			else if jpa() then "extends org.springframework.orm.jpa.support.JpaDaoSupport"
+			else ""
+		);
+
+String extendsLitteral(Service service) :
+	let prop = defaultExtendsClass(service.simpleMetaTypeName()) :
+	prop != '' ?
+		"extends " + prop :
+		"";
+
+String extendsLitteral(Resource resource) :
+	let prop = defaultExtendsClass(resource.simpleMetaTypeName()) :
+	prop != '' ?
+		"extends " + prop :
+		"";
+
+boolean isIdentifiable(DomainObject domainObject) :
+	domainObject.attributes.exists(e | e.name == "id" && e.getTypeName() == "Long");
+
+// The root of the aggregate that the domainObject belongs to
+DomainObject getAggregateRootObject(DomainObject domainObject) :
+	domainObject.belongsToAggregate != null ?
+		domainObject.belongsToAggregate :
+		(domainObject.aggregateRoot ?
+			domainObject :
+			(!domainObject.isEntityOrPersistentValueObject() ?
+				domainObject :
+				domainObject.module.application.getAllDomainObjects().select(e | e.aggregateRoot)
+					.selectFirst(e | e.getAggregate().contains(domainObject))
+			)
+		);
+
+boolean bothEndsInSameAggregateRoot(Reference ref) :
+	ref.to.getAggregateRootObject() == ref.from.getAggregateRootObject();
+
+
+// All DomainObjects in same aggregate group as the domainObject
+Collection[DomainObject] getAggregate(DomainObject domainObject) :
+	domainObject.isEntityOrPersistentValueObject() ?
+		domainObject.getAggregateImpl() :
+		{domainObject}.toSet();
+
+private Collection[DomainObject] getAggregateImpl(DomainObject domainObject) :
+	if domainObject.aggregateRoot then
+	(
+		let aggregate = {}.toSet() :
+		domainObject.collectAggregateObjects(aggregate)
+	)
+	else
+	(
+		let root = domainObject.getAggregateRootObject() :
+		(root == null || (root == domainObject)) ? {domainObject} : root.getAggregate()
+	);
+
+private Collection[DomainObject] collectAggregateObjects(DomainObject domainObject, Set[DomainObject] aggregate) :
+	if aggregate.contains(domainObject) then aggregate
+	else (
+		aggregate.add(domainObject) ->
+		domainObject.references.reject(e | e.to.isAggregateRoot()).collect(e | e.to).select(d | d.isEntityOrPersistentValueObject())
+			.collectAggregateObjects(aggregate) ->
+		aggregate
+	);
+
+String getJpaFlushEagerInterceptorClass(Module module) :
+	// when using multiple persistence units it must be possible to define separate JpaFlushEagerInterceptor
+	if hasProperty("jpa.JpaFlushEagerInterceptor." + module.persistenceUnit) then
+		getProperty("jpa.JpaFlushEagerInterceptor." + module.persistenceUnit)
+	else
+		fw("errorhandling.JpaFlushEagerInterceptor");
+
+boolean validateNotNullInConstructor(NamedElement any) :
+	false;
+
+boolean validateNotNullInConstructor(Reference ref) :
+	(!ref.isNullable() && !ref.changeable && (notChangeableReferenceSetterVisibility() == "private"));
+
+boolean validateNotNullInConstructor(Attribute att) :
+	!att.isNullable() && !att.isPrimitive();
+
+Module getModule(NamedElement elem) :
+	if (elem == null || elem.metaType == Module) then
+		((Module) elem)
+	else
+		((NamedElement) elem.eContainer).getModule();
+
+String toStringStyle(DomainObject domainObject) :
+	if (domainObject.hasHint("toStringStyle")) then
+		domainObject.getHint("toStringStyle")
+	else if hasProperty("toStringStyle") then
+		getProperty("toStringStyle")
+	else
+		null;
+
+String simpleMetaTypeName(NamedElement element) :
+	element.metaType.name.split("::").last();
+
+String docMetaTypeName(NamedElement element) :
+	simpleMetaTypeName(element);
+
+boolean isEventSubscriberOperation(Operation op) :
+	op.name == "receive" && op.parameters.size == 1 && op.parameters.first().type == fw("event.Event");
+
+cached String errorCodeType(Module module) :
+	hasProperty("exception.code.enum") ?
+		(
+		let enumName = getProperty("exception.code.enum") :
+		let enumType = module.application.modules.domainObjects.selectFirst(e | e.name == enumName) :
+		if (enumType == null) then error("You need to define enum " + enumName + " in model for the error codes") ->
+		enumType.getDomainPackage() + "." + enumType.name
+		) :
+		"int";
+
+boolean isImplementedInGapClass(DomainObjectOperation op) :
+	(!op.abstract && !op.hasHint("trait")) || (op.abstract && op.hasHint("trait"));
+
+boolean isImplementedInGapClass(ServiceOperation op) :
+	(op.delegate == null && op.serviceDelegate == null);
+
+boolean isImplementedInGapClass(ResourceOperation op) :
+	(op.delegate == null && !(op.parameters.isEmpty && op.returnString != null && op.httpMethod == HttpMethod::GET));
+
+String counterInc(String counter) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.counterInc(java.lang.String);
+
+Void counterReset(String counter, Integer initValue) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.counterReset(java.lang.String, java.lang.Integer);
+
+HttpMethod mapHttpMethod(String methodName) :
+	switch (methodName) {
+		case "GET" :
+			HttpMethod::GET
+		case "POST" :
+			HttpMethod::POST
+		case "PUT" :
+			HttpMethod::PUT
+		case "DELETE" :
+			HttpMethod::DELETE
+		default :
+			null
+	};
+
+String removeSuffix(String str, String suffix) :
+	(str.endsWith(suffix) ?
+		str.subString(0, str.length - suffix.length) :
+		str);
+
+String getDomainResourceName(Resource resource) :
+	resource.name.removeSuffix("Resource");
+
+String getXStreamAliasName(DomainObject domainObject) :
+	domainObject.name.removeSuffix("DTO").removeSuffix("Dto");
+
+String getXmlRootElementName(DomainObject domainObject) :
+	domainObject.name.removeSuffix("DTO").removeSuffix("Dto");
+
+boolean isRestRequestParameter(Parameter param) :
+    !getNotRestRequestParameter().contains(param.type);
+
+String replacePlaceholder(String str, String placeholder, String replacement) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.replacePlaceholder(java.lang.String, java.lang.String, java.lang.String);
+
+String getApplicationBasePackage(DomainObject domainObject) :
+    domainObject.module.application.basePackage;
+
+String getApplicationBasePackage(Reference reference) :
+    getApplicationBasePackage(reference.getDomainObject());
+
+String getApplicationBasePackage(Attribute attribute) :
+	getApplicationBasePackage(attribute.getDomainObject());
+
+DomainObject getAggregateRoot(RepositoryOperation op) :
+    op.repository.aggregateRoot;
+
+String getAggregateRootTypeName(Repository repository) :
+    repository.aggregateRoot.getDomainObjectTypeName();
+
+String getAggregateRootTypeName(RepositoryOperation op) :
+    op.repository.getAggregateRootTypeName();
+
+String getAggregateRootPropertiesTypeName(RepositoryOperation op) :
+    op.repository.getAggregateRootTypeName() + "Properties";
+
+boolean isOrdinaryEnum(Enum enum) :
+     enum.getIdentifierAttribute() == null;
+
+Enum getEnum(Reference ref) :
+    if (ref.isEnumReference()) then
+        ((Enum) ref.to)
+    else
+        error("Reference is not of type enum");
+
+boolean containsNonOrdinaryEnums(Application application) :
+    application.getAllEnums().exists(e|!e.isOrdinaryEnum());
+
+boolean hasParameters(RepositoryOperation op) :
+    op.parameters != null && !op.parameters.isEmpty;
+
+boolean hasAttribute(DomainObject domainObject, String name) :
+    domainObject.getAllAttributes().exists(a | a.name == name);
+
+boolean hasReference(DomainObject domainObject, String name) :
+    domainObject.getAllReferences().exists(a | a.name == name);
+
+boolean hasAttributeOrReference(DomainObject domainObject, String name) :
+    domainObject.hasAttribute(name) || domainObject.hasReference(name);
+
+private String getPropertyPath(String propertyName, DomainObject aggregateRoot) :
+    if (propertyName.contains("_")) then
+        propertyName.replaceAll("_", ".")
+    else
+        if (aggregateRoot.hasAttributeOrReference(propertyName)) then
+            propertyName
+        else if (aggregateRoot.getAllReferences().exists(e | e.to.hasAttributeOrReference(propertyName))) then
+            aggregateRoot.getAllReferences().selectFirst(e | e.to.hasAttributeOrReference(propertyName)).name + "." + propertyName
+        else
+            null;
+
+private String getReferencePathFromReturnType(RepositoryOperation op) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getReferencePathFromReturnType(sculptormetamodel.RepositoryOperation);
+
+String getDomainObjectTypeName(DomainObject domainObject) :
+    domainObject.getDomainPackage() + "." + domainObject.name;
+
+String getGenericResultTypeName(RepositoryOperation op)    :
+    if (op.collectionType != null || op.isPagedResult()) then
+        op.getTypeName().replaceAll(getDomainObjectTypeName(op.domainObjectType),"R")
+    else
+        "R";
+
+String getResultTypeName(RepositoryOperation op) :
+    if (op.type != null && !op.isPagedResult()) then (
+        if (op.isReturningPrimitiveType()) then
+            getObjectTypeName(op.getTypeName())
+        else
+            op.type)
+    else if (op.domainObjectType != null) then
+        getDomainObjectTypeName(op.domainObjectType)
+    else
+        null;
+
+String getAccessObjectResultTypeName2(RepositoryOperation op) :
+    if (op.isPagedResult()) then
+        "PagedResult<" + op.getResultTypeName() + ">"
+    else if (op.collectionType != null) then
+        "List<" + op.getResultTypeName() + ">"
+    else
+        op.getResultTypeName();
+
+String getResultTypeNameForMapping(RepositoryOperation op) :
+    if (op.useTupleToObjectMapping()) then
+        "javax.persistence.Tuple"
+    else
+        op.getResultTypeName();
+
+String getNotFoundExceptionName(RepositoryOperation op) :
+    (op.domainObjectType != null ? op.domainObjectType.name : "") + "NotFoundException";
+
+boolean throwsNotFoundException(RepositoryOperation op) :
+    op.throws != null && op.throws.contains(op.getNotFoundExceptionName());
+
+String removeSurrounding(String s, String char) :
+    if (s.startsWith(char) && s.endsWith(char)) then
+        s.subString(1, s.length -1)
+    else
+        s;
+
+boolean hasHintEquals(NamedElement element, String parameterName, String parameterValue) :
+    element.hasHint(parameterName) && element.getHint(parameterName) == parameterValue;
+
+boolean isGeneratedFinder(RepositoryOperation op) :
+    generateFinders() &&
+        !op.hasHint("gap") &&
+            (op.isQueryBased() || op.isConditionBased());
+
+boolean isQueryBased(RepositoryOperation op) :
+    isJpa2() && op.hasHint("query");
+
+boolean isConditionBased(RepositoryOperation op) :
+    (op.hasHint("construct") || op.hasHint("build") || op.hasHint("condition") || op.hasHint("select") || op.name.startsWith("find"));
+
+// TODO: quick solution, it would be better to implement a new access strategy
+boolean useGenericAccessStrategy(RepositoryOperation op) :
+    isJpa2() &&
+        (op.name == "findAll" ||
+         op.name == "findByQuery" ||
+         op.name == "findByExample" ||
+         op.name == "findByKeys" ||
+         op.name == "findByNaturalKeys" ||
+         op.name == "findByCondition" ||
+         op.name == "findByCriteria");
+
+boolean useTupleToObjectMapping(RepositoryOperation op) :
+    isJpa2() &&
+        (!op.hasHint("construct") &&
+            (op.hasHint("map") || op.isReturningDataTranferObject()));
+
+private boolean isReturningDataTranferObject(RepositoryOperation op) :
+    (op.domainObjectType != null && op.domainObjectType.isDataTranferObject());
+
+String buildConditionalCriteria(RepositoryOperation op) :
+    let condition = op.getHintOrDefault("condition", ";", "") :
+    if (condition.containsSqlPart()) then
+        condition
+    else
+        (op.hasHint("select") ? "select " + op.getHint("select",";") : op.buildSelect()) +
+        (op.hasHint("condition") ? " where " +  op.getHint("condition",";") : op.buildWhere()) +
+        (op.hasHint("groupBy") ? " group by " +  op.getHint("groupBy",";") : "") +
+        (op.hasHint("orderBy") ? " order by " +  op.getHint("orderBy",";") : "");
+
+String buildQuery(RepositoryOperation op) :
+    let query = op.getHintOrDefault("query", ";", "") :
+    if (query.isNamedQuery() || query.containsSqlPart()) then
+        query
+    else
+        "select object(o) from " + op.getAggregateRoot().name + " o where " + query;
+
+private boolean isNamedQuery(String query) :
+    !query.trim().contains(" ");
+
+private boolean containsSqlPart(String query) :
+    (query.contains("select") || query.contains("from") || query.contains("where") || query.contains("orderBy"));
+
+private String buildSelect(RepositoryOperation op) :
+    if (op.domainObjectType == null || op.isReturningAggregateRoot()) then
+        ""
+    else
+        op.buildSelectFromReturnType();
+
+private boolean isReturningAggregateRoot(RepositoryOperation op) :
+    (op.getAggregateRoot() == op.domainObjectType);
+
+private boolean isReturningPrimitiveType(RepositoryOperation op) :
+    (op.type != null && isPrimitiveType(op.getTypeName()));
+
+private String buildSelectFromReturnType(RepositoryOperation op) :
+    if (op.buildSelectForReference() != null) then
+        op.buildSelectForReference()
+    else if (op.buildSelectUsingAttributes() != null) then
+        op.buildSelectUsingAttributes()
+    else
+        error(
+            "Could not set select from return type for domain object '" + op.getAggregateRoot().name + "'. " +
+            "Add gap or select to repository operation '" + op.name + "' in repository '" + op.repository.name + "'");
+
+private String buildSelectForReference(RepositoryOperation op) :
+    let path = op.getReferencePathFromReturnType() :
+    (path != null) ? "select " + path : null;
+
+private String buildSelectUsingAttributes(RepositoryOperation op) :
+    let returnType = op.domainObjectType :
+    let aggregateRoot = op.getAggregateRoot() :
+    let matchingProperties = getMatchingPropertyNamesToSelect(returnType, aggregateRoot) :
+    if (!matchingProperties.isEmpty) then
+        "select " + matchingProperties.getPropertyPath(aggregateRoot).toSeparatedString(", ")
+    else
+        null;
+
+private List[String] getMatchingPropertyNamesToSelect(DomainObject returnType, DomainObject aggregateRoot) :
+    returnType.getAllAttributes().select(attr|getPropertyPath(attr.name, aggregateRoot) != null).name;
+
+private String buildWhere(RepositoryOperation op) :
+    (op.hasHint("useName")) ? op.buildWhereFromOperationName() : op.buildWhereFromParameters();
+
+private String buildWhereFromParameters(RepositoryOperation op) :
+    let expressions = ({}.addAll(op.parameters.buildExpression())).toList().toSeparatedString(" and ") :
+    (expressions.length > 0) ? " where " + expressions : "";
+
+private String buildExpression(Parameter parameter) :
+    let operation = parameter.getRepositoryOperation() :
+    let aggregateRoot = operation.getAggregateRoot() :
+    let propertyPath = getPropertyPath(parameter.name, aggregateRoot) :
+    if (propertyPath != null) then
+        propertyPath + " = :" + parameter.name
+    else
+        error(
+            "Could not find an attribute '" + parameter.name + "' in domain object '" + aggregateRoot.name + "'. " +
+            "Add gap to repository operation '" + operation.name + "' in repository '" + operation.repository.name + "'");
+
+private String buildWhereFromOperationName(RepositoryOperation op) :
+    error("buildWhereFromOperationName is not implemented");
+
+String toConditionalCriteria(String query, String rootProperty) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.toConditionalCriteria(java.lang.String, java.lang.String);
+
+boolean isValidationAnnotationToBeGeneratedForObject(DomainObject domainObject) :
+	if isDataTranferObject(domainObject) then
+		isValidationAnnotationToBeGenerated() && isDtoValidationAnnotationToBeGenerated()
+	else
+		isValidationAnnotationToBeGenerated();
+
+boolean isValidationAnnotationToBeGeneratedForObject(Attribute attribute) :
+	if isDataTranferObject(attribute.getDomainObject()) then
+		isValidationAnnotationToBeGenerated() && isDtoValidationAnnotationToBeGenerated()
+	else
+		isValidationAnnotationToBeGenerated();
+
+boolean isValidationAnnotationToBeGeneratedForObject(Reference reference) :
+	if isDataTranferObject(reference.getDomainObject()) then
+		isValidationAnnotationToBeGenerated() && isDtoValidationAnnotationToBeGenerated()
+	else
+		isValidationAnnotationToBeGenerated();
+
+// Builder-related extensions
+
+cached String getBuilderPackage(DomainObject domainObject) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getBuilderPackage(sculptormetamodel.DomainObject);
+
+List[Attribute] getBuilderAttributes(DomainObject domainObject) :
+	domainObject.getAllAttributes().select(a | !a.isUuid() && a != domainObject.getIdAttribute() && a.name != "version");
+
+List[Reference] getBuilderReferences(DomainObject domainObject) :
+	domainObject.getAllReferences();
+
+List[NamedElement] getBuilderConstructorParameters(DomainObject domainObject) :
+    domainObject.getConstructorParameters();
+
+List[NamedElement] getBuilderProperties(DomainObject domainObject) :
+	domainObject.getBuilderAttributes()
+		.addAll(domainObject.getBuilderReferences());
+
+String getBuilderClassName(DomainObject domainObject) :
+	domainObject.name + "Builder";
+
+String getBuilderFqn(DomainObject domainObject) :
+	domainObject.getBuilderPackage() + "." + domainObject.getBuilderClassName();
+
+boolean needsBuilder(DomainObject domainObject) :
+	domainObject.abstract == false;
+
+boolean needsBuilder(Enum domainObject) :
+  false;
+

@@ -1,0 +1,96 @@
+«REM»
+ * Copyright 2010 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::helper»
+
+«DEFINE camelConfig FOR Application»
+«FILE getResourceDir("spring") + "camel.xml" TO_RESOURCES-»
+«EXPAND header»
+	
+	«EXPAND camelEventBus»
+
+	«EXPAND camelContext»
+	«EXPAND camelJmsEndpoint»
+
+</beans>
+«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE camelTestConfig FOR Application»
+«FILE getResourceDir("spring") + "camel-test.xml" TO_RESOURCES_TEST-»
+«EXPAND header»
+	<import resource="classpath:/«getResourceDir("spring") + getApplicationContextFile("camel.xml")»"/>
+	
+	«EXPAND camelTestJmsEndpoint»
+
+</beans>
+«ENDFILE»
+«ENDDEFINE»
+
+
+«DEFINE header FOR Application»
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:camel="http://camel.apache.org/schema/spring" xmlns:broker="http://activemq.apache.org/schema/core"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+        http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
+        http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
+«ENDDEFINE»
+
+«DEFINE camelContext FOR Application»
+	<camel:camelContext id="camel">
+		<camel:package>«basePackage»</camel:package>
+		«EXPAND camelProducerTemplate»
+		«EXPAND camelContextHook»
+	</camel:camelContext>
+«ENDDEFINE»
+
+«DEFINE camelEventBus FOR Application»
+	<bean id="camelEventBusImpl" class="«fw("event.CamelEventBusImpl")»" />
+	<alias name="camelEventBusImpl" alias="eventBus" />
+«ENDDEFINE»
+
+«DEFINE camelProducerTemplate FOR Application»
+		<camel:template id="producerTemplate"/>
+«ENDDEFINE»
+
+«DEFINE camelContextHook FOR Application»
+«ENDDEFINE»
+
+«DEFINE camelJmsEndpoint FOR Application»
+	<!--
+		Camel ActiveMQ to use the ActiveMQ broker 
+	-->
+	<bean id="jms" class="org.apache.activemq.camel.component.ActiveMQComponent">
+		<property name="brokerURL" value="tcp://localhost:61616" />
+	</bean>
+«ENDDEFINE»
+
+«DEFINE camelTestJmsEndpoint FOR Application»
+	<!--
+		Camel ActiveMQ to use the inmemory ActiveMQ broker 
+	-->
+	<bean id="jms" class="org.apache.activemq.camel.component.ActiveMQComponent">
+		<property name="brokerURL" value="vm://localhost?broker.persistent=false" />
+	</bean>
+«ENDDEFINE»

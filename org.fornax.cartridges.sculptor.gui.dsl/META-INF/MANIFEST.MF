@@ -1,0 +1,35 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Sculptor GUI DSL Plug-in
+Bundle-Vendor: Fornax Sculptor
+Bundle-Version: 2.2.0.0
+Bundle-SymbolicName: org.fornax.cartridges.sculptor.gui.dsl; singleton:=true
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.fornax.cartridges.sculptor.dsl;bundle-version="2.1.0";visibility:=reexport,
+ org.eclipse.xtext;bundle-version="1.0.1",
+ org.eclipse.xtext.generator;bundle-version="1.0.1";resolution:=optional,
+ de.itemis.xtext.antlr;bundle-version="1.0.1";resolution:=optional,
+ org.apache.commons.logging;resolution:=optional,
+ org.eclipse.emf.codegen.ecore;bundle-version="[2.6.0,3.0.0)";resolution:=optional,
+ org.eclipse.emf.mwe.utils;bundle-version="[1.0.0,2.0.0)";resolution:=optional,
+ com.ibm.icu;resolution:=optional,
+ org.eclipse.xtext.xtend;bundle-version="1.0.1";resolution:=optional,
+ org.eclipse.xtext.util;bundle-version="1.0.1",
+ org.eclipse.emf.ecore;bundle-version="[2.6.0,3.0.0)",
+ org.eclipse.emf.common;bundle-version="[2.6.0,3.0.0)",
+ org.antlr.runtime;bundle-version="[3.0.0,4.0.0)",
+ org.eclipse.xtend;bundle-version="1.0.1",
+ org.apache.log4j,
+ org.eclipse.emf.mwe2.launch;bundle-version="[1.0.0,2.0.0)";resolution:=optional
+Eclipse-LazyStart: true
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Export-Package: org.fornax.cartridges.sculptor.gui.dsl,
+ org.fornax.cartridges.sculptor.gui.dsl.parseTreeConstruction,
+ org.fornax.cartridges.sculptor.gui.dsl.parser.antlr,
+ org.fornax.cartridges.sculptor.gui.dsl.sculptorguidsl,
+ org.fornax.cartridges.sculptor.gui.dsl.sculptorguidsl.impl,
+ org.fornax.cartridges.sculptor.gui.dsl.sculptorguidsl.util,
+ org.fornax.cartridges.sculptor.gui.dsl.services,
+ org.fornax.cartridges.sculptor.gui.dsl.validation,
+ org.fornax.cartridges.sculptor.gui.dsl.parser.antlr.internal
+Import-Package: org.apache.log4j

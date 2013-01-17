@@ -1,0 +1,392 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptormetamodel;
+
+extension extensions::properties;
+extension extensions::helper;
+
+String getCascade(Reference ref) :
+    ref.cascade == null || ref.cascade == "" ?
+        ref.getDerivedCascade() :
+        ref.cascade;
+
+private String getDerivedCascade(Reference ref) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getDerivedCascade(sculptormetamodel.Reference);
+
+boolean isDbOnDeleteCascade(Reference ref) :
+    isDbResponsibleForOnDeleteCascade() && (ref.getCascade() != null) && (ref.getCascade().contains("delete") || ref.getCascade().contains("all"));
+
+String getFetch(Reference ref) :
+    ref.fetch == "none" ? null :
+      ((ref.fetch == null || ref.fetch == "") ?
+        ref.getDerivedFetch() :
+        ref.fetch);
+
+private String getDerivedFetch(Reference ref) :
+    isManyToMany(ref) ?
+        null : // no default fetch for manyToMany
+        ((ref.to.isEntityOrPersistentValueObject() && !ref.to.aggregateRoot) ?
+            "join" :  // join fetch within same aggregate boundary
+            null);
+
+String getHibernateCacheUsage(Object obj) :
+    switch (cacheProvider()) {
+        case "EhCache" : "nonstrict-read-write"
+        case "TreeCache" : "nonstrict-read-write"
+        case "JbossTreeCache" : "transactional"
+        case "DeployedTreeCache" : "transactional"
+        default : "read-only"
+    };
+
+Collection[DomainObject] getDomainObjectsInCreateOrder(Application application, boolean ascending) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getDomainObjectsInCreateOrder(sculptormetamodel.Application, java.lang.Boolean);
+
+Collection[DomainObject] resolveManyToManyRelations(Application application, boolean ascending) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.resolveManyToManyRelations(sculptormetamodel.Application, java.lang.Boolean);
+
+String getDatabaseName(DomainObject domainObject) :
+    domainObject.databaseTable;
+
+String getDatabaseName(BasicType basicType) :
+    basicType.name.toUpperCase();
+
+String getDatabaseName(Attribute attribute) :
+	attribute.databaseColumn;
+
+String getDatabaseName(Reference reference) :
+	reference.databaseColumn;
+
+String getDatabaseName(NamedElement element) :
+    "UNKNOWN";
+
+String getDatabaseName(String dbColumnPrefix, NamedElement element) :
+	let elementDbName = element.getDatabaseName() :
+	let prefix = dbColumnPrefix != "" && !dbColumnPrefix.endsWith("_") ? (dbColumnPrefix + "_") : dbColumnPrefix :
+	(prefix + element.getDatabaseName()).removeTrailingUnderscore();
+
+private String removeTrailingUnderscore(String s) :
+	s.endsWith("_") ?
+		s.subString(0, s.length - 1) :
+		s;
+
+String getDefaultDatabaseName(NamedElement element) :
+	if mongoDb() && element.name == "id" then
+		"_id"
+	else if isJpaProviderAppEngine() || nosql() then
+		element.name
+	else
+		element.getDefaultDatabaseName2();
+
+private String getDefaultDatabaseName2(NamedElement element) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getDatabaseName(sculptormetamodel.NamedElement);
+
+String truncateLongDatabaseName(String name) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.truncateLongDatabaseName(java.lang.String);
+
+String truncateLongDatabaseName(String name, int max) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.truncateLongDatabaseName(java.lang.String, java.lang.Integer);
+
+String truncateLongDatabaseName(String part1, String part2) :
+	truncateLongDatabaseName(part1 + "_" + part2);
+
+String getDatabaseType(Attribute attribute) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getDatabaseType(sculptormetamodel.Attribute);
+
+String getListIndexDatabaseType() :
+	createListIndexAttribute().getDatabaseType();
+
+private create Attribute this createListIndexAttribute() :
+	setName("index") ->
+	setType("Integer");
+
+String getDiscriminatorColumnDatabaseType(Inheritance inheritance) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getDiscriminatorColumnDatabaseType(sculptormetamodel.Inheritance);
+
+String getDatabaseTypeNullability(Attribute attribute) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getDatabaseTypeNullability(sculptormetamodel.Attribute);
+
+String getDatabaseTypeNullability(Reference ref) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getDatabaseTypeNullability(sculptormetamodel.Reference);
+
+String getDatabaseLength(Attribute attribute) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getDatabaseLength(sculptormetamodel.Attribute);
+
+String getHibernateType(Attribute attribute) :
+    mapHibernateType(attribute.type);
+
+String getForeignKeyName(Reference ref) :
+	ref.databaseColumn;
+
+String getDefaultForeignKeyName(Reference ref) :
+	if isJpaProviderAppEngine() then
+		ref.name
+	else if nosql() then
+		(ref.isUnownedReference() ?
+			(ref.name + "Id" + (ref.many?"s":"")) :
+			ref.name
+		)
+	else
+		(ref.isUnidirectionalToManyWithoutJoinTable() ?
+			ref.getDefaultOppositeForeignKeyName() :
+			ref.getDefaultForeignKeyName2()
+		);
+
+private String getDefaultForeignKeyName2(Reference ref) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getDefaultForeignKeyName(sculptormetamodel.Reference);
+
+String getOppositeForeignKeyName(Reference ref) :
+	ref.opposite != null ?
+		ref.opposite.getForeignKeyName() :
+		(ref.isUnidirectionalToManyWithoutJoinTable() ?
+			ref.databaseColumn :
+			// unidirectional to-many with join table
+			ref.getDefaultOppositeForeignKeyName()
+		);
+
+String getDefaultOppositeForeignKeyName(Reference ref) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getDefaultOppositeForeignKeyName(sculptormetamodel.Reference);
+
+String getForeignKeyType(Reference ref) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getForeignKeyType(sculptormetamodel.Reference);
+
+String getExtendsForeignKeyName(DomainObject domainObject)    :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getExtendsForeignKeyName(sculptormetamodel.DomainObject);
+
+String getForeignKeyType(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getForeignKeyType(sculptormetamodel.DomainObject);
+
+boolean isInverse(Reference ref) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.isInverse(sculptormetamodel.Reference);
+
+String getManyToManyJoinTableName(Reference ref) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getManyToManyJoinTableName(sculptormetamodel.Reference);
+
+// getManyToManyJoinTableName() is used also for OnteToMany relationship with jointables
+// TODO: JPA2 supports jointables for all types of relationships, if we like to support this to, maybe we need an more common solution to get the jointable name
+// String getOneToManyJoinTableName(Reference ref) :
+//    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getOneToManyJoinTableName(sculptormetamodel.Reference);
+
+String getElementCollectionTableName(Attribute attribute) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getElementCollectionTableName(sculptormetamodel.Attribute);
+
+String getElementCollectionTableName(Reference reference) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getElementCollectionTableName(sculptormetamodel.Reference);
+
+// get unique list of join tables
+Set[String] getJoinTableNames(Collection[DomainObject] domainObjects) :
+        domainObjects.collect( d | d.getJoinTableNames()).flatten().toSet();
+
+// get join tables for this domain object
+Set[String] getJoinTableNames(DomainObject domainObject) :
+        domainObject.references.select(r | !r.transient && isManyToMany(r)
+                && r.to.hasOwnDatabaseRepresentation())
+                .getManyToManyJoinTableName();
+
+String getEnumDatabaseType(Reference ref) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getEnumDatabaseType(sculptormetamodel.Reference);
+
+String getEnumDatabaseLength(Reference ref) :
+    let length = getEnumDatabaseLength(ref.getEnum()) :
+    ref.getHintOrDefault("databaseLength", length);
+
+boolean isOfTypeString(Enum enum) :
+    "String" == enum.getEnumType();
+
+String getEnumDatabaseType(Enum enum) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getEnumDatabaseType(sculptormetamodel.Enum);
+
+String getEnumType(Enum enum) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getEnumType(sculptormetamodel.Enum);
+
+String getEnumDatabaseLength(Enum enum) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.DatabaseGenerationHelper.getEnumDatabaseLength(sculptormetamodel.Enum);
+
+String getCascadeType(Reference ref) :
+	let values = ref.getCascade() == null ?
+		null :
+		ref.getCascade().split(',').collect(e | mapCascadeType(e)) :
+	toAnnotationFormat(values);
+
+private String toAnnotationFormat(List values) :
+	if (values == null || values.isEmpty) then null
+	else if (values.size == 1) then values.get(0)
+	else "{" + values.toCommaSeparatedString() + "}";
+
+String mapCascadeType(String cascade) :
+    switch (cascade.trim()) {
+        case "persist" : "javax.persistence.CascadeType.PERSIST"
+        case "merge" : "javax.persistence.CascadeType.MERGE"
+        case "remove" : "javax.persistence.CascadeType.REMOVE"
+        case "refresh" : "javax.persistence.CascadeType.REFRESH"
+        case "all" : "javax.persistence.CascadeType.ALL"
+        case "all-delete-orphan" : "javax.persistence.CascadeType.ALL"
+        default : null
+    };
+
+boolean isOrphanRemoval(String cascade) :
+	isJpa2() && cascade != null && cascade.contains("all-delete-orphan");
+
+boolean isOrphanRemoval(String cascade, Reference ref) :
+	isJpa2() && (isOrphanRemoval(cascade) || !isAggregateRoot(ref.to));
+
+String getHibernateCascadeType(Reference ref) :
+	let values = ref.getCascade() == null ?
+		null :
+		ref.getCascade().split(',').collect(e | mapHibernateCascadeType(e)) :
+	toAnnotationFormat(values);
+
+String mapHibernateCascadeType(String cascade) :
+    switch (cascade.trim()) {
+        case "all-delete-orphan" : ((isJpa2()) ? null : "org.hibernate.annotations.CascadeType.DELETE_ORPHAN")
+        case "delete-orphan" : ((isJpa2()) ? null : "org.hibernate.annotations.CascadeType.DELETE_ORPHAN")
+        case "delete" : "org.hibernate.annotations.CascadeType.DELETE"
+        case "save-update" : "org.hibernate.annotations.CascadeType.SAVE_UPDATE"
+        case "evict" : ((isJpa2()) ? null : "org.hibernate.annotations.CascadeType.EVICT")
+        case "replicate" : "org.hibernate.annotations.CascadeType.REPLICATE"
+        case "lock" : "org.hibernate.annotations.CascadeType.LOCK"
+        default : null
+    };
+
+String getHibernateCacheStrategy(Object obj) :
+    switch (cacheProvider()) {
+        case "EhCache" : "org.hibernate.annotations.CacheConcurrencyStrategy.NONSTRICT_READ_WRITE"
+        case "TreeCache" : "org.hibernate.annotations.CacheConcurrencyStrategy.NONSTRICT_READ_WRITE"
+        case "JbossTreeCache" : "org.hibernate.annotations.CacheConcurrencyStrategy.TRANSACTIONAL"
+        case "DeployedTreeCache" : "org.hibernate.annotations.CacheConcurrencyStrategy.TRANSACTIONAL"
+        default : "org.hibernate.annotations.CacheConcurrencyStrategy.READ_ONLY"
+    };
+
+String getFetchType(Reference ref) :
+    switch (getFetch(ref)) {
+        // case "select" : "javax.persistence.FetchType.LAZY"
+        case "join" : "javax.persistence.FetchType.EAGER"
+        case "eager" : "javax.persistence.FetchType.EAGER"
+        case "lazy" : "javax.persistence.FetchType.LAZY"
+        default : null // use default in jpa
+    };
+
+String getFetchType(Attribute att) :
+    (att.hasHint("fetch")) ? getFetchType(att.getHint("fetch")) : null;
+
+
+String getFetchType(String fetch) :
+    switch (fetch) {
+        // case "select" : "javax.persistence.FetchType.LAZY"
+        case "join" : "javax.persistence.FetchType.EAGER"
+        case "eager" : "javax.persistence.FetchType.EAGER"
+        case "lazy" : "javax.persistence.FetchType.LAZY"
+        default : null // use default in jpa
+    };
+
+String getHibernateFetchType(Reference ref) :
+    switch (getFetch(ref)) {
+        // case "join" : "org.hibernate.annotations.FetchMode.JOIN"
+        // case "select" : "org.hibernate.annotations.FetchMode.SELECT"
+        case "subselect" : "org.hibernate.annotations.FetchMode.SUBSELECT"
+        default : null
+    };
+
+boolean isInheritanceTypeSingleTable(DomainObject domainObject) :
+	(domainObject != null && domainObject.inheritance != null && domainObject.inheritance.type == InheritanceType::SINGLE_TABLE);
+
+boolean isInheritanceTypeJoined(DomainObject domainObject) :
+	(domainObject != null && domainObject.inheritance != null && domainObject.inheritance.type == InheritanceType::JOINED);
+
+String getDiscriminatorType(DomainObject domainObject) :
+	domainObject.inheritance.discriminatorType == null ?
+		null :
+		"javax.persistence.DiscriminatorType." + domainObject.inheritance.discriminatorType;
+
+String getHbmDiscriminatorType(DomainObject domainObject) :
+	switch (domainObject.inheritance.discriminatorType) {
+		case DiscriminatorType::INTEGER :
+			"int"
+		case DiscriminatorType::CHAR :
+			"char"
+		default :
+			null
+	};
+
+boolean isJodaDateTimeLibrary() :
+    getDateTimeLibrary() == "joda";
+
+boolean isJodaTemporal(Attribute attribute) :
+	isTemporal(attribute) && isJodaDateTimeLibrary();
+
+boolean hasOpposite(Reference ref) :
+    ref.opposite != null;
+
+boolean isUnidirectionalToManyWithoutJoinTable(Reference ref) :
+	ref.many && ref.isInverse() && !ref.hasOpposite();
+
+boolean isAggregateRoot(DomainObject domainObject) :
+	domainObject.aggregateRoot;
+
+boolean hasClassLevelUniqueConstraints(DomainObject domainObject) :
+	(domainObject.hasCompositeNaturalKey() || domainObject.hasBasicTypeNaturalKey())
+	&& (domainObject == domainObject.getRootExtends()) && domainObject.getSubclasses().isEmpty;
+
+private hasBasicTypeNaturalKey(DomainObject domainObject) :
+	domainObject.getAllNaturalKeyReferences().select(e | e.to.metaType == BasicType).size == 1;
+
+boolean hasUniqueConstraints(DomainObject domainObject) :
+	domainObject.attributes.exists(a | a.isUuid())
+	|| (domainObject.hasNaturalKey()
+		&& domainObject.getNaturalKeyAttributes() == domainObject.getAllNaturalKeyAttributes()
+		&& domainObject.getNaturalKeyReferences() == domainObject.getAllNaturalKeyReferences()
+	   );
+
+String discriminatorColumnName(Inheritance inheritance) :
+	inheritance.discriminatorColumnName != null ?
+		inheritance.discriminatorColumnName :
+    	getProperty("db.discriminatorColumnName");
+
+String discriminatorColumnLength(Inheritance inheritance) :
+	let propertyName = dbProduct() + ".length.discriminatorType." + inheritance.discriminatorType :
+	inheritance.discriminatorColumnLength != null ?
+		inheritance.discriminatorColumnLength :
+    	(hasProperty(propertyName) ? getProperty(propertyName) : null);
+
+String getEclipseLinkTargetDatabase(String persistenceUnitName) :
+	getEclipseLinkTargetDatabase();
+
+String getEclipseLinkTargetDatabase() :
+	switch (dbProduct()) {
+		case "oracle" :
+			"Oracle"
+		case "postgresql" :
+			"PostgreSQL"
+		case "mysql" :
+			"MySQL"
+		case "hsqldb-inmemory" :
+			"HSQL"
+		default :
+			null
+	};
+
+String getListIndexColumnName(Reference ref) :
+    let defaultName = ref.getDefaultDatabaseName() + "_INDEX" :
+    ifNullOrEmpty(ref.getHint("orderColumn"), defaultName);
+
+boolean isAssociationOverrideNeeded(Reference ref) :
+    ref.to.references.exists(e | !e.isBasicTypeReference() && !e.isEnumReference());
+
+// Return true if this is an attribute to put last in the DDL
+boolean isSystemAttributeToPutLast(Attribute attr) :
+	getSystemAttributesToPutLast().contains(attr.name);
+

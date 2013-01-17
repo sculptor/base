@@ -1,0 +1,46 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptormetamodel;
+import sculptorguimetamodel;
+
+extension extensions::guihelper;
+
+String getMessagesClass(UserTask task) :
+    task.module.getRichClientPackage() + "." + task.module.name.toFirstUpper() + "Messages";
+    
+String getMessagesClass(GuiApplication guiApp) :
+    guiApp.getRichClientPackage() + ".Messages";
+    
+String getMessagesKey(DomainObject domainObject) :
+    "domainObject_" + domainObject.name;
+    
+String getMessagesKey(ViewDataProperty prop) :
+	prop.userTask.for.getMessagesKey() + "_" + prop.name;
+
+String getMessagesKey(ReferenceViewProperty prop) :
+	prop.userTask.for.getMessagesKey() + "_" + prop.reference.name;
+
+String getMessagesKey(BasicTypeViewProperty prop) :
+	prop.userTask.for.getMessagesKey() + "_" + prop.reference.name + "_" + prop.attribute.name;
+
+String getMessagesKey(BasicTypeEnumViewProperty prop) :
+    prop.userTask.for.getMessagesKey() + "_" + prop.basicTypeReference.name + "_" + prop.reference.name;
+
+boolean isSingleSelectAddSubTask(ReferenceViewProperty ref) :
+    !ref.isMany() && ref.isAddSubTaskAvailable();	
+	

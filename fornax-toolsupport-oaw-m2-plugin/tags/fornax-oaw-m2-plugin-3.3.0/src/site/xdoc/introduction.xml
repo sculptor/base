@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "http://maven.apache.org/maven-1.x/plugins/xdoc/maven-xdoc.dtd" >
+<document>
+	<properties>
+		<title>The oAW-Maven2-Plugin</title>
+		<author>Thorsten Kamann</author>
+	</properties>
+	<body>
+		<section name="Introduction">
+			<p>
+				The
+				<a href="http://www.openarchitectureware.org"
+					target="_blank" title="openArchitectureWare Homepage"
+					class="marked">
+					openArchitectureWare
+				</a>
+				project produces a powerful framework to build
+				Generators for MDSD (Model-Driven-Software-Development) purposes.
+			</p>
+			<p>
+				As a controller for the generation-process there is the
+				<code>Workflow-Component</code>.
+				With this component you can start multiple task you
+				need to run to process the generation of code. With this
+				<code>Workflow-Component</code>
+				you can execute all task you have in a MDSD-Environment:
+				Code-Generation, Model-2-Model-Transformation,
+				Clean-Ups...
+				<br />
+				For this
+				<code>Workflow-Component</code>
+				there is an Eclipse-Plugin to execute your defined
+				workflow comfortably.
+			</p>
+			<p>
+				With this Maven2-Plugin you can integrate your workflow
+				in your Build-Environment. This plugin is highly
+				configurable. All things must be done only once, so you
+				can use the Eclipse-Plugin and this Maven2-Plugin
+				without duplicate the configuration.
+			</p>
+		</section>
+		<section name="Features" id="features">
+			<ul>
+				<li>
+					The worklow definition file can be freely configured
+				</li>
+				<li>
+					The property mechanism of the
+					<code>Workflow-Component</code>
+					is reused in the Maven2-Plugin
+				</li>
+				<li>
+					Support for 2 different source directories are
+					included. This both directories will be appended to
+					the compile classpath
+				</li>
+				<li>
+					A list of resources can be configured to check
+					whether they are up-to-date. If all resources older
+					than the last generator-run, so the plugin stops the
+					execution.
+				</li>
+			</ul>
+		</section>
+
+	</body>
+</document>

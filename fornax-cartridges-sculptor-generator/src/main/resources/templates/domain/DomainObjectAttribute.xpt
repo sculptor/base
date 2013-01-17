@@ -1,0 +1,172 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+
+«DEFINE attribute FOR Attribute»
+    «EXPAND attribute(true)»
+«ENDDEFINE»
+
+«DEFINE attribute(boolean annotations) FOR Attribute»
+	«IF annotations»
+		«EXPAND DomainObjectAttributeAnnotation::attributeAnnotations»
+	«ENDIF»
+    private «IF transient»transient «ENDIF»«getTypeName()» «name»«IF collectionType != null» = new «getImplTypeName()»()«ENDIF»«EXPAND attributeDefaultValue»;
+«ENDDEFINE»
+
+«REM»Possibility to overwrite and set custom default initialization for some attributes,
+	e.g. using hint. Note that you must include =.
+«ENDREM»
+«DEFINE attributeDefaultValue FOR Attribute-»
+«ENDDEFINE»
+
+«DEFINE propertyAccessors FOR Attribute»
+    «EXPAND propertyGetter»
+    «IF name == "id" && getDomainObject().isPersistent()»
+    	«EXPAND idPropertySetter»
+    «ELSEIF !changeable && getTypeName().isPrimitiveType()»
+    	«EXPAND notChangeablePrimitivePropertySetter»
+    «ELSEIF !changeable»
+    	«EXPAND notChangeablePropertySetter»
+    «ELSE»
+    	«EXPAND propertySetter»
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE propertyGetter FOR Attribute»
+	«EXPAND propertyGetter(true)»
+«ENDDEFINE»
+
+«DEFINE propertyGetter(boolean annotations) FOR Attribute»
+    «formatJavaDoc()»
+    «IF annotations»
+    	«EXPAND DomainObjectAttributeAnnotation::propertyGetterAnnotations»
+    «ENDIF»
+    «getVisibilityLitteralGetter()»«getTypeName()» «getGetAccessor()»() {
+    	«IF isJpaProviderAppEngine() && collectionType != null && getDomainObject().isPersistent() -»
+    	// appengine sometimes stores the collection as null
+    	if («name» == null) {
+    	    «name» = new «getImplTypeName()»();
+    	}
+    	«ENDIF -»
+        return «name»;
+    };
+«ENDDEFINE»
+
+«DEFINE propertySetter FOR Attribute»
+	«IF isSetterNeeded()»
+    «formatJavaDoc()»
+    «EXPAND DomainObjectAttributeAnnotation::propertySetterAnnotations»
+    «getVisibilityLitteralSetter()»void set«name.toFirstUpper()»(«getTypeName()» «name») {
+        «IF isFullyAuditable() && !transient-»
+        receiveInternalAuditHandler().recordChange(«getDomainObject().name»Properties.«name»(), this.«name», «name»);
+        «ENDIF-»
+        this.«name» = «name»;
+    };
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE notChangeablePropertySetter FOR Attribute»
+    «IF isSetterNeeded()»
+    «IF notChangeablePropertySetterVisibility() == "private"-»
+    @SuppressWarnings("unused")
+    «ELSE-»
+    «EXPAND notChangeablePropertySetterJavaDoc »
+    «ENDIF -»
+    «EXPAND DomainObjectAttributeAnnotation::propertySetterAnnotations»
+    «notChangeablePropertySetterVisibility()» void set«name.toFirstUpper()»(«getTypeName()» «name») {
+        if ((this.«name» != null) && !this.«name».equals(«name»)) {
+            throw new IllegalArgumentException("Not allowed to change the «name» property.");
+        }
+        this.«name» = «name»;
+    };
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE notChangeablePrimitivePropertySetter FOR Attribute»
+	«IF isSetterNeeded()»
+		«IF isJpaAnnotationToBeGenerated() && isJpaAnnotationOnFieldToBeGenerated()»
+		@javax.persistence.Transient
+		«ENDIF»
+		private boolean «name»IsSet = false;
+	    «IF notChangeablePropertySetterVisibility() == "private"-»
+	    @SuppressWarnings("unused")
+	    «ELSE-»
+	    «EXPAND notChangeablePropertySetterJavaDoc »
+	    «ENDIF -»
+	    «EXPAND DomainObjectAttributeAnnotation::propertySetterAnnotations»
+	    «notChangeablePropertySetterVisibility()» void set«name.toFirstUpper()»(«getTypeName()» «name») {
+	        if (this.«name»IsSet && (this.«name» != «name»)) {
+	            throw new IllegalArgumentException("Not allowed to change the «name» property.");
+	        }
+	        this.«name» = «name»;
+	        this.«name»IsSet = true;
+	    };
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE notChangeablePropertySetterJavaDoc FOR Attribute»
+    /**
+     * This property can't be changed. Use constructor to assign value.
+     * However, some tools need setter methods and therefore this method
+     * is visible, but the value can't be changed once it is assigned..
+     */
+«ENDDEFINE»
+
+«DEFINE idPropertySetter FOR Attribute»
+    /**
+     * The id is not intended to be changed or assigned manually, but
+     * for test purpose it is allowed to assign the id.
+     */
+    «EXPAND DomainObjectAttributeAnnotation::propertySetterAnnotations»
+    protected void set«name.toFirstUpper()»(«getTypeName()» «name») {
+        if ((this.«name» != null) && !this.«name».equals(«name»)) {
+            throw new IllegalArgumentException("Not allowed to change the id property.");
+        }
+        this.«name» = «name»;
+    };
+«ENDDEFINE»
+
+«DEFINE uuidAccessor FOR DomainObject»
+    /**
+     * This domain object doesn't have a natural key
+     * and this random generated identifier is the
+     * unique identifier for this domain object.
+     */
+    «IF isJpaAnnotationToBeGenerated() && !isJpaAnnotationOnFieldToBeGenerated()»
+		«EXPAND DomainObjectAttributeAnnotation::jpaAnnotations FOR attributes.selectFirst(e|e.isUuid())»
+    «ENDIF»
+    public String getUuid() {
+        // lazy init of UUID
+        if (uuid == null) {
+            uuid = java.util.UUID.randomUUID().toString();
+        }
+        return uuid;
+    }
+
+    «IF !isJpaAnnotationToBeGenerated()»
+    @SuppressWarnings("unused")
+    private void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+    «ENDIF»
+
+«ENDDEFINE»
+
+

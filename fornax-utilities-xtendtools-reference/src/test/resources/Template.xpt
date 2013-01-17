@@ -1,0 +1,5 @@
+«DEFINE Class FOR ecore::EClass»
+«FILE name + ".txt"»
+Name: «name»
+«ENDFILE»
+«ENDDEFINE»

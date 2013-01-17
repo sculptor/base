@@ -1,0 +1,14 @@
+<workflow>
+
+	<cartridge file="sculptorguidslworkflow.mwe">
+		<modelFile value="classpath:/model.guidesign"/>
+	</cartridge>
+	<!-- 
+	<component adviceTarget="generator" id="reflectionAdvice"
+			class="org.eclipse.xpand2.GeneratorAdvice">
+		<advices value="templates::WebSpecialCases" />
+		<fileEncoding value="iso-8859-1" />
+	</component>	
+	-->
+</workflow>
+

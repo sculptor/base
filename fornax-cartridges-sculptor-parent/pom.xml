@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<parent>
+		<groupId>org.fornax</groupId>
+		<artifactId>fornax-parent</artifactId>
+		<version>3.3</version>
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.fornax.cartridges</groupId>
+	<artifactId>fornax-cartridges-sculptor-parent</artifactId>
+	<version>2.2.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>Fornax Cartridge :: Sculptor</name>
+
+	<description>Sculptor is subproject of Fornax cartridge project</description>
+
+	<properties>
+		<projectId>CSC</projectId>
+		<projectPID>10050</projectPID>
+		<projectName>Sculptor</projectName>
+		<category>cartridges/sculptor</category>
+		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
+
+		<fornax-oaw-m2.version>3.2.3</fornax-oaw-m2.version>
+		<slf4j.version>1.6.4</slf4j.version>
+		<logback.version>1.0.0</logback.version>
+	</properties>
+	
+	<distributionManagement>
+		<repository>
+			<id>releases.fornax-platform.org</id>
+			<url>dav:http://fornax-platform.org/nexus/content/repositories/releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>snapshots.fornax-platform.org</id>
+			<url>dav:http://fornax-platform.org/nexus/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+
+	<modules>
+		<module>../org.fornax.cartridges.sculptor.dsl</module>
+		<module>../org.fornax.cartridges.sculptor.gui.dsl</module>
+		<module>../fornax-cartridges-sculptor-metamodel</module>
+		<module>../fornax-cartridges-sculptor-generator</module>
+		<module>../fornax-cartridges-sculptor-framework</module>
+		<module>../fornax-cartridges-sculptor-framework-test</module>
+		<module>../fornax-cartridges-sculptor-framework-web</module>
+		<module>../fornax-cartridges-sculptor-mongodb</module>
+		<module>../fornax-cartridges-sculptor-smartclient-bt</module>
+
+		<module>../fornax-cartridges-sculptor-archetype</module>
+		<module>../fornax-cartridges-sculptor-archetype-jsf</module>
+		<module>../fornax-cartridges-sculptor-archetype-ear</module>
+		<module>../fornax-cartridges-sculptor-archetype-parent</module>
+		<module>../fornax-cartridges-sculptor-archetype-standalone</module>
+		<module>../fornax-cartridges-sculptor-archetype-appengine</module>
+		<module>../fornax-cartridges-sculptor-archetype-pure-ejb3</module>
+		<module>../fornax-cartridges-sculptor-archetype-smartclient</module>
+		<module>../fornax-cartridges-sculptor-archetype-mongodb</module>
+
+	</modules>
+
+	<repositories>
+		<repository>
+			<id>fornax-platform.org</id>
+			<name>Fornax Repository</name>
+			<url>http://fornax-platform.org/nexus/content/repositories/public</url>
+			<releases><enabled>true</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
+		</repository>
+		<repository>
+			<id>com.springsource.repository.bundles.external</id>
+			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
+			<url>http://repository.springsource.com/maven/bundles/external</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>com.springsource.repository.bundles.release</id>
+			<name>SpringSource Enterprise Bundle Repository - SpringSource Releases</name>
+			<url>http://repository.springsource.com/maven/bundles/release</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>jboss.org</id>
+			<url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>nexus.jboss.org</id>
+			<url>https://repository.jboss.org/nexus/content/groups/public/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>www.mvnsearch.org</id>
+			<name>Maven search repository</name>
+			<url>http://www.mvnsearch.org/maven2/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>gae.googlecode.com</id>
+			<name>GAE SVN repository</name>
+			<url>http://maven-gae-plugin.googlecode.com/svn/repository/</url>
+		</repository>
+	</repositories>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>fornax-platform.org</id>
+			<name>Fornax Repository</name>
+			<url>
+				http://fornax-platform.org/nexus/content/repositories/public
+			</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+
+	<developers>
+		<developer>
+			<id>patrik_nordwall</id>
+			<name>Patrik Nordwall</name>
+			<roles>
+				<role>Project-Manager</role>
+				<role>Developer</role>
+				<role>Documentation</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+		<developer>
+			<id>bear50</id>
+			<name>Andreas Källberg</name>
+			<roles>
+				<role>Developer</role>
+				<role>Documentation</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+		<developer>
+			<id>oringel</id>
+			<name>Oliver Ringel</name>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+		<developer>
+			<id>bakattila</id>
+			<name>Attila Bak</name>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+		<developer>
+			<id>aderriba</id>
+			<name>Alberto de Arriba</name>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+		<developer>
+			<id>paveltavoda</id>
+			<name>Pavel Tavoda</name>
+			<roles>
+				<role>Developer</role>
+			</roles>
+		</developer>
+		<developer>
+			<id>eugeis</id>
+			<name>Eugen Eisler</name>
+			<roles>
+				<role>Developer</role>
+			</roles>
+		</developer>
+		<developer>
+			<id>ootferrell</id>
+			<name>Todd Ferrell</name>
+			<roles>
+				<role>Developer</role>
+			</roles>
+		</developer>
+		<developer>
+			<id>wrungel</id>
+			<name>Maxim Frolov</name>
+			<roles>
+				<role>Developer</role>
+			</roles>
+		</developer>
+		<developer>
+		    <id>rsmith7209</id>
+		    <name>Ron Smith</name>
+		    <roles>
+				<role>Developer</role>
+			</roles>
+		</developer>
+	</developers>
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.6</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-plugin-plugin</artifactId>
+				<version>2.2</version>
+			</plugin>
+			<plugin>
+				<artifactId>maven-eclipse-plugin</artifactId>
+				<version>2.8</version>
+				<configuration>
+					<downloadSources>true</downloadSources>
+					<classpathContainers>
+	   					<classpathContainer>org.eclipse.jdt.launching.JRE_CONTAINER</classpathContainer>
+	   				</classpathContainers>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+

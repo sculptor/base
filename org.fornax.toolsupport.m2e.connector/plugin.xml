@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.m2e.core.lifecycleMappingMetadataSource">
+   </extension>
+   <extension
+         point="org.eclipse.m2e.core.projectConfigurators">
+      <configurator
+            class="org.fornax.toolsupport.m2e.connector.WorkflowProjectConfigurator"
+            id="org.fornax.toolsupport.m2e.connector.workflowConfigurator"
+            name="Fornax Code Generator">
+      </configurator>
+   </extension>
+</plugin>

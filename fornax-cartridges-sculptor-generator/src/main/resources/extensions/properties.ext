@@ -1,0 +1,553 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptormetamodel;
+
+cached String getProperty(String propertyName) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GeneratorProperties.getProperty(java.lang.String);
+
+cached boolean hasProperty(String propertyName) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GeneratorProperties.hasProperty(java.lang.String);
+
+cached boolean getBooleanProperty(String propertyName) :
+    getProperty(propertyName).toLowerCase() == "true";
+
+String getProperty(String propertyName, String defaultValue) :
+	hasProperty(propertyName) ? getProperty(propertyName) : defaultValue;
+
+String fw(String fwClassName) :
+	let propName = "framework." + fwClassName :
+	hasProperty(propName) ?
+		getProperty(propName) :
+		"org.fornax.cartridges.sculptor." + propName;
+
+String defaultExtendsClass(String typeName) :
+	let propName = typeName.toFirstLower() + ".extends" :
+	hasProperty(propName) ?
+		getProperty(propName) :
+		"";
+
+String abstractDomainObjectClass() :
+	fw("domain.AbstractDomainObject");
+
+String consumerInterface() :
+	fw("event.EventSubscriber");
+
+String abstractMessageBeanClass() :
+	fw("consumer.AbstractMessageBean2");
+
+cached String serviceContextClass() :
+	fw("errorhandling.ServiceContext");
+
+String serviceContextStoreAdviceClass() :
+	fw("errorhandling.ServiceContextStoreAdvice");
+
+String serviceContextStoreClass() :
+	fw("errorhandling.ServiceContextStore");
+
+String serviceContextServletFilterClass() :
+	fw("errorhandling.ServiceContextServletFilter");
+
+String servletContainerServiceContextFactoryClass() :
+    fw("errorhandling.ServletContainerServiceContextFactory");
+
+String auditInterceptorClass() :
+	getBooleanProperty("generate.auditable.joda") ?
+		fw("domain.JodaAuditInterceptor") :
+		fw("domain.AuditInterceptor");
+
+String auditableInterface() :
+	getBooleanProperty("generate.auditable.joda") ?
+		fw("domain.JodaAuditable") :
+		fw("domain.Auditable");
+
+String identifiableInterface() :
+	fw("domain.Identifiable");
+
+String applicationExceptionClass() :
+	fw("errorhandling.ApplicationException");
+
+String systemExceptionClass() :
+	fw("errorhandling.SystemException");
+
+String accessBaseWithExceptionClass() :
+	fw("accessimpl.AccessBaseWithException");
+
+String accessBaseClass() :
+	fw("accessimpl.AccessBase");
+
+String genericAccessObjectInterface(String name) :
+	let apiName = name.toFirstUpper() + "Access" :
+	if (hasProperty("framework.accessapi." + apiName)) then
+		fw("accessapi." + apiName)
+	else if (hasProperty("framework.accessapi.package")) then
+		getProperty("framework.accessapi.package") + "." + apiName
+	else
+		// default name
+		fw("accessapi." + apiName);
+
+// Configuration of access object is pretty flexible.
+// It is documented in default-sculptor-generator.properties
+// and in Developer's Guide.
+String genericAccessObjectImplementation(String name) :
+	let jpa = isJpaAnnotationToBeGenerated() :
+	let hibernate = (!jpa || isJpaProviderHibernate()) && !isJpa2() :
+	// don't use Spring when using jpa
+	let spring = !jpa && isSpringToBeGenerated() && isJpaProviderHibernate() :
+	let implName = name.toFirstUpper() + "AccessImpl" :
+	if (hasProperty("framework.accessimpl." + implName)) then
+		fw("accessimpl." + implName)
+	else
+		mapGenericAccessObjectImplementationPackage(jpa, hibernate, spring) + "." +
+			mapGenericAccessObjectImplementationPrefix(jpa, hibernate, spring) + implName;
+
+private String mapGenericAccessObjectImplementationPrefix(boolean jpa, boolean hibernate, boolean spring) :
+	if (hasProperty("framework.accessimpl.prefix")) then
+		getProperty("framework.accessimpl.prefix")
+	else (
+		(jpa ? "Jpa" : "") +
+		(hibernate ? "Hib" : "") +
+		(spring ? "Sp" : ""));
+
+private String mapGenericAccessObjectImplementationPackage(boolean jpa, boolean hibernate, boolean spring) :
+	if (hasProperty("framework.accessimpl.package")) then
+		getProperty("framework.accessimpl.package")
+	else (
+		let lastPart =
+			(jpa ? ((isJpa2()) ? "jpa2" : "jpa") : "") +
+			(hibernate ? "hibernate" : "") +
+			(spring ? "spring" : ""):
+		fw(lastPart == "" ? "accessimpl" : "accessimpl." + lastPart));
+
+// Attributes defined by system that should appear last in attribute listings, such as in DDL
+cached Collection[String] getSystemAttributesToPutLast() :
+    getProperty("systemAttributesToPutLast").split(",");
+    
+String databaseTestCaseClass() :
+	fw("util.db.IsolatedDatabaseTestCase");
+
+String fakeObjectInstantiatorClass() :
+    fw("util.FakeObjectInstantiator");
+
+String enumUserTypeClass() :
+    fw("accessimpl.GenericEnumUserType");
+
+String jpaFlowExecutionListenerListenerClass() :
+	if (isJpaProviderEclipseLink() || isJpaProviderDataNucleus()) then
+    	fw("web.jpa.JpaFlowExecutionListener")
+    else
+    	"org.springframework.webflow.persistence.JpaFlowExecutionListener";
+
+String openHibernateSessionInConversationListenerClass() :
+    fw("web.hibernate.OpenHibernateSessionInConversationListener");
+
+String disconnectHibernateInterceptor() :
+    fw("web.hibernate.DisconnectHibernateInterceptor");
+
+String webExceptionUtilClass() :
+    fw("web.errorhandling.ExceptionUtil");
+
+String webExceptionAdviceClass() :
+    fw("web.errorhandling.ExceptionAdvice");
+
+String conversationDomainObjectRepositoryInterface() :
+    fw("web.hibernate.ConversationDomainObjectRepository");
+
+String conversationDomainObjectJpaRepositoryImplClass() :
+    fw("web.jpa.ConversationDomainObjectJpaRepositoryImpl");
+
+String optionEditorClass() :
+    fw("propertyeditor.OptionEditor");
+
+String optionClass() :
+    fw("propertyeditor.Option");
+
+String enumEditorClass() :
+    fw("propertyeditor.EnumEditor");
+
+String dbProduct() :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GeneratorProperties.getDbProduct();
+
+String hibernateDialect() :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GeneratorProperties.getHibernateDialect();
+
+String cacheProvider() :
+	getProperty("cache.provider");
+
+Boolean pureEjb3() :
+	hasProjectNature("pure-ejb3");
+
+Boolean isEar() :
+    getProperty("deployment.type") == "ear";
+
+Boolean isWar() :
+    getProperty("deployment.type") == "war";
+
+Boolean isRunningInServletContainer() :
+	applicationServer() == "tomcat" || applicationServer() == "jetty";
+
+String applicationServer() :
+    getProperty("deployment.applicationServer").toLowerCase();
+
+String notChangeablePropertySetterVisibility() :
+    getProperty("notChangeablePropertySetter.visibility");
+
+String notChangeableReferenceSetterVisibility() :
+    getProperty("notChangeableReferenceSetter.visibility");
+
+String mapHibernateType(String modelType) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GeneratorProperties.mapHibernateType(java.lang.String);
+
+String mapPropertyEditor(String modelType) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GeneratorProperties.mapPropertyEditor(java.lang.String);
+
+boolean hasProjectNature(String nature) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GeneratorProperties.hasProjectNature(java.lang.String);
+
+boolean isGuiDefaultsToBeCreated() :
+	getBooleanProperty("gui.createDefaults");
+
+boolean isJSFCrudGuiToBeGenerated() :
+	getBooleanProperty("generate.jsfCrudGui");
+
+boolean isRcpCrudGuiToBeGenerated() :
+	getBooleanProperty("generate.rcpCrudGui");
+
+boolean isRapCrudGuiToBeGenerated() :
+	getBooleanProperty("generate.rapCrudGui");
+
+boolean isBuilderToBeGenerated() :
+	getBooleanProperty("generate.domainObject.builder");
+
+boolean isDomainObjectToBeGenerated() :
+    getBooleanProperty("generate.domainObject");
+
+boolean isDomainObjectCompositeKeyClassToBeGenerated() :
+    getBooleanProperty("generate.domainObject.compositeKeyClass");
+
+boolean isExceptionToBeGenerated() :
+    getBooleanProperty("generate.exception");
+
+boolean isRepositoryToBeGenerated() :
+    getBooleanProperty("generate.repository");
+
+boolean isServiceToBeGenerated() :
+    getBooleanProperty("generate.service");
+
+boolean isServiceProxyToBeGenerated() :
+    getBooleanProperty("generate.service.proxy");
+
+boolean isResourceToBeGenerated() :
+    getBooleanProperty("generate.resource");
+
+boolean isRestWebToBeGenerated() :
+    getBooleanProperty("generate.restWeb");
+
+boolean isSpringRemotingToBeGenerated() :
+    getBooleanProperty("generate.springRemoting");
+
+String getSpringRemotingType() :
+	isSpringRemotingToBeGenerated() ?
+		getProperty("spring.remoting.type").toLowerCase() :
+		"N/A";
+
+boolean isConsumerToBeGenerated() :
+    getBooleanProperty("generate.consumer");
+
+boolean isSpringToBeGenerated() :
+    getBooleanProperty("generate.spring");
+
+boolean isHibernateToBeGenerated() :
+    getBooleanProperty("generate.hibernate");
+
+boolean isDdlToBeGenerated() :
+    getBooleanProperty("generate.ddl");
+
+boolean isDdlDropToBeGenerated() :
+    getBooleanProperty("generate.ddl.drop");
+
+
+boolean isDatasourceToBeGenerated() :
+    getBooleanProperty("generate.datasource");
+
+boolean isLogbackConfigToBeGenerated() :
+    getBooleanProperty("generate.logbackConfig");
+
+boolean isTestToBeGenerated() :
+    getBooleanProperty("generate.test");
+
+boolean isDbUnitTestDataToBeGenerated() :
+    getBooleanProperty("generate.test.dbunitTestData");
+
+boolean isEmptyDbUnitTestDataToBeGenerated() :
+    getBooleanProperty("generate.test.emptyDbunitTestData");
+
+boolean isModuleToBeGenerated(String moduleName) :
+	let propertyName = "generate.module." + moduleName :
+	hasProperty(propertyName) ?
+		getBooleanProperty(propertyName) :
+		true;
+
+String getDbUnitDataSetFile() :
+	hasProperty("test.dbunit.dataSetFile") ?
+		getProperty("test.dbunit.dataSetFile") :
+		null;
+
+boolean isServiceContextToBeGenerated() :
+    getBooleanProperty("generate.serviceContext");
+
+boolean isAuditableToBeGenerated() :
+    getBooleanProperty("generate.auditable");
+
+boolean isDbResponsibleForOnDeleteCascade() :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GeneratorProperties.isDbResponsibleForOnDeleteCascade();
+
+boolean isUMLToBeGenerated() :
+    getBooleanProperty("generate.umlgraph");
+
+boolean isModelDocToBeGenerated() :
+    getBooleanProperty("generate.modeldoc");
+
+boolean isOptimisticLockingToBeGenerated() :
+    getBooleanProperty("generate.optimisticLocking");
+
+boolean isPubSubToBeGenerated() :
+    getBooleanProperty("generate.pubSub");
+
+boolean isGapClassToBeGenerated() :
+	getBooleanProperty("generate.gapClass");
+
+boolean isGapClassToBeGenerated(String module, String class) :
+	if hasProperty("generate.gapClass." + module + "." + class) then
+		getBooleanProperty("generate.gapClass." + module + "." + class)
+	else if hasProperty("generate.gapClass." + class) then
+		getBooleanProperty("generate.gapClass." + class)
+	else
+		isGapClassToBeGenerated();
+
+boolean isGapClassToBeGenerated(boolean dslGapClass, boolean dslNoGapClass) :
+	dslGapClass ?
+		true :
+		(dslNoGapClass ?
+			false :
+			isGapClassToBeGenerated());
+
+List[String] scaffoldOperations() :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GeneratorProperties.scaffoldOperations();
+
+String subPackage(String packageKey) :
+    getProperty("package." + packageKey);
+
+String getDateTimeLibrary() :
+	getProperty("datetime.library");
+
+boolean isHighlightMissingMessageResources() :
+	getBooleanProperty("gui.highlightMissingMessageResources");
+
+boolean isStubService() :
+    getBooleanProperty("gui.stubService");
+
+String getResourceDir(Application application, String name) :
+    getResourceDirImpl(name);
+
+String getResourceDir(Module module, String name) :
+    getResourceDirImpl(name);
+
+private String getResourceDirImpl(String name) :
+	switch (name) {
+	    case "spring" : ""
+	    default: name + "/"
+	};
+
+String getEnumTypeDefFileName(Module module) :
+    "Enums-" + module.name + ".hbm.xml";
+
+cached String javaHeader() :
+    getProperty("javaHeader") == "" ?
+    	"" :
+		"/* " + getProperty("javaHeader").replaceAll("\n", "\n * ") + "\n */";
+
+boolean jpa() :
+	jpaProvider() != "none";
+
+cached boolean nosql() :
+	getProperty("nosql.provider") != "none";
+
+boolean mongoDb() :
+	getProperty("nosql.provider") == "mongoDb";
+
+cached boolean isJpaAnnotationToBeGenerated() :
+    getBooleanProperty("generate.jpa.annotation");
+
+boolean isJpaAnnotationColumnDefinitionToBeGenerated() :
+    getBooleanProperty("generate.jpa.annotation.columnDefinition");
+
+boolean isJpaAnnotationOnFieldToBeGenerated() :
+    getBooleanProperty("generate.jpa.annotation.onField");
+
+boolean isValidationAnnotationToBeGenerated() :
+    getBooleanProperty("generate.validation.annotation");
+
+boolean isDtoValidationAnnotationToBeGenerated() :
+    getBooleanProperty("generate.validation.annotation.dataTransferObject");
+
+boolean isSpringAnnotationTxToBeGenerated() :
+    getBooleanProperty("generate.spring.annotation.tx");
+
+boolean isSpringDataSourceSupportToBeGenerated() :
+    getBooleanProperty("generate.spring.dataSourceSupport");
+
+boolean isXstreamAnnotationToBeGenerated() :
+	getBooleanProperty("generate.xstream.annotation");
+
+boolean isXmlBindAnnotationToBeGenerated() :
+	getBooleanProperty("generate.xml.bind.annotation");
+
+boolean isXmlBindAnnotationToBeGenerated(String typeName) :
+	let propName = "generate.xml.bind.annotation." + typeName.toFirstLower() :
+	(hasProperty(propName) ? getBooleanProperty(propName) : false);
+
+boolean isFullyAuditable() :
+	getBooleanProperty("generate.fullAuditable");
+
+boolean isInjectDrools() :
+	getBooleanProperty("generate.injectDrools");
+
+boolean isGenerateParameterName() :
+	getBooleanProperty("generate.parameterName");
+
+String jpaProvider() :
+    getProperty("jpa.provider").toLowerCase();
+
+boolean isJpaProviderHibernate() :
+    jpaProvider() == "hibernate" || jpaProvider() == "hibernate3";
+
+boolean isJpaProviderHibernate3() :
+    jpaProvider() == "hibernate3";
+
+boolean isJpaProviderHibernate4() :
+    jpaProvider() == "hibernate";
+
+boolean isJpaProviderEclipseLink() :
+    jpaProvider() == "eclipselink";
+
+boolean isJpaProviderDataNucleus() :
+    jpaProvider() == "datanucleus";
+
+cached boolean isJpaProviderAppEngine() :
+    jpaProvider() == "appengine";
+
+boolean isJpaProviderOpenJpa() :
+    jpaProvider() == "openjpa";
+
+String jpaVersion() :
+    getProperty("jpa.version");
+
+boolean isJpa1() :
+    "1.0" == jpaVersion() && jpa();
+
+boolean isJpa2() :
+	"2.0" == jpaVersion() && jpa();
+
+String validationProvider() :
+    getProperty("validation.provider");
+
+String testProvider() :
+    getProperty("test.provider");
+
+String databaseJpaTestCaseClass() :
+	fw("test.AbstractDbUnitJpaTests");
+
+String auditEntityListener() :
+	getBooleanProperty("generate.auditable.joda") ?
+		fw("domain.JodaAuditListener") :
+		fw("domain.AuditListener");
+
+String validationEntityListener() :
+	isValidationAnnotationToBeGenerated() ?
+		"org.fornax.cartridges.sculptor.framework.validation.ValidationEventListener" :
+		null;
+
+String getApplicationContextFile(Application application, String fileName) :
+    fileName;
+
+String getApplicationContextFile(Module module, String fileName) :
+    fileName;
+
+String getValidationAnnotations(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getValidationAnnotations(sculptormetamodel.DomainObject);
+
+String getValidationAnnotations(Attribute attribute) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getValidationAnnotations(sculptormetamodel.Attribute);
+
+String getValidationAnnotations(Reference reference) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.getValidationAnnotations(sculptormetamodel.Reference);
+
+cached Collection[String] getSystemAttributes() :
+    getProperty("systemAttributes").split(",");
+
+boolean isSystemAttribute(Attribute att) :
+    getSystemAttributes().contains(att.name);
+
+cached Collection[String] getAuditableAttributes() :
+    getProperty("auditableAttributes").split(",");
+
+boolean isAuditableAttribute(Attribute att) :
+    getAuditableAttributes().contains(att.name);
+
+cached Collection[String] getNotRestRequestParameter() :
+    getProperty("rest.notRequestParameter").split(",");
+
+boolean isDynamicMenu() :
+	if hasProperty("menu.type") then
+		getProperty("menu.type") != "linkbased"
+	else
+		true;
+
+String getJavaType(String modelType) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GeneratorProperties.getJavaType(java.lang.String);
+
+String getSuffix(String key) :
+	getProperty("naming.suffix." + key);
+
+String persistenceXml() :
+	getProperty("jpa.persistenceXmlFile");
+
+boolean usePersistenceContextUnitName() :
+	!isJpaProviderAppEngine() && !(isEar() && isSpringToBeGenerated());
+
+boolean useJpaDefaults() :
+    getBooleanProperty("jpa.useJpaDefaults");
+
+boolean generateFinders() :
+    getBooleanProperty("generate.repository.finders");
+
+boolean useIdSuffixInForeigKey() :
+    getBooleanProperty("db.useIdSuffixInForeigKey");
+
+// hook to be overwritten to make additional programatic configuration of properties
+initPropertiesHook() :
+	null;
+
+setProperty(String key, String value) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GeneratorProperties.setProperty(java.lang.String, java.lang.String);
+
+isGenerateQuick() :
+	getBooleanProperty("generate.quick");
+
+getChangedModules() :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GeneratorProperties.getChangedModules();

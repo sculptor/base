@@ -1,0 +1,84 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+
+«EXTENSION extensions::helper»
+«EXTENSION extensions::guihelper»
+«EXTENSION extensions::rcphelper»
+«EXTENSION extensions::properties»
+
+«DEFINE defineColumns FOR List[ViewDataProperty]»
+    protected void defineColumns(«fw("richclient.table.CustomizableTableViewer")» tableViewer) {
+        new «fw("richclient.table.TableDefinition")»(tableViewer) {{
+            «EXPAND column FOREACH this»
+        }}.build();
+    }
+«ENDDEFINE»
+
+«DEFINE column FOR ViewDataProperty»
+«ENDDEFINE»
+
+«DEFINE column FOR AttributeViewProperty»
+	«EXPAND attributeColumn(userTask.for.getMessagesKey() + "_" + attribute.name, getAttributeType())»
+«ENDDEFINE»
+
+«DEFINE column FOR BasicTypeViewProperty»
+	«EXPAND attributeColumn(userTask.for.getMessagesKey() + "_" + reference.name + "_" + attribute.name, getAttributeType())»
+«ENDDEFINE»
+
+«DEFINE attributeColumn(String labelKey, String attributeType) FOR ViewDataProperty»
+	«IF attributeType == "Date"»
+		«EXPAND dateColumn(labelKey)»
+	«ELSE»
+		«EXPAND standardColumn(labelKey)»;
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE dateColumn(String labelKey) FOR ViewDataProperty»
+    «EXPAND standardColumn(labelKey)»
+	«IF getDateTimeLibrary() == "joda"-»
+        .convertWith(new «fw("propertyeditor.LocalDateEditor")»(«userTask.getMessagesClass()».format_datePattern, true));
+	«ELSE-»
+        .convertWith(new org.springframework.beans.propertyeditors.CustomDateEditor(new java.text.SimpleDateFormat(«userTask.getMessagesClass()».format_datePattern), true));
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE standardColumn(String labelKey) FOR ViewDataProperty»
+    column(«userTask.getMessagesClass()».«labelKey»).property("«name»")
+«ENDDEFINE»
+
+«REM»TODO: EnumViewProperty not added by transformation«ENDREM»
+«DEFINE column FOR EnumViewProperty»
+    «EXPAND enumColumn(userTask.for.getMessagesKey() + "_" + reference.name)»
+«ENDDEFINE»
+
+«REM»TODO: BasicTypeEnumViewProperty not added by transformation«ENDREM»
+«DEFINE column FOR BasicTypeEnumViewProperty»
+    «EXPAND enumColumn(userTask.for.getMessagesKey() + "_" + basicTypeReference.name + "_" + reference.name)»
+«ENDDEFINE»
+
+«DEFINE enumColumn(String labelKey) FOR EnumViewProperty»
+    «EXPAND standardColumn(labelKey)»
+        .convertWith(new org.eclipse.core.databinding.conversion.Converter(«reference.to.getDomainPackage()».«reference.to.name».class, String.class) {
+            public Object convert(Object element) {
+                return «userTask.getMessagesClass()».getString("«reference.to.getMessagesKey()»_" + ((«reference.to.getDomainPackage()».«reference.to.name») element).getName());
+            }
+        });
+«ENDDEFINE»
+

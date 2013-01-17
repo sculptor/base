@@ -1,0 +1,20 @@
+import "classpath:/dto.btdesign"
+
+gui DtoAppWeb for DtoApp {
+	Module for media {
+		CreateTask for LibraryDto {
+			gap
+			- name  
+			
+			list media use attributes location
+			createWith LibraryDtoService.save
+		}
+		
+		ViewTask for LibraryDto {
+			gap
+			- name
+			- rating
+		}
+	}
+
+}

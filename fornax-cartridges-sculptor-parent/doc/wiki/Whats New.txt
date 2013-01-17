@@ -1,0 +1,1514 @@
+h1. What's New in Sculptor
+
+{toc}
+{anchor:v2_1}
+
+h2. Version 2.1.x
+
+Version 2.1.0 was released January 21, 2012.
+
+Some highlights of the release:
+- JPA 2.0
+- Convenient ways to query the database by defining queries in the model, see documentation in [Advanced Tutorial|http://fornax.itemis.de/confluence/display/fornax/3.+Advanced+Tutorial+%28CSC%29#3.AdvancedTutorial%28CSC%29-GenerationofFinderOperations]
+- Support for OpenJPA
+- Validation based javax.validation api
+- Builders with fluent interface for construction of domain objects, see documentation in [Advanced Tutorial|http://fornax.itemis.de/confluence/display/fornax/3.+Advanced+Tutorial+%28CSC%29#3.AdvancedTutorial%28CSC%29-DomainObjectBuilders]
+- Major performance improvement in generation by suppressing invisible logging in beautifier
+
+Complete [Release Notes|fornax:Sculptor (CSC)^release-notes-2.1.html].
+
+h3. Migration
+
+If you start from scratch you use the maven archetypes to create project structure, and you can of course skip these migration instructions. If you have an existing project you need to do the following tasks.
+
+*Update Eclipse and DSL Editor Plugin*
+Install Eclipse Indigo and latest Sculptor plugins as described in [Installation Guide|fornax:1. Installation Guide (CSC)].
+
+*Change version*
+Change {{sculptor.version}} in the {{pom.xml}} of the parent project.
+{code}
+<sculptor.version>2.1.0</sculptor.version>
+{code}
+*JPA 2.0*
+
+Sculptor Version 2.1.0 supports the JPA 2.0 persistence api, which is now the default.
+
+Sculptor is backward compatible with JPA 1.0. If you like to stay with JPA 1.0 add the jpa.version to your sculptor-generator.properties file.
+{code}
+jpa.version=1.0
+{code}
+Otherwise you have to upgrade to a JPA 2.0 compatible jpa provider, e.g. hibernate 3.6.x.
+
+Change {{hibernate.version}} and the hibernate entitymanager dependency in the {{pom.xml}} of your project.
+{code}
+<hibernate.version>3.6.9.Final</hibernate.version>
+
+<dependency>
+    <groupId>org.hibernate</groupId>
+    <artifactId>hibernate-entitymanager</artifactId>
+    <version>${hibernate.version}</version>
+<dependency>
+{code}
+Remove some unnecassary hibernate properties and dependencies
+{code}
+<hibernate.annotations.version>3.4.0.GA</hibernate.annotations.version>
+<hibernate.entitymanager.version>3.4.0.GA</hibernate.entitymanager.version>
+
+<dependency>
+	<groupId>org.hibernate</groupId>
+	<artifactId>hibernate-core</artifactId>
+	<version>${hibernate.version}</version>
+</dependency>
+<dependency>
+	<groupId>org.hibernate</groupId>
+	<artifactId>hibernate-annotations</artifactId>
+	<version>${hibernate.annotations.version}</version>
+</dependency>
+{code}
+Remove the ununsed {{jpa.version}} and related dependencies in the {{pom.xml}} of your project.&nbsp;
+{code}
+<jpa.version>1.0</jpa.version>
+
+<dependency>
+	<groupId>javax.persistence</groupId>
+	<artifactId>persistence-api</artifactId>
+	<version>${jpa.version}</version>
+</dependency>
+{code}
+
+If you use the joda datetime api in your project upgrade the joda dependencies
+
+{code}
+<dependency>
+	<groupId>joda-time</groupId>
+	<artifactId>joda-time</artifactId>
+	<version>1.6.2</version>
+</dependency>
+<dependency>
+	<groupId>joda-time</groupId>
+	<artifactId>joda-time-hibernate</artifactId>
+	<version>1.3</version>
+</dependency>
+{code}
+*Validation*
+
+Sculptor Version 2.1.0 now uses the javax.validation api. If you are using generated validations it is necessary to upgrade to a compatible validation provider, e.g. hibernate validator 4.1.x.
+
+Change {{hibernate.validator.version}} in the {{pom.xml}} of the parent project.
+{code}
+<hibernate.validator.version>4.1.0.Final</hibernate.validator.version>
+{code}
+
+*Change log settings for generator*
+
+The logback configuration is important for the performance of the hybridlabs-beautifier.
+In your project pom.xml <configuration> section of fornax-oaw-m2-plugin you should add the following settings:
+{code}
+ <jvmSettings>
+ <copySysProperties>true</copySysProperties>
+ <jvmArgs>
+ <jvmArg>-client</jvmArg>
+ <jvmArg>-Xms256m</jvmArg>
+ <jvmArg>-Xmx512m</jvmArg>
+ <jvmArg>-Dlogback.configurationFile=generator/logback-sculptor.xml</jvmArg>
+ </jvmArgs>
+ </jvmSettings>
+{code}
+
+*mongo-java-driver 2.7.2*
+If you use MongoDB you should be aware of that we have upgraded the mongo-java-driver to version 2.7.2. You should generate new Eclipse .classpath with mvn eclipse:eclipse. It is a transitive dependency from fornax-cartridges-sculptor-mongodb.
+
+{anchor:v2_0}
+h2. Version 2.0.x
+
+Version 2.0.0 was released March 13, 2011.
+
+This release contains:
+* RESTful Services
+* Mixin composition with traits
+* Spring Remoting
+* Upgrade to Xtext 1.0 and Eclipse Helios
+* Upgrade to Maven 3
+* Upgrade to Spring 3.0
+* Upgrade of versions for Google App Engine, Apache Camel, Spring Integration, Spring Web Flow, Drools, MongoDB, JBoss, Ehcache, Joda
+* Change of logging API to SLF4J
+* Removal of deprecated features
+* Support DataTransferObject in CRUD GUI
+* Persistent DomainEvent
+* And a long [list|http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?reset=true&pid=10050&fixfor=10340] of other bug fixes and improvements...
+
+Complete [Release Notes|fornax:Sculptor (CSC)^release-notes-2.0.html].
+
+Install new Sculptor DSL editor from update site. See [Installation Guide|fornax:1. Installation Guide (CSC)].
+
+h3. Migration
+
+If you start from scratch you use the maven archetypes to create project structure, and you can of course skip these migration instructions. If you have an existing project you need to do the following tasks.
+
+As user of previous versions you should not be afraid of upgrading to version 2.0. It contains a lot, but we have, as always, performed the changes carefully, with backwards compatibility or with well defined migration instructions. Don't hesitate to ask us in the [Forum] if you have any trouble with the migration.
+
+*Java 6*
+In case you are still using Java 5 you need to move to [Java 6|http://www.oracle.com/technetwork/java/javase/downloads/index.html]. Sculptor 2.0 doesn't support Java 5.
+
+*Maven 3*
+It is still possible to use Maven 2.2.x, but we encourage you to upgrade to [Maven 3.0.x|http://maven.apache.org/download.html]. The backwards compatibility is very good so it shouldn't be much trouble.
+
+*Update Eclipse and DSL Editor Plugin*
+Install Eclipse Helios and latest Sculptor plugins as described in [Installation Guide|fornax:1. Installation Guide (CSC)].
+
+*Change version*
+Change {{sculptor.version}} in the {{pom.xml}} of the parent project.
+{code}
+<sculptor.version>2.0.0</sculptor.version>
+{code}
+
+*Change Maven Repositories*
+
+Fornax Maven repository has been changed to Nexus at a new location. Update {{<repositories>}} section to use the following instead of old archiva.fornax-platform.org:
+
+{code}
+		<repository>
+			<id>fornax-platform.org</id>
+			<name>Fornax Repository</name>
+			<url>http://fornax-platform.org/nexus/content/repositories/public</url>
+			<releases><enabled>true</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
+		</repository>
+{code}
+
+Similar for {{<pluginRepositories>}}:
+{code}
+		<pluginRepository>
+			<id>fornax-platform.org</id>
+			<name>Fornax Repository</name>
+			<url>http://fornax-platform.org/nexus/content/repositories/public</url>
+			<releases><enabled>true</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
+		</pluginRepository>
+{code}
+
+Update the {{jboss.org}} repository also:
+{code}
+		<repository>
+			<id>jboss.org</id>
+			<url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
+			<releases><enabled>true</enabled></releases>
+			<snapshots><enabled>false</enabled></snapshots>
+		</repository>
+{code}
+
+You can remove legacy {{java.net}} repository, since it is included in http://fornax-platform.org/nexus/content/repositories/public
+
+*Change Dependencies*
+
+Change the following version properties in {{pom.xml}} of the parent project. Thereafter you should generate new Eclipse .classpath with mvn eclipse:eclipse.
+{code}
+<spring.version>3.0.4.RELEASE</spring.version>
+<spring.webflow.version>2.1.1.RELEASE</spring.webflow.version>
+<ehcache.version>1.7.2</ehcache.version> 
+{code}
+
+You must also change version of the JUnit dependency, to 4.6.
+{code}
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.6</version>
+            <scope>test</scope>
+        </dependency>
+{code}
+
+The artifactId of Ehcache is changed to ehcache-core:
+{code}
+	<dependency>
+		<groupId>net.sf.ehcache</groupId>
+		<artifactId>ehcache-core</artifactId>
+		<version>${ehcache.version}</version>
+		<!-- Add scope provided when deployed in jboss -->
+		<!-- <scope>provided</scope> -->
+	</dependency>
+{code}
+
+Change dependency to joda-time-hibernate:
+{code}
+	<dependency>
+		<groupId>joda-time</groupId>
+		<artifactId>joda-time-hibernate</artifactId>
+		<version>1.2</version>
+		<exclusions>
+			<exclusion>
+				<groupId>org.hibernate</groupId>
+				<artifactId>hibernate</artifactId>
+			</exclusion>
+		</exclusions>
+	</dependency>
+{code}
+
+If you use JSF GUI you should change version of jsf-facelets to 1.1.15.
+{code}
+        <dependency>
+            <groupId>com.sun.facelets</groupId>
+            <artifactId>jsf-facelets</artifactId>
+            <version>1.1.15</version>
+        </dependency>
+{code}
+
+Due to a [bug FACELETS-364|http://java.net/jira/browse/FACELETS-364] in jsf-facelets to 1.1.15 you need to define begin and step in c:forEach tags. Add that in template.xhtml:
+{code}
+<c:forEach var="item" items="${a:breadCrumb(flowExecutionContext,msg)}" varStatus="status" begin="0" step="1">
+{code}
+You might have written other forEach elements in other files also.
+
+You should also add this to your web.xml
+{code}
+ <listener>
+ 	<listener-class>com.sun.faces.config.ConfigureListener</listener-class>
+ </listener>
+{code}
+
+If you use pure-ejb3 you should change dependency of openejb:
+{code}
+	<dependency>
+		<groupId>org.apache.openejb</groupId>
+		<artifactId>openejb-core</artifactId>
+		<version>3.1.3</version>
+		<scope>test</scope>
+	</dependency>
+{code}
+
+If you are using Spring and deploying as war file to JBoss 5.1.0.GA you need to add {{classifier without-ejb}} to the fornax-cartridges-sculptor-framework dependency.
+{code}
+		<dependency>
+			<groupId>org.fornax.cartridges</groupId>
+			<artifactId>fornax-cartridges-sculptor-framework</artifactId>
+			<version>${sculptor.version}</version>
+			<classifier>without-ejb</classifier>
+		</dependency>
+{code}
+
+If you use MongoDB you should be aware of that we have upgraded the mongo-java-driver to version 2.4. You should generate new Eclipse .classpath with {{mvn eclipse:eclipse}}. It is a transitive dependency from fornax-cartridges-sculptor-mongodb.
+
+If you use Apache Camel you should change version property to:
+{code}
+<camel.version>2.6.0</camel.version>
+{code}
+
+
+If you use Spring Integration you should change the dependency of previous artifactId org.springframework.integration to:
+{code}
+	<spring-integration.version>2.0.0.RELEASE</spring-integration.version>
+
+	<dependency>
+		<groupId>org.springframework.integration</groupId>
+		<artifactId>spring-integration-core</artifactId>
+		<version>${spring-integration.version}</version>
+	</dependency>
+{code}
+
+If you use Google Appengine you should migrate to version 1.4.2 with these changes in pom.xml
+- appengine.version 1.4.2
+- datanucleus-appengine.version 1.0.8.final
+- remove exclude com.google.appengine:appengine-local-runtime from maven-eclipse-plugin
+- remove exclude com.google.appengine:appengine-tools-api from maven-eclipse-plugin
+- remove dependency appengine-local-runtime
+- remove dependency appengine-tools-api
+
+Due to a bug in appengine-testing 1.4.2 we must use 1.4.2a for appengine-testing. 
+{code}
+		<dependency>
+			<groupId>com.google.appengine</groupId>
+			<artifactId>appengine-testing</artifactId>
+			<!-- version 1.4.2a -->
+			<version>${appengine.version}a</version>
+			<scope>test</scope>
+		</dependency>
+{code}
+
+Update the GAE Eclipse plugin from update site: http://dl.google.com/eclipse/plugin/3.6
+
+*Update to new workflow system and new file layout for generator*
+In pom.xml change version of oAW plugin
+{code}
+    <fornax-oaw-m2.version>3.2.3</fornax-oaw-m2.version>
+{code}
+and whole oAW plugin section to
+{code}
+	<plugin>
+		<groupId>org.fornax.toolsupport</groupId>
+		<artifactId>fornax-oaw-m2-plugin</artifactId>
+		<version>${fornax-oaw-m2.version}</version>
+		<configuration>
+			<workflowEngine>mwe2</workflowEngine>
+			<workflowDescriptor>file://${basedir}/src/main/resources/generator/Workflow.mwe2</workflowDescriptor>
+			<checkFilesets>
+				<checkFileset>
+					<directory>${basedir}</directory>
+					<includes><include>src/main/resources/*.btdesign</include></includes>
+				</checkFileset>
+			</checkFilesets>
+		</configuration>
+		<executions>
+			<execution>
+				<phase>generate-sources</phase>
+				<goals>
+					<goal>run-workflow</goal>
+				</goals>
+			</execution>
+		</executions>
+	</plugin>
+{code}
+Add following line to '.ignore-checksum.txt'
+{code}
+src/main/resources/generator
+{code}
+Create new directory 'src/main/resources/generator'. Create there new file 'Workflow.mwe2' with following content:
+{code}
+module generator.Workflow
+
+Workflow {
+	component = @workflow.Sculptorworkflow {
+		modelFile = "classpath:/model.btdesign"
+		// For org.eclipse.xtext.mwe.Reader:
+		// modelFile = "."
+
+		// Advice for
+		//    transformation, Xtend 'src/main/resources/generator/SpecialCases.ext'
+		transformationAdvice = "generator::SpecialCases"
+		//    templates, Xpand 'src/main/resources/generator/SpecialCases.xpt'
+		templateAdvice = "generator::SpecialCases"
+	}
+}
+{code}
+
+Move all generator specific files 'templates/SpecialCases.xpt', 'extensions/SpecialCases.ext' and 'sculptor-generator.properties' from 'src/main/resources' directory to 'src/main/resources/generator' subdirectory. Go to 'src/main/resources' directory and run following:
+{code}
+cd src/main/resources
+mv templates/* extensions/* sculptor-generator.properties generator
+{code}
+After this step you will have 4 files in 'src/main/resources/generator' (Workflow.mwe2, SpecialCases.xpt, SpecialCases.ext, sculptor-generator.properties).
+Now you can remove empty directories 'templates' and 'extensions' and also old workflow file 'workflow.mwe' from 'src/main/resources'.
+{code}
+rmdir templates extensions
+rm workflow.mwe
+{code}
+
+Run {{mvn eclipse:eclipse}} from the parent project to update Eclipse projects.
+
+*Static imports in JUnit tests*
+You might need to add static imports for assert methods in your JUnit tests.
+{code}
+import static org.junit.Assert.*;
+{code}
+
+*Integration with SLF4J*
+New version was moved from log4j logging to [SLF4J|http://www.slf4j.org/] with [Logback backend|http://logback.qos.ch/]. SLF4J allow many backends and also have special bridges for many (legacy) logging frameworks. Following points lead to setup where you have log4j and commons-logging directed to SLF4J and through this to SLF4J native backend - Logback. Other setups are also feasible, check previous links. However for now SLF4J with Logback is considered to be best logging framework available.
+1. Remove all references to commons-logging and log4j from pom.xml dependencies. Usually you have to REMOVE something like this:
+{code}
+                <dependency>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                        <version>${log4j.version}</version>
+                        <!-- Add scope provided when deployed in jboss -->
+                        <!-- <scope>provided</scope> -->
+                </dependency>
+---------------------------------------------------------------------------
+                <dependency>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                        <version>${commons-logging.version}</version>
+                        <scope>provided</scope>
+                </dependency>
+{code}
+
+2. It is also important to not include commons-logging and log4j as a transitive dependency. For example you must use exclude in the following dependencies:
+{code}
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+			<version>${spring.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+ 				<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>commons-beanutils</groupId>
+			<artifactId>commons-beanutils</artifactId>
+			<version>1.7.0</version>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+ 				<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+{code}
+
+[M2Eclipse|http://m2eclipse.sonatype.org/] plugin or {{mvn dependency:tree}} are invaluable tools when analyzing dependencies.
+
+3. Merge following to properties section of you pom.xml (check if you don't have already such properties, specially slf4j.version)
+{code}
+		<slf4j.version>1.6.1</slf4j.version>
+		<logback.version>0.9.28</logback.version>
+{code}
+4. Add following to dependencies section of pom.xml
+{code}
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>log4j-over-slf4j</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback.version}</version>
+		</dependency>
+{code}
+
+5. Initial configuration file for Logback will be generated in src/main/resouces and src/test/resources
+
+Now all logging from commons-logging, log4j are redirected through SLF4J. Other setups are feasible, check [SLF4J configuration guide|http://www.slf4j.org/legacy.html]. For example you can use log4j as backend.
+{code}
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>${slf4j.version}</version>
+			<!-- Add scope provided when deployed in jboss -->
+		    <scope>provided</scope>
+		</dependency>
+{code}
+
+When using log4j as backend you should not use log4j-over-slf4j, jcl-over-slf4j and logback-classic.
+
+Even though not necessary when you use the bridge, it is recommended that you migrate your hand written log statements to use SLF4J instead of commons-logging. The API is very similar, so it isn't difficult. You can also use the [migration tool|http://www.slf4j.org/migrator.html]. 
+
+6. Generate new Eclipse .classpath with mvn eclipse:eclipse.
+
+*Changed syntax in GUI DSL*
+A small non-backwards compatible change to the gui dsl (.guidesign) has been done to be able to improve code completion. You must add {{-}} in front of view properties.
+{code}
+        ListTask for Person {
+            - name.first
+            - name.last
+            - birthDate
+            - sex
+            - ssn
+            searchWith PersonService.findAllNicePersons
+        }
+{code}
+
+*New DSL keywords*
+ 
+We have added a few new keywords in the DSL, e.g. {{url}}. If you get a naming conflict with your existing names you can prefix it with {{^}}, e.g. {{^url}}.
+
+{anchor:v2_0_refactoring}
+*SpecialCases.xpt - templates restructured*
+A structural refactoring of the code generation templates has been done. It will break code in your SpecialCases.xpt files. It should be easy to migrate since we have only moved template files to subdirectories and some templates has been divided into several files. The following changes has been done. [CSC-608|http://fornax.itemis.de/jira/browse/CSC-608] contains descriptions with Subversion revision numbers in case you need to see the exact details of the changes.
+
+DomainObjectProperties.xpt has been moved to templates::domain::DomainObjectProperties.xpt 
+DomainObject.xpt has been moved to templates::domain::DomainObject.xpt 
+DomainObject.xpt has been divided into: 
+* templates::domain::DomainObject.xpt
+* templates::domain::DomainObjectAnnotation.xpt
+* templates::domain::DomainObjectAttribute.xpt
+* templates::domain::DomainObjectAttributeAnnotation.xpt
+* templates::domain::DomainObjectConstructor.xpt
+* templates::domain::DomainObjectKey.xpt
+* templates::domain::DomainObjectNames.xpt
+* templates::domain::DomainObjectReference.xpt
+* templates::domain::DomainObjectReferenceAnnotation.xpt
+* templates::domain::DomainObjectTrait.xpt
+* templates::domain::Enum.xpt 
+
+
+Service.xpt has been moved to templates::service::Service.xpt 
+Service.xpt has been divided into: 
+* templates::service::Service.xpt 
+* templates::service::ServiceTest.xpt 
+* templates::service::ServiceEjb.xpt 
+* templates::service::ServiceEjbTest.xpt
+
+Consumer.xpt has been moved to templates::consumer::Consumer.xpt 
+Consumer.xpt has been divided into: 
+* templates::consumer::Consumer.xpt
+* templates::consumer::ConsumerTest.xpt 
+* templates::consumer::ConsumerEjb.xpt 
+* templates::consumer::ConsumerEjbTest.xpt 
+
+Repository.xpt has been moved to templates::repository::Repository.xpt 
+AccessObject.xpt has been moved to templates::repository::AccessObject.xpt 
+AccessObjectFactory.xpt has been moved to templates::repository::AccessObjectFactory.xpt 
+
+Spring.xpt has been moved to templates::spring::Spring.xpt 
+
+JPA.xpt has been moved to templates::jpa::JPA.xpt 
+DataNucleus.xpt has been moved to templates::jpa::DataNucleus.xpt 
+EclipseLink.xpt has been moved to templates::jpa::EclipseLink.xpt 
+Hibernate.xpt has been moved to templates::jpa::Hibernate.xpt 
+
+Exception.xpt has been moved to templates::common::Exception.xpt 
+PubSub.xpt has been moved to templates::common::PubSub.xpt 
+Drools.xpt has been moved to templates::drools::Drools.xpt 
+
+DDL.xpt has been moved to templates::db::DDL.xpt 
+OracleDDL.xpt has been moved to templates::db::OracleDDL.xpt 
+MysqlDDL.xpt has been moved to templates::db::MysqlDDL.xpt 
+CustomDDL.xpt has been moved to templates::db::CustomDDL.xpt 
+DbUnit.xpt has been moved to templates::db::DbUnit.xpt 
+Datasource.xpt has been moved to templates::db::Datasource.xpt 
+
+UMLGraph.xpt has been moved to templates::doc::UMLGraph.xpt 
+ModelDoc.xpt has been moved to templates::doc::ModelDocCss.xpt 
+ModelDoc.xpt has been divided into: 
+* templates::doc::ModelDoc.xpt 
+* templates::doc::ModelDocCss.xpt 
+
+{anchor:v1_9}
+h2. Version 1.9.x
+
+Version 1.9.0 was released July 07, 2010.
+
+This release contains:
+* [Support for MongoDB|fornax:12. MongoDB (CSC)]
+* [Support for Event-Driven Arcitecture|fornax:6. Event Driven Tutorial (CSC)] (Publish/Subscribe, CQRS, Event Sourcing)
+* New Home Page: [http://sculptor.fornax-platform.org|http://sculptor.fornax-platform.org]
+* Generated Documentation
+* More generated visualizations
+* [DSL language syntax|fornax:DSL language syntax 1.9]
+* [GWT SmartClient improvements|fornax:5.4. SmartClient (CSC)]
+* [Support for Non persistent ValueObject in GUI|fornax:5.1 Web CRUD GUI Tutorial (CSC)]
+* Several improvements of generation of database DDL
+* ToStringStyle
+* And a long [list|http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?reset=true&pid=10050&fixfor=10320] of bug fixes and improvements...
+
+Complete [Release Notes|fornax:Sculptor (CSC)^release-notes-1.9.html].
+
+Install new Sculptor DSL editor from update site. See [Installation Guide|fornax:1. Installation Guide (CSC)].
+
+h3. Migration
+
+If you start from scratch you use the maven archetypes to create project structure, and you can of course skip these migration instructions. If you have an existing project you need to do the following tasks.
+
+*Change version*
+Change {{sculptor.version}} in the {{pom.xml}} of the parent project.
+{code}
+<sculptor.version>1.9.0</sculptor.version>
+{code}
+
+*New DSL keywords*
+
+We have added a few new keywords in the DSL, e.g. {{to}}. If you get a naming conflict with your existing names you can prefix it with {{^}}, e.g. {{^to}}.
+
+Note the new syntax for aggregates. You can still use the old {{not aggregateRoot}}, but I think it is more informative to use the new {{belongsTo}}.
+{code}
+Entity Order { 
+  String orderId 
+  String customer 
+} 
+
+ValueObject OrderRow { 
+  belongsTo Order 
+  String product 
+}
+{code}
+
+*ValueObjects and aggregates*
+
+We have added same kind of aggregate support for persistent ValueObjects as for Entities. That means that additional constraint validations are performed. If you run in to constraint validation errors you might need to specify not aggregateRoot (or belongsTo) for your ValueObjects that belongs to an aggregate.
+
+*Graphviz maven plugin*
+There is a new maven plugin fornax-graphviz-m2-plugin that generates images (.png) from the .dot files. Add the following plugin in your pom.xml, and install Graphviz, you need to have dot executable in path (or define dotCmd configuration of the plugin).
+
+{code}
+<plugin>
+	<groupId>org.fornax.toolsupport</groupId>
+	<artifactId>fornax-graphviz-m2-plugin</artifactId>
+	<version>1.0.0</version>
+	<executions>
+		<execution>
+			<phase>generate-resources</phase>
+			<goals><goal>run</goal></goals>
+		</execution>
+	</executions>
+</plugin>
+{code}
+
+*Replace hints joinTableName and joinColumnName*
+
+* hint joinTableName is now supported with keyword databaseJoinTable
+* hint joinColumnName is now supported with keyword databaseJoinColumn
+
+Documented in [Advanced Tutorial|fornax:3. Advanced Tutorial (CSC)#DatabaseDefinitions]
+
+*Appengine 1.3.5*
+If you are using Appengine target implementation you need to change the following to migrate to GAE SDK 1.3.5 and GAE Eclipse Plugin 1.3.3.
+
+a) Install GAE Eclipse Plugin 1.3.3 from update site: http://dl.google.com/eclipse/plugin/3.5
+
+b) Change version numbers in pom.xml
+{code}
+<spring.version>3.0.3.RELEASE</spring.version>
+<sculptor.version>1.9.0</sculptor.version>
+<appengine.version>1.3.5</appengine.version>
+<datanucleus.version>1.1.5</datanucleus.version>
+<datanucleus-appengine.version>1.0.7.final</datanucleus-appengine.version>
+{code}
+
+c) Modify excludes configuration of maven-eclipse-plugin in pom.xml. It should now be:
+{code}
+<excludes>
+	<!-- Included in GAE_CONTAINER -->
+	<exclude>com.google.appengine:appengine-api-1.0-sdk</exclude>
+	<exclude>com.google.appengine:appengine-api-labs</exclude>
+	<exclude>com.google.appengine:appengine-local-runtime</exclude>
+	<exclude>com.google.appengine:appengine-tools-api</exclude>
+	<exclude>com.google.appengine.orm:datanucleus-appengine</exclude>
+	<exclude>org.datanucleus:datanucleus-jpa</exclude>
+	<exclude>org.datanucleus:datanucleus-core</exclude>
+	<exclude>org.apache.geronimo.specs:geronimo-jpa_3.0_spec</exclude>
+	<exclude>org.apache.geronimo.specs:geronimo-jta_1.1_spec</exclude>
+	<exclude>javax.jdo:jdo2-api</exclude>
+</excludes>
+{code}
+
+d) Replace appengine-api-1.0-labs and datanucleus-appengine dependencies of maven-dependency-plugin in pom.xml. It should now be:
+{code}
+<artifactItem>
+	<groupId>com.google.appengine</groupId>
+	<artifactId>appengine-api-labs</artifactId>
+	<version>${appengine.version}</version>
+	<outputDirectory>war/WEB-INF/lib</outputDirectory>
+</artifactItem>
+<artifactItem>
+	<groupId>com.google.appengine.orm</groupId>
+	<artifactId>datanucleus-appengine</artifactId>
+	<version>${datanucleus-appengine.version}</version>
+	<outputDirectory>war/WEB-INF/lib</outputDirectory>
+</artifactItem>
+{code}
+
+e) Replace the following dependencies in pom.xml. appengine-api-1.0-labs, appengine-api-1.0-stubs, appengine-api-1.0-runtime, appengine-tools-sdk, datanucleus-appengine. It should now be:
+{code}
+<dependency>
+	<groupId>com.google.appengine</groupId>
+	<artifactId>appengine-api-labs</artifactId>
+	<version>${appengine.version}</version>
+</dependency>
+<dependency>
+	<groupId>com.google.appengine</groupId>
+	<artifactId>appengine-testing</artifactId>
+	<version>${appengine.version}</version>
+	<scope>test</scope>
+</dependency>
+<dependency>
+	<groupId>com.google.appengine</groupId>
+	<artifactId>appengine-api-stubs</artifactId>
+	<version>${appengine.version}</version>
+	<scope>test</scope>
+</dependency>
+<dependency>
+	<groupId>com.google.appengine</groupId>
+	<artifactId>appengine-local-runtime</artifactId>
+	<version>${appengine.version}</version>
+	<scope>test</scope>
+</dependency>
+<dependency>
+	<groupId>com.google.appengine</groupId>
+	<artifactId>appengine-tools-api</artifactId>
+	<version>${appengine.version}</version>
+	<scope>test</scope>
+</dependency>
+<dependency>
+	<groupId>com.google.appengine.orm</groupId>
+	<artifactId>datanucleus-appengine</artifactId>
+	<version>${datanucleus-appengine.version}</version>
+</dependency>
+{code}
+
+f) Add another maven repository in pom.xml
+{code}
+<repository>
+	<id>gae.googlecode.com</id>
+	<name>GAE SVN repository</name>
+	<url>http://maven-gae-plugin.googlecode.com/svn/repository/</url>
+</repository>
+{code}
+
+g) Run {{mvn clean}} followed by {{mvn eclipse:eclipse}}
+
+{anchor:v1_8}
+h2. Version 1.8.x
+
+Version 1.8.0 was released February 16, 2010.
+
+This release has the same functionality as previous 1.7.0, but internally it has been migrated to latest openArchitectureWare, which is now part of Eclipse. This means that the usability of the DSL editor is much better.
+
+* Better content assist (ctrl+space)
+* Formatting (Pretty Printing) of model files (ctrl+shift+F)
+* Templates (ctrl+space). This is a good complement to ordinary content assist. For example collection references.
+
+h3. Installation
+
+See [Installation Guide|fornax:1. Installation Guide (CSC)] for instructions of how to install Eclipse 3.5 Galileo and MWE/Xpand/Xtext 0.7.2, and the new Sculptor Plugins.
+
+h3. Migration
+
+If you start from scratch you use the maven archetypes to create project structure, and you can of course skip these migration instructions. If you have an existing project you need to do the following tasks.
+
+1. Change {{sculptor.version}} in the {{pom.xml}} of the parent project.
+{code}
+<sculptor.version>1.8.0</sculptor.version>
+{code}
+
+2. Rename src/main/resources/workflow.oaw to workflow.mwe
+
+3. Change workflow.mwe:
+{code}
+<workflow>
+
+	<cartridge file="sculptorworkflow.mwe">
+		<modelFile value="classpath:/model.btdesign"/>
+	</cartridge>
+
+	<component adviceTarget="modelTransformation"
+				class="org.eclipse.internal.xtend.xtend.XtendAdvice">
+		<extensionAdvice value="extensions::SpecialCases" />
+	</component>
+
+	<component adviceTarget="dslTransformation"
+				class="org.eclipse.internal.xtend.xtend.XtendAdvice">
+		<extensionAdvice value="extensions::SpecialCases" />
+	</component>
+	
+	<component adviceTarget="generator" id="reflectionAdvice"
+			class="org.eclipse.xpand2.GeneratorAdvice">
+		<advices value="templates::SpecialCases" />
+		<extensionAdvices value="extensions::SpecialCases" />
+		<fileEncoding value="iso-8859-1" />
+	</component>
+	
+</workflow>
+{code}
+
+4. In pom.xml add workflowEngine mwe to the configuration of fornax-oaw-m2-plugin
+
+{code}
+	<plugin>
+		<groupId>org.fornax.toolsupport</groupId>
+		<artifactId>fornax-oaw-m2-plugin</artifactId>
+		<version>${fornax-oaw-m2.version}</version>
+		<configuration>
+			<workflowEngine>mwe</workflowEngine>
+{code}
+Find dependency on *hybridlabs-beautifier* and remove whole dependency section.
+{code}
+               <dependency>
+                       <groupId>org.hybridlabs</groupId>
+                       <artifactId>hybridlabs-beautifier</artifactId>
+                       <version>1.1.9</version>
+                       <scope>runtime</scope>
+               </dependency>
+{code}
+
+5. We have removed the nested import feature, so you need to import all nested dependent models explicitly. That means that you might need to add some extra imports in model.btdesign.
+
+6. Replace platform resource import with classpath import
+For example:
+import 'platform:/resource/myapp/src/main/resources/model_core.btdesign'
+should be replaced with
+import 'classpath:/model_core.btdesign'
+
+7. To be able to use the new formatting feature of model files you might need to add some semicolons to define end of statement for attributes and references. It is still optional, and you don't need to add them, but then formatting will not be good.
+
+{code}
+        Entity Planet {
+            gap
+            scaffold
+            String name key;
+            String message;
+            Integer diameter nullable min="1";
+            Integer population nullable min="0";
+            - Set<@Moon> moons opposite planet;
+        }
+{code}
+
+8. External import feature has been removed. If you have used external import you can replace it with defining that the module should not be generated in in {{sculptor-generator.properties}}. E.g. to skip generation of module named '{{foo}}':
+{code}
+generate.module.foo=false
+{code}
+
+{anchor:v1_7}
+h2. Version 1.7.x
+
+Version 1.7.0 was released January 29, 2010.
+
+This release contains:
+* [Support Google App Engine|fornax:10. App Engine (CSC)]
+* [Support for additional JPA providers|fornax:7. Developer's Guide (CSC)#jpa_provider], [EclipseLink|http://www.eclipse.org/eclipselink/], and [DataNucleus|http://www.datanucleus.org/] 
+* [CRUD GUI with GWT SmartClient|fornax:5.4. SmartClient (CSC)]
+* [JSF improvements|fornax:5.1 Web CRUD GUI Tutorial (CSC)]
+* [Pure EJB3 target implementation (without Spring)|fornax:9. Pure EJB3 (CSC)]
+* [Data Transfer Objects and Web Services with JAX-WS|fornax:9. Pure EJB3 (CSC)#web_service]
+* [Pagination for queries|fornax:3. Advanced Tutorial (CSC)#pagination]
+* [Complex criteria support with internal DSL|fornax:3. Advanced Tutorial (CSC)#find_by_condition]
+* [findByKey|fornax:3. Advanced Tutorial (CSC)], built in query for the properties marked as key
+* [Hint for customization|fornax:7. Developer's Guide (CSC)#hint]
+* And a long [list|http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?reset=true&pid=10050&fixfor=10210] of bug fixes and improvements...
+
+
+Fixed issues:
+{jiraissues:url=http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?view=rss&&pid=10050&fixfor=10210&sorter/field=priority&sorter/order=DESC&tempMax=100&reset=true&anonymous=true&decorator=none\|columns=type;key;priority;status;summary;resolution}
+h3. Migration
+
+If you start from scratch you use the maven archetypes to create project structure, and you can of course skip these migration instructions.
+
+If you have an existing project you need to do the following tasks.
+
+*Change {{sculptor.version}}* in the {{pom.xml}} of the parent project.
+{code}
+<sculptor.version>1.7.0</sculptor.version>
+{code}
+
+*fornax-cartridges-sculptor-framework-test*
+Test utilities have been moved to separate jar. You need to add the following dependency in both business tier and web projects.
+{code}
+		<dependency>
+			<groupId>org.fornax.cartridges</groupId>
+			<artifactId>fornax-cartridges-sculptor-framework-test</artifactId>
+			<version>${sculptor.version}</version>
+			<scope>test</scope>
+		</dependency>
+{code}
+*Transitive dependencies from sculptor-framework are removed*
+All dependencies in sculptor-framework are now declared with scope {{provided}} and you must define the used dependencies yourself in your application project.
+
+*CGLIB dependency*
+The CGLIB dependency has been upgraded. In your business tier project you need to add an exclusion to the joda-time-hibernate dependency and you need to add an explicit dependency to the CGLIB library, see below.
+{code}
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>1.6</version>
+		</dependency>
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time-hibernate</artifactId>
+			<version>1.1</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.hibernate</groupId>
+					<artifactId>hibernate</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>hsqldb</groupId>
+					<artifactId>hsqldb</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>ehcache</groupId>
+					<artifactId>ehcache</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>dom4j</groupId>
+					<artifactId>dom4j</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>antlr</groupId>
+					<artifactId>antlr</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>cglib</groupId>
+					<artifactId>cglib-full</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>cglib</groupId>
+			<artifactId>cglib-nodep</artifactId>
+			<version>2.2</version>
+			<!-- Add scope provided when deployed in jboss -->
+			<!--scope>provided</scope-->
+		</dependency>
+{code}
+*Joda for auditable timestamps*
+When using joda the auditable fields are now also joda types. In case you prefer the old behaviour you can add in sculptor-generator.properties:
+{code}
+generate.auditable.joda=false
+{code}
+*Checksum plugin (optional)*
+This maven plugin is responsible for deleting unchanged files from one-time-generate directories. Read more about it in [Developer's Guide|fornax:7. Developer's Guide (CSC)#checksum_plugin]. You don't need to use the checksum plugin.
+
+To use it you need to add the folling to pom.xml files in business-tier and presentation-tier projects.
+
+{code}
+			<plugin>
+				<groupId>org.fornax.toolsupport</groupId>
+				<artifactId>fornax-checksum-m2-plugin</artifactId>
+				<version>1.0.0-SNAPSHOT</version>
+				<executions>
+					<execution>
+						<id>clean</id>
+						<phase>clean</phase>
+						<goals><goal>run</goal></goals>
+					</execution>
+					<execution>
+						<id>before generate</id>
+						<phase>initialize</phase>
+						<goals><goal>run</goal></goals>
+						<configuration>
+							<action>before-generate</action>
+						</configuration>
+					</execution>
+					<execution>
+						<id>after generate</id>
+						<phase>generate-sources</phase>
+						<goals><goal>run</goal></goals>
+						<configuration>
+							<action>after-generate</action>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+{code}
+
+*JSF client*
+A lot of changes has been made to improve support for customization. The eaisiest way of figuring it out is to generate a new project in parallell and compare the differences. For more info about on explicit changes, see jira-issue's that starts with 'JSF client'.
+
+*Names interfaces not generated*
+For each domain object there was a corresponding interface containing string constants for all attribute and association names. This is not generated any more. If you need it you can turn on generation of it with sculptor-generator.properties:
+{code}
+generate.domainObject.nameConstants=true
+{code}
+However, we recommend that you migrate to the new type and refactoring safe Properties classes instead. They are intended to be used together with the new {{findByCondition}} and {{ConditionalCriteriaBuilder}}, but they can be used standalone also. E.g. 
+{code}
+String firstName = PersonProperties.name().first().toString();
+{code}
+
+{anchor:v1_6}
+
+h2. Version 1.6.x
+
+Version 1.6.0 was released June 14, 2009.
+
+This release contains:
+* Support for JPA
+* Support for Hibernate validator
+* Spring annotations instead of XML
+* JUnit 4 annotations
+* Jetty and inmemory Hsqldb
+* Spring Webflow 2
+* Don't generate gap classes by default
+* And a long [list|http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?reset=true&pid=10050&fixfor=10101] of bug fixes and improvements...
+
+Fixed issues:
+{jiraissues:url=http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?view=rss&&pid=10050&fixfor=10101&sorter/field=priority&sorter/order=DESC&tempMax=100&reset=true&anonymous=true&decorator=none\|columns=type;key;priority;status;summary;resolution}
+h3. Migration
+
+If you start from scratch you use the maven archetypes to create project structure, and you can of course skip these migration instructions.
+
+If you have an existing project you need to do the following tasks.
+
+*Dependencies*
+We have upgraded several frameworks to latest version. Run the [Sculptor archetypes|fornax:4. Archetype Tutorial (CSC)] for version 1.6 and compare {{pom}} files with your existing project.
+
+Version overview:
+|| Framework || Sculptor 1.5.x || Sculptor 1.6.x ||
+| Hibernate | 3.2.5.ga | 3.3.1.GA |
+| hibernate-entitymanager | \- | 3.4.0.GA |
+| hibernate-annotations | \- | 3.4.0.GA |
+| hibernate-validator | \- | 3.1.0.GA |
+| Spring | 2.0.7 | 2.5.6 |
+| JUnit | 3.8.1 | 4.4 |
+| DBUnit | 2.1 | 2.4.4 |
+| Jetty | \- | 6.1.11 |
+| Spring Webflow | 1.0.5 | 2.0.6.RELEASE |
+
+*Maven clean plugin*
+To [remove generated files before regeneration|http://fornax.itemis.de/jira/browse/CSC-208] you need to add some settings for maven-clean-plugin. Grab correct settings by running the [Sculptor archetypes|fornax:4. Archetype Tutorial (CSC)] for version 1.6.
+
+*Change file extension of .design to .btdesign*
+Due to naming conflict with another plugin we have changed the file extension of {{model.design}}. It is now {{.btdesign}}. bt stands for Business Tier. You need to rename the .design files and change references in {{pom.xml}}, {{workflow.oaw}} and {{model.guidesign}}. After [installing|fornax:1. Installation Guide (CSC)] the Sculptor Eclipse plugins you might need to start Eclipse with {{\-clean}}.
+
+*sculptor-generator.properties*
+We have changed default values to use Jetty and Hsqldb. To use JBoss and MySQL, which was default in Sculptor 1.5.0, you need to add these properties:
+{code}
+deployment.type=ear
+deployment.applicationServer=JBoss
+db.product=mysql
+{code}
+JPA, Spring annotations and JUnit annotations are new default features in Sculptor 1.6.0. If you still want to use the old style you need to add these properties:
+{code}
+generate.jpa.annotation=false
+generate.spring.annotation=false
+generate.test.annotation=false
+{code}
+This setup requires DbUnit version 2.1.
+{code}
+		<dependency>
+			<groupId>dbunit</groupId>
+			<artifactId>dbunit</artifactId>
+			<version>2.1</version>
+			<scope>test</scope>
+		</dependency>
+{code}
+*Gap Class*
+Prior to version 1.6.0 Sculptor generated some files once, such as subclasses to domain objects. Now those classes are generated on demand. In {{model.design}} you can specify that you need a sub class for hand written code, a {{gap}} class.
+
+{code}
+       Entity Person {
+          gap
+          scaffold
+          Date birthDate
+          - @Gender sex !changeable
+          - @Ssn ssn key
+          - @PersonName name
+       }
+{code}
+To use the same behavior as before, i.e. always generate gap classes, you need to add the following property in {{sculptor-generator.properties}}.
+
+{code}
+generate.gapClass=true
+{code}
+*JSP CRUD GUI*
+The JSP variant of the CRUD GUI has been removed, in favor of JSF.
+
+{anchor:v1_5}
+
+h2. Version 1.5.x
+
+Version 1.5.0 was released February 1, 2009.
+
+This release contains:
+* New DSL for customization of the [CRUD GUI|5.3 DSL for GRUD GUI]
+* New [rich client|5.2 Rich Client CRUD GUI Tutorial (CSC)] dialect of the CRUD GUI
+* Upgrade to oAW 4.3.1
+* Port of the [DDD Sample|8. DDD Sample (CSC)]
+* And a long list of bug fixes and improvements...
+
+Fixed issues:
+{jiraissues:url=http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?view=rss&&pid=10050&fixfor=10042&sorter/field=priority&sorter/order=DESC&tempMax=100&reset=true&decorator=none\|columns=type;key;priority;status;summary;resolution}
+h3. Migration
+
+You have to upgrade to oAW 4.3.1, and install the Sculptor features, see [Installation guide|1. Installation Guide (CSC)].
+
+If you start from scratch you use the maven archetypes to create project structure, and you can of course skip these migration instructions.
+
+If you have an existing project you need to do the following tasks.
+
+1. Change {{sculptor.version}} in the {{pom.xml}} of the parent project.
+{code}
+<sculptor.version>1.5.0</sculptor.version>
+{code}
+2. Change {{fornax-oaw-m2.version}} in the {{pom.xml}} of the parent project.
+{code}
+<fornax-oaw-m2.version>2.1.1</fornax-oaw-m2.version>
+{code}
+3. If you use a web project. Create file {{src/main/resources/model.guidesign}} with content (replace with your own names):
+{code}
+import 'platform:/resource/helloworld/src/main/resources/model.design'
+gui MyWeb for Universe {
+
+}
+{code}
+4. If you use a web project. Edit {{src/main/resources/workflow-gui.oaw}}. It should now look something like this
+{code}
+<workflow>
+	<cartridge file="sculptorguidslworkflow.oaw">
+		<modelFile value="model.guidesign"/>
+		<appProject value="helloworld-web"/>
+	</cartridge>
+	<!--
+	<component adviceTarget="generator" id="reflectionAdvice"
+			class="oaw.xpand2.GeneratorAdvice">
+		<advices value="templates::WebSpecialCases" />
+		<fileEncoding value="iso-8859-1" />
+	</component>
+	-->
+</workflow>
+{code}
+5. Thereafter you need to run {{mvn eclipse:eclipse}} from the parent project to update the classpath of the Eclipse projects.
+
+{anchor:v1_4}
+
+h2. Version 1.4.x
+
+Version 1.4.1 was released October 6, 2008.
+
+The most important features of this release:
+* JSF dialect of CRUD GUI.
+* Possibility to split model.design into several files.
+* Upgrade to oAW 4.3
+* Support for Eclipse 3.4 Ganymede. Europa 3.3.2 is also supported.
+
+Fixed issues:
+{jiraissues:url=http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?view=rss&&pid=10050&fixfor=10041&sorter/field=priority&sorter/order=DESC&tempMax=50&reset=true&decorator=none\|columns=type;key;priority;status;summary;resolution}
+{jiraissues:url=http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?view=rss&&pid=10050&fixfor=10110&sorter/field=priority&sorter/order=DESC&tempMax=50&reset=true&decorator=none\|columns=type;key;priority;status;summary;resolution}
+h3. JSF dialect still in beta
+
+There are some known issues with the JSF dialect of the CRUD GUI. JSF will be our future default choice and we are working hard to make it good. Please, try it and report issues
+
+h3. Migration
+
+You have to upgrade to oAW 4.3, see [Installation guide|1. Installation Guide (CSC)].
+
+If you start from scratch you use the maven archetypes to create project structure, and you can of course skip these migration instructions.
+
+If you have an existing project you need to do the following tasks.
+
+1. Change {{sculptor.version}} in the {{pom.xml}} of the parent project.
+{code}
+<sculptor.version>1.4.1</sculptor.version>
+{code}
+2. Change {{fornax-oaw-m2.version}} in the {{pom.xml}} of the parent project.
+{code}
+<fornax-oaw-m2.version>2.1.0</fornax-oaw-m2.version>
+{code}
+3. The fornax maven repository has moved and therefore you need to change the repositories settings in {{pom.xml}} of the parent project. It should be like this:
+{code}
+	<repositories>
+		<repository>
+			<id>releases.archiva.fornax-platform.org</id>
+			<name>Archiva Managed Release Repository</name>
+			<url>
+				http://www.fornax-platform.org/archiva/repository/releases/
+			</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>snapshots.archiva.fornax-platform.org</id>
+			<name>Archiva Managed Snapshot Repository</name>
+			<url>
+				http://www.fornax-platform.org/archiva/repository/snapshots/
+			</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>java.net</id>
+			<url>http://download.java.net/maven/1</url>
+			<layout>legacy</layout>
+		</repository>
+	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>releases.archiva.fornax-platform.org</id>
+			<name>Archiva Managed Release Repository</name>
+			<url>
+				http://www.fornax-platform.org/archiva/repository/releases/
+			</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+		<pluginRepository>
+			<id>snapshots.archiva.fornax-platform.org</id>
+			<name>Archiva Managed Snapshot Repository</name>
+			<url>
+				http://www.fornax-platform.org/archiva/repository/snapshots/
+			</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+{code}
+4. Thereafter you need to run {{mvn eclipse:eclipse}} from the parent project to update the classpath of the Eclipse projects.
+
+5. If you have an existing project and need correction of "CSC-207 Not possible to deploy several applications" you have to change the {{pom.xml}} in the ear project. Change version of maven-ear-plugin to 2.3.1 and add the following
+You have to upgrade to oAW 4.3, see [Installation guide|1. Installation Guide (CSC)].
+
+jboss element to the configuration:
+
+{code}
+<plugin>
+	<artifactId>maven-ear-plugin</artifactId>
+	<version>2.3.1</version>
+	<configuration>
+		<generateApplicationXml>true</generateApplicationXml>
+		<jboss>
+			<loader-repository>${groupId}.${artifactId}:archive=${artifactId}.ear</loader-repository>
+		</jboss>
+{code}
+{anchor:v1_3}
+
+h2. Version 1.3.x
+
+Version 1.3.1 was released April 11, 2008.
+
+The most important feature of 1.3 is a totally new metamodel for the CRUD GUI. In version 1.1 we implemented theyou need to change the version of {{fornax-oaw-m2-plugin}}. You have to change the {{pom.xml}} in the parent project.
+{code}
+<fornax-oaw-m2.version>2.1.0</fornax-oaw-m2.version>
+{code}
+If you have an existing project  CRUD GUI without a separate gui metamodel. The gui generation was using the business tier model. This was a good start, but the experience was that the templates and helper extensions became rather complicated. A special purpose gui metamodel simplified the templates and moved some of the logic to a transformation instead. This is important as we see the need for different dialects of the GUI. In the initial version we are using Spring WebFlow and JSP. We have also started a JSF dialect. More is likely to come, such as rich client (RCP). Another motivation for the gui metamodel is the possibility to customize the GUI by using a separate DSL (in next release).
+
+The release also contains several other improvements and new features.
+{jiraissues:url=http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?view=rss&&pid=10050&fixfor=10040&sorter/field=priority&sorter/order=DESC&tempMax=50&reset=true&decorator=none\|columns=type;key;priority;status;summary;resolution}
+Some more bug fixes in 1.3.1.
+{jiraissues:url=http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?view=rss&&pid=10050&fixfor=10060&sorter/field=priority&sorter/order=DESC&tempMax=50&reset=true&decorator=none\|columns=type;key;priority;status;summary;resolution}
+h3. Migration
+ 
+If you start from scratch you use the maven archetypes to create project structure.
+ 
+For existing projects you have to do some migration.
+ 
+*1. workflow.oaw*
+You need to rename workflow.oaw in *web* project to workflow-gui.oaw and also change the reference to this file in pom.xml in the same web project:
+{code}
+ <plugin>
+ <groupId>org.fornax.toolsupport</groupId>
+ <artifactId>fornax-oaw-m2-plugin</artifactId>
+ <version>${fornax-oaw-m2.version}</version>
+ <configuration>
+ <workflowDescriptor>workflow-gui.oaw</workflowDescriptor>
+ <checkResources>
+ <checkResource>
+ ../fornax-cartridges-sculptor-examples-library/src/main/resources/model.design
+ </checkResource>
+ </checkResources>
+ <properties>
+ <modelFile>model.design</modelFile>
+ <appProject>${artifactId}</appProject>
+ </properties>
+ </configuration>
+ <executions>
+ <execution>
+ <phase>generate-sources</phase>
+ <goals>
+ <goal>run-workflow</goal>
+ </goals>
+ </execution>
+ </executions>
+ </plugin>
+{code}
+*2. Rename foreign key columns*
+The naming conventions for foreign key columns in the generated DDL file has been changed. Basically the new naming is based on names of the references, instead of names of the referred objects. Make a copy of previously generated DDL file and compare that to the new one see what has been changed. Rename columns in existing database, if you can't recreate the database.
+{code}
+ALTER TABLE MOON CHANGE COLUMN PLANET_ID PLANET BIGINT NOT NULL
+ 
+ALTER TABLE DEPARTMENT CHANGE COLUMN EMPLOYEE_ID HEADOFDEPARTMENT BIGINT
+{code}
+With this version it is possible to define database table and column names in the DSL, i.e. if you can't change the database you can define the old names. See [Advanced Tutorial|3. Advanced Tutorial (CSC)#databaseNames].
+ 
+{anchor:v1_2}
+ 
+h2. Version 1.2.x
+ 
+Version 1.2.0 was released December 9, 2007.
+ 
+{jiraissues:url=http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?view=rss&&pid=10050&fixfor=10032&sorter/field=priority&sorter/order=DESC&tempMax=50&reset=true&decorator=none\|columns=type;key;priority;status;summary;resolution}
+It is a technical upgrade of several core products such as Eclipse and openArchitectureWare. You have to do some migration tasks to start using 1.2.0.
+ 
+h3. Installation of Development Environment
+ 
+The [Installation Guide|1. Installation Guide (CSC)] describes that you need to install Eclipse IDE for Java EE Developers (jee-europa 3.3.1.1) and plugins such as openArchitectureWare 4.2.
+ 
+Note that the need for the previously manually installed Sun jar files in the maven repository has been eliminated, but you have to add {{java.net}} repository in maven settings.xml.
+ 
+JBoss AS 4.2.2.GA is the application server we are using with Sculptor 1.2.
+ 
+h3. Migration of Maven pom.xml files
+ 
+If you start from scratch you use the maven archetypes to create project structure and maven pom.xml files with correct dependencies. However, for existing projects you need to change some dependencies in the pom.xml.
+ 
+Hibernate, add exclusion of jta:
+{code}
+<dependency>
+ <groupId>org.hibernate</groupId>
+ <artifactId>hibernate</artifactId>
+ <version>${hibernate.version}</version>
+ <exclusions>
+ <exclusion>
+ <groupId>javax.transaction</groupId>
+ <artifactId>jta</artifactId>
+ </exclusion>
+ </exclusions>
+</dependency>
+{code}
+spring-hibernate3, add exclusion of jta:
+{code}
+<dependency>
+ <groupId>org.springframework</groupId>
+ <artifactId>spring-hibernate3</artifactId>
+ <version>${spring.version}</version>
+ <exclusions>
+ <exclusion>
+ <groupId>javax.transaction</groupId>
+ <artifactId>jta</artifactId>
+ </exclusion>
+ </exclusions>
+</dependency>
+{code}
+javaee, use javaee-api artifactId instead of javaee:
+{code}
+<dependency>
+ <groupId>javaee</groupId>
+ <artifactId>javaee-api</artifactId>
+ <version>5</version>
+ <scope>provided</scope>
+</dependency>
+{code}
+castor, add exclusion of jta:
+{code}
+<dependency>
+ <groupId>org.codehaus.castor</groupId>
+ <artifactId>castor</artifactId>
+ <version>1.1.1</version>
+ <exclusions>
+ <exclusion>
+ <groupId>cglib</groupId>
+ <artifactId>cglib-full</artifactId>
+ </exclusion>
+ <exclusion>
+ <groupId>xerces</groupId>
+ <artifactId>xerces</artifactId>
+ </exclusion>
+ <exclusion>
+ <groupId>javax.transaction</groupId>
+ <artifactId>jta</artifactId>
+ </exclusion>
+ </exclusions>
+</dependency>
+{code}
+Add hybridlabs-beautifier:
+{code}
+<dependency>
+ <groupId>org.hybridlabs</groupId>
+ <artifactId>hybridlabs-beautifier</artifactId>
+ <version>1.1.8</version>
+ <scope>runtime</scope>
+</dependency>
+{code}
+spring-webflow, version 1.0.5:
+{code}
+<dependency>
+ <groupId>org.springframework</groupId>
+ <artifactId>spring-webflow</artifactId>
+ <version>1.0.5</version>
+</dependency>
+{code}
+Add fornax-cartridges-sculptor-generator to web project.
+Add hybridlabs-beautifier also.
+{code}
+<dependency>
+ <groupId>org.fornax.cartridges</groupId>
+ <artifactId>fornax-cartridges-sculptor-generator</artifactId>
+ <version>${sculptor.version}</version>
+ <scope>runtime</scope>
+</dependency>
+<dependency>
+ <groupId>org.hybridlabs</groupId>
+ <artifactId>hybridlabs-beautifier</artifactId>
+ <version>1.1.8</version>
+ <scope>runtime</scope>
+</dependency>
+{code}
+*Remove* oaw-aaa-patch dependency:
+{code}
+<dependency>
+ <!-- Patch for oAW bug 180359. This will be placed before oaw-core-xpand2-4.1.2.jar in classpath. -->
+ <groupId>org.fornax.cartridges</groupId>
+ <artifactId>oaw-aaa-patch</artifactId>
+ <version>1.0.0</version>
+ <scope>compile</scope>
+</dependency>
+{code}
+maven-surefire-plugin version 2.3:
+{code}
+<plugin>
+ <artifactId>maven-surefire-plugin</artifactId>
+ <version>2.3</version>
+ <configuration>
+ <skip>false</skip>
+ <forkMode>once</forkMode>
+ <argLine>-Xms32m -Xmx1024m -Dlog4j.configuration=log4j-test.properties</argLine>
+ </configuration>
+</plugin>
+{code}
+Change version properties in pom.xml in parent project:
+{code}
+<properties>
+ <fornax-oaw-m2.version>2.0.0</fornax-oaw-m2.version>
+ <hibernate.version>3.2.5.ga</hibernate.version>
+ <spring.version>2.0.7</spring.version>
+ <log4j.version>1.2.8</log4j.version>
+ <commons-logging.version>1.0.3</commons-logging.version>
+ <sculptor.version>1.2.0</sculptor.version>
+</properties>
+{code}
+Remove the following from pom.xml in ear project:
+{code}
+<javaModule>
+ <groupId>org.eclipse.emf</groupId>
+ <artifactId>ecore-xmi</artifactId>
+ <excluded>true</excluded>
+</javaModule>
+<javaModule>
+ <groupId>antlr</groupId>
+ <artifactId>antlr</artifactId>
+ <excluded>true</excluded>
+</javaModule>
+<javaModule>
+ <groupId>org.antlr</groupId>
+ <artifactId>antlr</artifactId>
+ <excluded>true</excluded>
+</javaModule>
+<javaModule>
+ <groupId>org.antlr</groupId>
+ <artifactId>stringtemplate</artifactId>
+ <excluded>true</excluded>
+</javaModule>
+{code}
+Run {{mvn eclipse:eclipse}} in the parent project to update the dependencies in the Eclipse projects.
+ 
+h3. Rename of sculptor-generator.properties
+ 
+In web project the generator properties file should be named {{sculptor-gui-generation.properties}}. In the business tier project it is still named {{sculptor-generation.properties}}. If you have any properties that are identically defined in both of these files you can remove it from the web project {{sculptor-gui-generation.properties}}.
+ 
+{anchor:v1_1}
+ 
+h2. Version 1.1.x
+ 
+Version 1.1.0 was released November 5, 2007. It include a lot of useful features.
+ 
+* A complete, but customizable, [CRUD Gui|5. CRUD GUI Tutorial (CSC)] is generated based on the domain model specified with the Sculptor DSL. The generated web application uses Spring Web Flow to achieve navigation of the associations in the domain model.
+ 
+* [Scaffold|3. Advanced Tutorial (CSC)#scaffold] simplifies generation of CRUD operations and is perfect for prototyping together with the CRUD Gui.
+ 
+* It is efficient to develop the domain model with a textual DSL, but for communication purposes it is useful to have a visual UML view. Sculptor automatically generates a [class diagram|3. Advanced Tutorial (CSC)#diagram] of the domain model. Instantly updated documentation\!
+ 
+* Possibility to [deploy without EJBs|7. Developer's Guide (CSC)#war], i.e. to run in Tomcat.
+ 
+*Version 1.1.1 was released November 26. It is a minor bug fix release.*
+{jiraissues:url=http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?view=rss&&pid=10050&fixfor=10030&sorter/field=priority&sorter/order=DESC&tempMax=50&reset=true&decorator=none\|columns=type;key;priority;status;summary;resolution}
+{jiraissues:url=http://fornax.itemis.de/jira/secure/IssueNavigator.jspa?view=rss&&pid=10050&fixfor=100

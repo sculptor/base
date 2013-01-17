@@ -1,0 +1,452 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::guihelper»
+
+«DEFINE flowXml FOR GuiApplication»
+	«EXPAND createFlowXml FOREACH this.modules.userTasks.typeSelect(CreateTask)»
+	«EXPAND updateFlowXml FOREACH this.modules.userTasks.typeSelect(UpdateTask)»
+	«EXPAND viewFlowXml FOREACH this.modules.userTasks.typeSelect(ViewTask)»
+	«EXPAND deleteFlowXml FOREACH this.modules.userTasks.typeSelect(DeleteTask)»
+	«EXPAND listFlowXml FOREACH this.modules.userTasks.typeSelect(ListTask)»
+	«IF this.modules.userTasks.notExists(e | e.gapClass) »
+		«EXPAND createFlowsDir»
+	«ENDIF»
+«ENDDEFINE »
+
+«DEFINE createFlowsDir FOR GuiApplication»
+	«FILE "WEB-INF/flows/readme.txt" TO_WEBROOT»
+It is required to have a WEB-INF/flows directory.
+This file can be removed when some other files has been generated in the 
+flows directory.
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE createFlowXml FOR CreateTask»
+	«EXPAND createFlowDefinitionBase»
+	«IF gapClass»
+		«EXPAND flowDefinitionImpl»
+	«ENDIF»
+«ENDDEFINE »
+
+
+«DEFINE createFlowDefinitionBase FOR CreateTask»
+	«FILE "WEB-INF/generated/flows/" + module.name + "/" + name + "/" + name + (gapClass ? "-base" : "-flow") + ".xml" TO_GEN_WEBROOT-»
+	<?xml version="1.0" encoding="UTF-8"?>
+	<flow xmlns="http://www.springframework.org/schema/webflow"
+          xmlns:ns0="http://www.w3.org/2001/XMLSchema-instance"
+          ns0:schemaLocation="http://www.springframework.org/schema/webflow http://www.springframework.org/schema/webflow/spring-webflow-2.0.xsd"
+          start-state="«EXPAND startStateName-»">
+
+		«EXPAND flowAttributeTag»
+		«EXPAND flowInputTag»
+		«EXPAND onStartFlowTag»
+		«EXPAND startStateTag»		
+		«EXPAND confirmStateTag»				
+		«EXPAND subflowForCreate FOREACH this.subTaskTransitions.select(e|e.to.metaType == CreateTask) -»
+		«EXPAND subflowForUpdate FOREACH this.subTaskTransitions.select(e|e.to.metaType == UpdateTask) -»
+		«EXPAND subflowForView FOREACH this.subTaskTransitions.select(e|e.to.metaType == ViewTask) -»
+
+		<decision-state id="cancelDecision">
+			<!-- When the flow is a top level flow we redirect to the first page, otherwise we finish the flow and return to parent flow. -->
+			<if test="flowExecutionContext.activeSession.root" then="redirectFinish" else="finish"/>
+		</decision-state>
+		«EXPAND endStateTag»			
+	</flow>
+	«ENDFILE »
+«ENDDEFINE»
+
+
+
+«DEFINE updateFlowXml FOR UpdateTask»
+	«EXPAND updateFlowDefinitionBase»
+	«IF gapClass»
+		«EXPAND flowDefinitionImpl»
+	«ENDIF»
+«ENDDEFINE »
+
+«DEFINE updateFlowDefinitionBase FOR UpdateTask»
+	«FILE "WEB-INF/generated/flows/" + module.name + "/" + name + "/" + name + (gapClass ? "-base" : "-flow") + ".xml" TO_GEN_WEBROOT-»
+	<?xml version="1.0" encoding="UTF-8"?>
+	<flow xmlns="http://www.springframework.org/schema/webflow"
+		xmlns:ns0="http://www.w3.org/2001/XMLSchema-instance"
+		ns0:schemaLocation="http://www.springframework.org/schema/webflow http://www.springframework.org/schema/webflow/spring-webflow-2.0.xsd"
+		start-state="«EXPAND startStateName-»">
+
+		«EXPAND flowAttributeTag»
+		«EXPAND flowInputTag»
+		«EXPAND onStartFlowTag»
+		«EXPAND startStateTag»
+		«EXPAND confirmStateTag»
+		«EXPAND subflowForCreate FOREACH this.subTaskTransitions.select(e|e.to.metaType == CreateTask) -»
+		«EXPAND subflowForUpdate FOREACH this.subTaskTransitions.select(e|e.to.metaType == UpdateTask) -»
+		«EXPAND subflowForView FOREACH this.subTaskTransitions.select(e|e.to.metaType == ViewTask) -»
+		«EXPAND endStateTag»			
+	</flow>
+	«ENDFILE »
+«ENDDEFINE»
+
+
+«DEFINE viewFlowXml FOR ViewTask»
+	«EXPAND viewFlowDefinitionBase »
+	«IF gapClass»
+		«EXPAND flowDefinitionImpl»
+	«ENDIF»
+«ENDDEFINE »
+
+«DEFINE viewFlowDefinitionBase FOR ViewTask»
+	«FILE "WEB-INF/generated/flows/" + module.name + "/" + name + "/" + name + (gapClass ? "-base" : "-flow") + ".xml" TO_GEN_WEBROOT-»
+	<?xml version="1.0" encoding="UTF-8"?>
+	<flow xmlns="http://www.springframework.org/schema/webflow"
+		xmlns:ns0="http://www.w3.org/2001/XMLSchema-instance"
+		ns0:schemaLocation="http://www.springframework.org/schema/webflow
+		http://www.springframework.org/schema/webflow/spring-webflow-2.0.xsd"
+		start-state="«EXPAND startStateName-»">
+
+		«EXPAND flowAttributeTag»
+		«EXPAND flowInputTag»
+		«EXPAND onStartFlowTag»
+		«EXPAND startStateTag»
+		«EXPAND subflowForViewFromView FOREACH this.subTaskTransitions.select(e|e.to.metaType == ViewTask) -»
+		«EXPAND endStateTag»
+	</flow>
+	«ENDFILE »
+«ENDDEFINE»
+
+
+«DEFINE deleteFlowXml FOR DeleteTask»
+	«IF this.deleteDOWith != null»
+		«EXPAND deleteFlowDefinitionBase »
+		«IF gapClass»
+			«EXPAND flowDefinitionImpl»
+		«ENDIF»
+	«ENDIF»
+«ENDDEFINE »
+
+«DEFINE deleteFlowDefinitionBase FOR DeleteTask»
+	«FILE "WEB-INF/generated/flows/" + module.name + "/" + name + "/" + name + (gapClass ? "-base" : "-flow") + ".xml" TO_GEN_WEBROOT-»
+	<?xml version="1.0" encoding="UTF-8"?>
+	<flow xmlns="http://www.springframework.org/schema/webflow"
+		xmlns:ns0="http://www.w3.org/2001/XMLSchema-instance"
+		ns0:schemaLocation="http://www.springframework.org/schema/webflow
+		http://www.springframework.org/schema/webflow/spring-webflow-2.0.xsd"
+		start-state="«EXPAND startStateName-»">
+
+		«EXPAND flowAttributeTag»
+		«EXPAND flowInputTag»
+		«EXPAND onStartFlowTag»
+		«EXPAND startStateTag»
+		«EXPAND endStateTag»
+	</flow>
+	«ENDFILE »
+«ENDDEFINE»
+
+
+«DEFINE listFlowXml FOR ListTask»
+	«IF this.searchDOWith != null»
+		«EXPAND listFlowDefinitionBase»
+		«IF gapClass»
+			«EXPAND flowDefinitionImpl»
+		«ENDIF»
+	«ENDIF»
+«ENDDEFINE »
+
+«DEFINE listFlowDefinitionBase FOR ListTask»
+	«FILE "WEB-INF/generated/flows/" + module.name + "/" + name + "/" + name + (gapClass ? "-base" : "-flow") + ".xml" TO_GEN_WEBROOT-»
+	<?xml version="1.0" encoding="UTF-8"?>
+	<flow xmlns="http://www.springframework.org/schema/webflow"
+		xmlns:ns0="http://www.w3.org/2001/XMLSchema-instance"
+		ns0:schemaLocation="http://www.springframework.org/schema/webflow
+		http://www.springframework.org/schema/webflow/spring-webflow-2.0.xsd"
+		start-state="«EXPAND startStateName-»">
+
+		«EXPAND flowAttributeTag»
+		«EXPAND flowInputTag»
+		«EXPAND onStartFlowTag»
+		«EXPAND startStateTag»
+		
+		<subflow-state id="view" subflow="«module.name»/view«for.name»">
+			<input name="id" value="requestParameters.id"/>
+			<transition on="finish" to="list"/>
+		</subflow-state>
+		«IF this.isUpdateSubTaskAvailable() -»
+		<subflow-state id="update" subflow="«module.name»/update«for.name»">
+			<input name="id" value="requestParameters.id"/>
+			<transition on="finish" to="list"/>
+		</subflow-state>
+		«ENDIF -»
+		«IF this.isDeleteSubTaskAvailable() -»
+		<subflow-state id="delete" subflow="«module.name»/delete«for.name»">
+			<input name="id" value="requestParameters.id"/>
+			<transition on="finish" to="list"/>
+		</subflow-state>
+		«ENDIF -»
+
+	</flow>
+	«ENDFILE »
+«ENDDEFINE»
+
+«DEFINE flowDefinitionImpl FOR UserTask»
+	«FILE "WEB-INF/flows/" + module.name + "/" + name + "/" + name + "-flow.xml" TO_WEBROOT-»
+	<?xml version="1.0" encoding="UTF-8"?>
+	<flow xmlns="http://www.springframework.org/schema/webflow"
+		xmlns:ns0="http://www.w3.org/2001/XMLSchema-instance"
+		ns0:schemaLocation="http://www.springframework.org/schema/webflow
+		http://www.springframework.org/schema/webflow/spring-webflow-2.0.xsd"
+		parent="«module.name»/«name»Base">
+	</flow>
+	«ENDFILE»
+«ENDDEFINE»
+
+
+
+
+«DEFINE startStateName FOR CreateTask»input«ENDDEFINE»
+«DEFINE startStateName FOR UpdateTask»input«ENDDEFINE»
+«DEFINE startStateName FOR ViewTask»view«ENDDEFINE»
+«DEFINE startStateName FOR DeleteTask»confirm«ENDDEFINE»
+«DEFINE startStateName FOR ListTask»list«ENDDEFINE»
+
+«DEFINE flowAttributeTag FOR UserTask»
+<attribute name="persistenceContext" value="supports"/>
+«ENDDEFINE»
+
+«DEFINE flowInputTag FOR CreateTask»«ENDDEFINE»
+
+«DEFINE flowInputTag FOR UpdateTask»
+«IF this.findDOWith != null -»
+<input name="id" required="true"/>
+«ELSE-»
+<input name="«for.name»" value="flashScope.«for.name»" required="true"/>
+«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE flowInputTag FOR ViewTask»
+<input name="id"/>
+<input name="«for.name»" />
+«ENDDEFINE»
+
+«DEFINE flowInputTag FOR DeleteTask»
+<input name="id" required="true"/>
+«ENDDEFINE»
+
+«DEFINE flowInputTag FOR ListTask»«ENDDEFINE»
+
+«DEFINE onStartFlowTag FOR UserTask»
+<on-start>
+	<!-- create the backing form object -->
+	<evaluate expression="«this.name»Action.createForm(flowRequestContext)"/>
+	<!-- Load things into the form -->
+   	<evaluate expression="«this.name»Action.loadForm(flowRequestContext)"/>
+</on-start>
+«ENDDEFINE»
+
+«DEFINE onStartFlowTag FOR DeleteTask»
+
+«ENDDEFINE»
+
+«DEFINE onStartFlowTag FOR ListTask»
+<on-start>
+	<!-- create the backing form object -->
+	<evaluate expression="«this.name»Action.createForm(flowRequestContext)"/>
+</on-start>
+«ENDDEFINE»
+
+
+«DEFINE startStateTag FOR CreateTask»
+<view-state id="input" model="«name»Form" view="/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/input.xhtml">
+	<transition on="submit" to="confirm">
+		<evaluate expression="«this.name»Action.confirm(flowRequestContext)"/>
+	</transition>		
+	«EXPAND cancelTransitionTag»			
+	«EXPAND transitionToSubflow(true) FOREACH this.subTaskTransitions.select(e | e.to.metaType == CreateTask || e.to.metaType == UpdateTask || e.to.metaType == ViewTask) -»
+	«EXPAND transitionToRemoveChild(this) FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base) -»
+	«EXPAND transitionToAddExistingChild(this) FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base) -»
+</view-state>
+«ENDDEFINE»
+
+«DEFINE startStateTag FOR UpdateTask»
+<view-state id="input" model="«name»Form" view="/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/input.xhtml">
+	<transition on="submit" to="confirm">
+		<evaluate expression="«this.name»Action.confirm(flowRequestContext)"/>
+	</transition>
+	«EXPAND cancelTransitionTag»
+	«EXPAND transitionToSubflow(true) FOREACH this.subTaskTransitions.select(e | e.to.metaType == CreateTask || e.to.metaType == UpdateTask || e.to.metaType == ViewTask) -»
+	«REM»TODO - should e.forReference.isRemoveAvailable be on gui meta model instead?«ENDREM»
+	«EXPAND transitionToRemoveChild(this) FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base)»
+	«REM»TODO - hmm, perhaps not the right way to use the 'CreateTask' subTaskTansitions for addin existing childs, but it will work for now«ENDREM»
+	«EXPAND transitionToAddExistingChild(this) FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base) -»
+</view-state>
+«ENDDEFINE»
+
+«DEFINE startStateTag FOR ViewTask»
+<view-state id="view" model="«this.name»Form" view="/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/view.xhtml">		
+	«EXPAND cancelTransitionTag»
+	«EXPAND transitionToSubflow(true) FOREACH this.subTaskTransitions.select(e | e.to.metaType == ViewTask) -»
+</view-state>
+«ENDDEFINE»
+
+«DEFINE startStateTag FOR DeleteTask»
+<view-state id="confirm" view="/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/confirm.xhtml">
+	<on-render>
+		<evaluate expression="«this.name»Action.findById(flowRequestContext)"/>
+	</on-render>
+	<transition on="submit" to="finish">
+		<evaluate expression="«this.name»Action.delete(flowRequestContext)"/>
+	</transition>
+	«EXPAND cancelTransitionTag»
+</view-state>
+«ENDDEFINE»
+
+«DEFINE startStateTag FOR ListTask»
+<view-state id="list" model="«this.name»Form" view="/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/list.xhtml">
+	<on-render>
+		<evaluate expression="«this.name»Action.findAll(flowRequestContext)"/>
+	</on-render>
+	<transition on="view" to="view"/>
+	«IF this.isUpdateSubTaskAvailable() -»
+	<transition on="update" to="update"/>
+	«ENDIF -»
+	«IF this.isDeleteSubTaskAvailable() -»
+	<transition on="delete" to="delete"/>
+	«ENDIF -»
+</view-state>
+«ENDDEFINE»
+
+«DEFINE confirmStateTag FOR CreateTask»
+<view-state id="confirm" view="/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/confirm.xhtml">
+	<transition on="submit" to="finish">
+		<evaluate expression="«this.name»Action.save(flowRequestContext)"/>
+	</transition>
+	«EXPAND cancelTransitionTag»
+	<transition on="back" to="input"/>
+</view-state>
+«ENDDEFINE»
+
+«DEFINE confirmStateTag FOR UpdateTask»
+<view-state id="confirm" view="/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/confirm.xhtml">
+	<transition on="submit" to="finish">
+		<evaluate expression="«this.name»Action.save(flowRequestContext)"/>
+	</transition>
+	«EXPAND cancelTransitionTag»
+	<transition on="back" to="input">
+	</transition>
+</view-state>
+«ENDDEFINE»
+
+
+«DEFINE transitionToSubflow(boolean addActionHooks) FOR SubTaskTransition »
+<transition on="«resolveTransitionEventName()»"
+			to="«resolveSubFlowId()»" validate="false">
+	«IF addActionHooks»
+	<evaluate expression="«this.from.name»Action.«resolvePrepareMethodName()»(flowRequestContext)"/>
+	«ENDIF»
+</transition>
+«ENDDEFINE»
+
+
+«DEFINE transitionToRemoveChild(UserTask fromTask) FOR ReferenceViewProperty»
+<transition on="«resolveRemoveTransitionEventName()»" to="input" validate="false">
+	<evaluate expression="«fromTask.name»Action.«resolveRemoveChildMethodName()»(flowRequestContext)"/>
+</transition>
+«ENDDEFINE»
+
+
+
+«DEFINE transitionToAddExistingChild(UserTask fromTask) FOR ReferenceViewProperty»
+«IF isAddSubTaskAvailable() -»
+<transition on="«resolveAddExistingChildEventName()»" to="input" validate="false">
+	<evaluate expression="«fromTask.name»Action.«resolveAddExistingChildMethodName()»(flowRequestContext)"/>
+</transition>
+«ENDIF»
+«ENDDEFINE»
+
+
+«DEFINE subflowForCreate FOR SubTaskTransition »
+«IF this.to.metaType == CreateTask»
+<subflow-state id="«resolveSubFlowId()»" subflow="«to.module.name»/«to.name»">
+	<output name="«to.for.name»" value="flashScope.«to.for.name»"/>
+	<transition on="finish" to="input">
+		<evaluate expression="«from.name»Action.«resolveAddChildMethodName()»(flowRequestContext)"/>
+	</transition>
+</subflow-state>
+«ENDIF»
+«ENDDEFINE»
+
+«DEFINE subflowForUpdate FOR SubTaskTransition»
+«IF this.to.metaType == UpdateTask »
+<subflow-state id="«resolveSubFlowId()»" subflow="«to.module.name»/«to.name»">
+	<input name="«to.for.name»" value="flashScope.«to.for.name»"/>
+	<output name="«to.for.name»" value="flashScope.«to.for.name»"/>
+	<transition on="finish" to="input">
+		<evaluate expression="«from.name»Action.«resolveUpdateChildMethodName()»(flowRequestContext)"/>
+	</transition>
+</subflow-state>
+«ENDIF»
+«ENDDEFINE»
+
+«DEFINE subflowForView FOR SubTaskTransition»
+<subflow-state id="«resolveSubFlowId()»" subflow="«to.module.name»/«to.name»">
+	<input name="«to.for.name»" value="flashScope.«to.for.name»"/>
+	<transition on="finish" to="input"/>
+</subflow-state>
+«ENDDEFINE»
+
+«DEFINE subflowForViewFromView FOR SubTaskTransition»
+<subflow-state id="«resolveSubFlowId()»" subflow="«to.module.name»/«to.name»">
+	<input name="«to.for.name»" value="flashScope.«to.for.name»"/>
+	<transition on="finish" to="view"/>
+</subflow-state>
+«ENDDEFINE»
+
+
+«DEFINE cancelTransitionTag FOR UserTask»
+<transition on="cancel" to="finish" bind="false"/>
+«ENDDEFINE»
+«DEFINE cancelTransitionTag FOR CreateTask»
+<transition on="cancel" to="cancelDecision" bind="false"/>
+«ENDDEFINE»
+«DEFINE cancelTransitionTag FOR UpdateTask»
+<transition on="cancel" to="finish" bind="false">
+	<evaluate expression="«this.name»Action.cancel(flowRequestContext)"/>
+</transition>
+«ENDDEFINE»
+
+«DEFINE endStateTag FOR CreateTask»
+<end-state id="redirectFinish" view="externalRedirect:contextRelative:/"/>
+<end-state id="finish" view="/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/finish.xhtml">
+	<output name="«for.name»" value="flashScope.«for.name»"/>
+</end-state>
+«ENDDEFINE»
+
+«DEFINE endStateTag FOR UpdateTask»
+<end-state id="finish" view="/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/finish.xhtml">
+	<output name="«for.name»" value="flashScope.«for.name»"/>
+</end-state>
+«ENDDEFINE»
+
+«DEFINE endStateTag FOR ViewTask»
+<end-state id="finish" />
+«ENDDEFINE»
+
+«DEFINE endStateTag FOR DeleteTask»
+<end-state id="finish" view="/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/finish.xhtml"/>
+«ENDDEFINE»

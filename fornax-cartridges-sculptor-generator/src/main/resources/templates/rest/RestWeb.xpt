@@ -1,0 +1,15 @@
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+
+«DEFINE restWeb FOR Application»
+	«IF getBooleanProperty("generate.restWeb.config")»
+		«EXPAND RestWebConfig::config»
+	«ENDIF»
+	«IF getBooleanProperty("generate.restWeb.jsp")»
+		«EXPAND RestWebCss::css»
+		«EXPAND RestWebJsp::jsp»
+		«EXPAND RestWebJsp::jsp FOREACH getAllResources(false)»
+	«ENDIF»
+«ENDDEFINE»
+

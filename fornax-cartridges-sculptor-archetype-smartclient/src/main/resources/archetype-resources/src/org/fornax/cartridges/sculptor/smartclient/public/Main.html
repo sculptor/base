@@ -1,0 +1,43 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<title>Smartclient client</title>
+	<link rel="shortcut icon" href="favicon.ico" />
+	<script>var isomorphicDir = "sc/";</script>
+	<style type="text/css"> 
+		body { overflow:hidden }
+	</style>
+</head>
+
+<body>
+	<iframe src="javascript:''" id="__gwt_historyFrame" tabIndex='-1' style="position:absolute;width:0;height:0;border:0"></iframe>
+	<iframe src="javascript:''" id="upload" name="upload" tabIndex='-1' style="position:absolute;width:0;height:0;border:0"></iframe>
+
+	<!--include SmartClient -->
+	<script src=sc/modules/ISC_Core.js></script> 
+	<script src='sc/modules/ISC_Foundation.js'></script> 
+	<script src='sc/modules/ISC_Containers.js'></script> 
+	<script src='sc/modules/ISC_Grids.js'></script> 
+	<script src='sc/modules/ISC_Forms.js'></script> 
+	<!-- sc/modules/ISC_RichTextEditor.js' -->
+	<!-- sc/modules/ISC_Calendar.js' -->
+	<script src='sc/modules/ISC_DataBinding.js'></script> 
+
+	<!--SKIN:  Graphite, Enterprise, EnterpriseBlue, TreeFrog, Defered: BlackOps, SilverWave,  fleet-->
+	<script type="text/javascript">
+		var skin="Graphite";
+		var parameters = location.search.split(/[&?]/);
+		for (cx = 0; cx < parameters.length; cx++) {
+			var p = parameters[cx].split("=");
+			if (p.length == 2 && p[0] == "skin" && (p[1] == "Graphite" || p[1] == "Enterprise" || p[1] == "EnterpriseBlue" || p[1] == "TreeFrog")) {
+				skin=p[1];
+				break;
+			}
+		}
+		document.write("<"+"script src=sc/skins/"+skin+"/load_skin.js><"+"/script>");
+	</script>
+
+	<script type="text/javascript" src="smartclient.nocache.js"></script>
+</body>
+</html>

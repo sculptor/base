@@ -1,0 +1,112 @@
+Application Library {
+    basePackage = org.fornax.cartridges.sculptor.examples.library
+ 
+    Module media {
+      
+        Entity Library {
+          String name key
+          - Set<@PhysicalMedia> media <-> library          
+        }
+        
+        Entity PhysicalMedia {
+          String status length="3"
+          String location
+          - @Library library nullable <-> media
+          - Set<@Media> media <-> physicalMedia
+        }
+        
+       
+        abstract Entity Media {
+          String title !changeable
+          - Set<@PhysicalMedia> physicalMedia inverse <-> media
+          - Set<@Engagement> engagements <-> media
+          - Set<@MediaCharacter> mediaCharacters <-> existsInMedia
+        }
+        Entity ComicBook extends Media {
+        	Boolean isMarvel
+        }
+        Entity Book extends Media {
+          !auditable
+          String isbn key length="20"
+        }
+        
+        Entity Movie extends @Media {
+          !auditable
+          String urlIMDB key
+          Integer playLength
+          - @Genre category nullable
+        }
+        
+        enum Genre {
+            ACTION,
+            COMEDY,
+            DRAMA,
+            SCI_FI
+        }
+       
+        ValueObject Engagement {
+          String role
+          - @Person person
+          - @Media media <-> engagements
+        }
+        
+        ValueObject MediaCharacter {
+          String name !changeable
+          - Set<@Person> playedBy
+          - Set<@Media> existsInMedia <-> mediaCharacters
+          
+        }
+        ValueObject Car {
+        	String model
+        	String color
+        }
+        Entity Director {
+        	String name
+        	- @Address address
+        	- @Car car
+        }
+    }
+ 
+    Module person {
+     
+     	abstract ValueObject Address {
+     		String street
+     		String zipcode
+     	}
+     	ValueObject NormalAddress extends Address {
+     	
+     	}
+     	ValueObject VacationAddress extends Address {
+     	
+     	}
+     	abstract ValueObject Holiday {
+     		String location
+     	}
+     	ValueObject WinterHoliday extends Holiday {
+     		Integer snowDepth
+     	}
+     	ValueObject SummerHoliday extends Holiday {
+     		Integer waterTemperature
+     	}
+        Entity Person {
+          Date birthDate
+          - @Ssn ssn key
+          - @PersonName name
+          - @Address address
+          - @Holiday lastHoliday
+          - Set<@Holiday> holidays
+        }
+        
+        BasicType Ssn {
+          String number key length="20"
+        }
+    
+        BasicType PersonName {
+          String first
+          String last
+        }
+        
+    }
+}
+
+

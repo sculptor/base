@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="${project.name}">
+	<skin>
+		<groupId>org.fornax</groupId>
+		<artifactId>fornax-site-skin</artifactId>
+		<version>1.0.0</version>
+	</skin>
+	<bannerLeft>
+		<name>${project.name}</name>
+		<src>images/fornax_logo.png</src>
+		<href>http://fornax.sourceforge.net/</href>
+		<alt>Fornax: ${project.name}</alt>
+	</bannerLeft>
+
+	<body>
+		<links>
+			<item
+				name="Fornax Main Page"
+				href="http://www.fornax-platform.org/" />
+		</links>
+		<menu ref="reports"/>
+	</body>
+</project>

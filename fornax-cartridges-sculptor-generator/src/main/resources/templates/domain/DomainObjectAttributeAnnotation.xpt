@@ -1,0 +1,215 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::dbhelper»
+«EXTENSION extensions::properties»
+
+«DEFINE attributeAnnotations FOR Attribute»
+	«IF isJpaAnnotationOnFieldToBeGenerated()»
+		«IF isJpaAnnotationToBeGenerated() && getDomainObject().isPersistent() »
+			«EXPAND jpaAnnotations»
+		«ENDIF»
+		«IF isValidationAnnotationToBeGeneratedForObject()»
+			«EXPAND validationAnnotations»
+		«ENDIF»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE propertyGetterAnnotations FOR Attribute»
+	«IF !isJpaAnnotationOnFieldToBeGenerated()»
+		«IF isJpaAnnotationToBeGenerated() && getDomainObject().isPersistent() »
+			«EXPAND jpaAnnotations»
+		«ENDIF»
+		«IF isValidationAnnotationToBeGeneratedForObject()»
+			«EXPAND validationAnnotations»
+		«ENDIF»
+	«ENDIF»
+	«IF isXmlElementToBeGenerated()»
+		«EXPAND xmlElementAnnotation»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE xmlElementAnnotation FOR Attribute»
+	«IF transient»
+	    @javax.xml.bind.annotation.XmlTransient
+	«ELSE»
+	    @javax.xml.bind.annotation.XmlElement(«formatAnnotationParameters({
+		    		required, "required", "true",
+		    		nullable, "nillable", "true"
+		    	})»)
+		«IF getTypeName() == "org.joda.time.LocalDate"»
+		@javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter(«fw("xml.JodaLocalDateXmlAdapter")».class)
+		«ELSEIF getTypeName() == "org.joda.time.DateTime"»
+		@javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter(«fw("xml.JodaDateTimeXmlAdapter")».class)
+		«ENDIF»
+		«IF isDate()»
+		@javax.xml.bind.annotation.XmlSchemaType(name="date")
+		«ENDIF»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE jpaAnnotations FOR Attribute»
+	«IF transient»
+		@javax.persistence.Transient
+	«ELSE»
+		«IF isCollection()»
+			«IF isJpa2()»
+				«EXPAND elementCollectionAnnotations»
+			«ELSE»
+				@javax.persistence.Transient
+			«ENDIF»
+		«ELSE»
+		    «IF name == "id"»
+				«EXPAND idAnnotations»
+		    «ELSEIF name == "version"»
+		    	«EXPAND versionAnnotations»
+		    «ELSEIF name == "createdDate" || name == "lastUpdated" »
+		    	«EXPAND auditAnnotations»
+		    «ELSE»
+				«EXPAND columnAnnotations»
+		    «ENDIF»
+		    «IF useJpaLobAnnotation()»
+		    	@javax.persistence.Lob
+		    «ENDIF»
+		    «IF useJpaBasicAnnotation()»
+			    @javax.persistence.Basic
+			«ENDIF»
+			«IF index»
+				«EXPAND indexAnnotations»
+			«ENDIF»
+		«ENDIF»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE idAnnotations FOR Attribute»
+	@javax.persistence.Id
+	«IF isJpaProviderAppEngine()»
+	@javax.persistence.GeneratedValue(strategy = javax.persistence.GenerationType.IDENTITY)
+	«ELSEIF isJpa1() && isJpaProviderEclipseLink()»
+    @javax.persistence.GeneratedValue(strategy = javax.persistence.GenerationType.AUTO)
+//    possible bug in eclipselink produces incorrect ddl for hsqldb (IDENTITY)
+//    @javax.persistence.GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "«getDomainObject().name»Sequence")
+    @javax.persistence.SequenceGenerator(name = "«getDomainObject().name»Sequence", initialValue = 10)
+	«ELSE»
+	@javax.persistence.GeneratedValue(strategy = javax.persistence.GenerationType.AUTO)
+	«ENDIF»
+    @javax.persistence.Column(name="«getDatabaseName()»")
+«ENDDEFINE»
+
+«DEFINE versionAnnotations FOR Attribute»
+    @javax.persistence.Version
+    @javax.persistence.Column(«formatAnnotationParameters({
+    	true, "name", '"' + getDatabaseName() + '"',
+    	!nullable, "nullable", nullable})»)
+«ENDDEFINE»
+
+«DEFINE auditAnnotations FOR Attribute»
+«LET isJpaAnnotationColumnDefinitionToBeGenerated() ? getDatabaseType() : null AS dbType»
+	«IF isJpaProviderHibernate() && isJodaTemporal()»
+	@org.hibernate.annotations.Type(type="«getHibernateType()»")
+	«ELSEIF isJpaProviderEclipseLink() && isJodaTemporal()»
+    @org.eclipse.persistence.annotations.Convert("JodaConverter")
+	«ELSEIF isJpaProviderOpenJpa() && isJodaTemporal()»
+    @org.apache.openjpa.persistence.jdbc.Strategy("«getApplicationBasePackage()».util.JodaHandler")
+	«ELSE»
+	@javax.persistence.Temporal(javax.persistence.TemporalType.TIMESTAMP)
+	«ENDIF»
+    @javax.persistence.Column(
+    «formatAnnotationParameters({
+    	true, "name", '"' + getDatabaseName() + '"',
+    	!nullable, "nullable", nullable,
+    	dbType != null, "columnDefinition", '"' + dbType + '"'
+    })»)
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE columnAnnotations FOR Attribute»
+«LET isJpaAnnotationColumnDefinitionToBeGenerated() ? getDatabaseType() : null AS dbType»
+    @javax.persistence.Column(
+    «formatAnnotationParameters({
+        true, "name", '"' + getDatabaseName() + '"',
+        !nullable, "nullable", nullable,
+        getDatabaseLength() != null, "length", getDatabaseLength(),
+        (isUuid() || isSimpleNaturalKey()) && (isJpa2() || isJpaProviderHibernate()), "unique", "true",
+        dbType != null, "columnDefinition", '"' + dbType + '"'
+    })»)
+    «EXPAND columnDateAnnotations»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE columnDateAnnotations FOR Attribute»
+    «IF isJpaProviderHibernate() && getHibernateType() != null»
+    @org.hibernate.annotations.Type(type="«getHibernateType()»")
+    «ELSEIF isJpaProviderEclipseLink() && isJodaTemporal()»
+    @org.eclipse.persistence.annotations.Convert("JodaConverter")
+    «ELSEIF isJpaProviderOpenJpa() && isJodaTemporal()»
+    @org.apache.openjpa.persistence.jdbc.Strategy("«getApplicationBasePackage()».util.JodaHandler")
+    «ELSE»
+        «IF isDate()»
+    @javax.persistence.Temporal(javax.persistence.TemporalType.DATE)
+        «ELSEIF isDateTime()»
+    @javax.persistence.Temporal(javax.persistence.TemporalType.TIMESTAMP)
+        «ENDIF»
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE indexAnnotations FOR Attribute»
+    «IF isJpaProviderHibernate()»
+    @org.hibernate.annotations.Index(name="«getDatabaseName()»")
+    «ELSEIF isJpaProviderOpenJpa()»
+    @org.apache.openjpa.persistence.jdbc.Index(name="«getDatabaseName()»")
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE elementCollectionAnnotations FOR Attribute»
+	«REM»TODO: change support for fetchtype, add a keyword«ENDREM»
+	@javax.persistence.ElementCollection(
+			«formatAnnotationParameters({
+				getFetchType() != null, "fetch", getFetchType()
+			})»)
+	«IF !useJpaDefaults()»
+        «EXPAND elementCollectionTableJpaAnnotation»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE elementCollectionTableJpaAnnotation FOR Attribute»
+    «REM»
+        It's not possible to overwrite the collection table later,
+        therefore not set it for embeddabkes
+    «ENDREM»
+    «IF !getDomainObject().isEmbeddable()»
+         @javax.persistence.CollectionTable(
+            name="«getElementCollectionTableName()»",
+            joinColumns = @javax.persistence.JoinColumn(name = "«getDomainObject().getDatabaseName() + ((useIdSuffixInForeigKey()) ? "_ID" : "")»"))
+        @javax.persistence.Column(
+        «formatAnnotationParameters({
+            true, "name", '"' + getDatabaseName().toLowerCase().singular().toUpperCase() + '"'
+        })»)
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE validationAnnotations FOR Attribute»
+	«REM»exclude persistence controlled properties«ENDREM»
+	«IF name != "id" && name != "version" && !isUuid()»
+		«getValidationAnnotations()»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE propertySetterAnnotations FOR Attribute»
+«ENDDEFINE»

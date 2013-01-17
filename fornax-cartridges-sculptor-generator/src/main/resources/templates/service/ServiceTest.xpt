@@ -1,0 +1,182 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::helper»
+
+«DEFINE serviceJUnitBase FOR Service»
+    «FILE javaFileName(getServiceapiPackage() + "." + name + "TestBase") TO_GEN_SRC_TEST»
+«javaHeader()»
+package «getServiceapiPackage()»;
+
+/**
+ * Definition of test methods to implement.
+ */
+public interface «name»TestBase {
+
+    «REM»There may be several operations with the same name
+         and to avoid name collision we only generate one test method.
+    «ENDREM»
+    «EXPAND testInterfaceMethod FOREACH
+      operations.select(op | op.isPublicVisibility()).collect(op| op.name).toSet()»
+
+}
+    «ENDFILE »
+«ENDDEFINE »
+
+«REM»this (FOR String) is the name of the operation«ENDREM»
+«DEFINE testInterfaceMethod FOR String»
+    public void test«this.toFirstUpper()»() throws Exception;
+«ENDDEFINE»
+
+«DEFINE serviceJUnitSubclassWithAnnotations FOR Service»
+    «FILE javaFileName(getServiceapiPackage() + "." + name + "Test") TO_SRC_TEST»
+«javaHeader()»
+package «getServiceapiPackage()»;
+
+import static org.junit.Assert.fail;
+
+/**
+ * Spring based transactional test with DbUnit support.
+ */
+public class «name»Test extends «databaseJpaTestCaseClass()» implements «name»TestBase {
+
+    «EXPAND serviceJUnitDependencyInjection»
+    
+    «EXPAND serviceJUnitGetDataSetFile»
+
+    «EXPAND testMethod FOREACH
+      operations.select(op | op.isPublicVisibility()).collect(op| op.name).toSet()»
+}
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE serviceJUnitDependencyInjection FOR Service»
+    @org.springframework.beans.factory.annotation.Autowired
+    protected «getServiceapiPackage()».«name» «name.toFirstLower()»;
+«ENDDEFINE »
+
+«DEFINE serviceJUnitSubclassAppEngine FOR Service»
+    «FILE javaFileName(getServiceapiPackage() + "." + name + "Test") TO_SRC_TEST»
+«javaHeader()»
+package «getServiceapiPackage()»;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+/**
+ * Spring based test with Google App Engine support.
+ */
+public class «name»Test extends «fw("test.AbstractAppEngineJpaTests")» implements «name»TestBase {
+
+	«EXPAND serviceJUnitDependencyInjection»
+	
+	«EXPAND serviceJUnitSubclassAppEnginePopulateDataStore»
+	
+    «EXPAND testMethod FOREACH
+      operations.select(op | op.isPublicVisibility()).collect(op| op.name).toSet()»
+}
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE serviceJUnitSubclassAppEnginePopulateDataStore FOR Service»
+    @org.junit.Before
+    public void populateDatastore() {
+        // here you can add objects to data store before test methods are executed
+        // getEntityManager().persist(obj);
+    }
+«ENDDEFINE»
+
+
+
+«DEFINE serviceJUnitGetDataSetFile FOR Service»
+	«IF getDbUnitDataSetFile() != null»
+	    @Override
+        protected String getDataSetFile() {
+    	    return "«getDbUnitDataSetFile()»";
+        }
+    «ENDIF»
+«ENDDEFINE»
+
+«REM»this (FOR String) is the name of the operation«ENDREM»
+«DEFINE testMethod FOR String»
+	@org.junit.Test
+    public void test«this.toFirstUpper()»() throws Exception {
+        // TODO Auto-generated method stub
+        fail("test«this.toFirstUpper()» not implemented");
+    }
+«ENDDEFINE»
+
+«DEFINE dbunitTestData FOR Service»
+    «FILE "dbunit/" + name + "Test.xml" TO_RESOURCES_TEST»
+		«EXPAND templates::db::DbUnit::dbunitTestDataContent FOR module.application»
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE serviceDependencyInjectionJUnit FOR Service»
+    «FILE javaFileName(getServiceimplPackage() + "." + name + "DependencyInjectionTest") TO_GEN_SRC_TEST»
+«javaHeader()»
+package «getServiceimplPackage()»;
+
+/**
+ * JUnit test to verify that dependency injection setter methods
+ * of other Spring beans have been implemented.
+ */
+public class «name»DependencyInjectionTest extends junit.framework.TestCase {
+
+    «EXPAND serviceDependencyInjectionTestMethod(this) FOREACH otherDependencies»
+
+}
+    «ENDFILE »
+«ENDDEFINE »
+
+«REM»This (String) is the name of the dependency«ENDREM»
+«DEFINE serviceDependencyInjectionTestMethod(Service service) FOR String»
+    public void test«this.toFirstUpper()»Setter() throws Exception {
+        Class clazz = «service.getServiceimplPackage()».«service.name»Impl.class;
+        java.lang.reflect.Method[] methods = clazz.getMethods();
+        String setterMethodName = "set«this.toFirstUpper()»";
+        java.lang.reflect.Method setter = null;
+        for (int i = 0; i < methods.length; i++) {
+            if (methods[i].getName().equals(setterMethodName) &&
+                    void.class.equals(methods[i].getReturnType()) &&
+                    methods[i].getParameterTypes().length == 1) {
+                setter = methods[i];
+                break;
+            }
+        }
+
+        assertNotNull("Setter method for dependency injection of " +
+                    "«this» must be defined in «service.name».",
+                    setter);
+
+        «service.getServiceimplPackage()».«service.name»Impl «service.name.toFirstLower()» = new «service.getServiceimplPackage()».«service.name»Impl();
+        try {
+            setter.invoke(«service.name.toFirstLower()», new Object[] {null});
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            if (e.getCause().getClass().equals(UnsupportedOperationException.class)) {
+                assertTrue(e.getCause().getMessage(), false);
+            } else {
+                // exception due to something else, but the method was not forgotten
+            }
+        }
+
+    }
+«ENDDEFINE»

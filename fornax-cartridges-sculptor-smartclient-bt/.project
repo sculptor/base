@@ -1,0 +1,20 @@
+<projectDescription>
+  <name>fornax-cartridges-sculptor-smartclient-bt</name>
+  <comment>Sculptor is subproject of Fornax cartridge project. NO_M2ECLIPSE_SUPPORT: Project files created with the maven-eclipse-plugin are not supported in M2Eclipse.</comment>
+  <projects>
+    <project>fornax-cartridges-sculptor-framework</project>
+    <project>fornax-cartridges-sculptor-framework-test</project>
+    <project>fornax-cartridges-sculptor-generator</project>
+    <project>fornax-cartridges-sculptor-metamodel</project>
+    <project>org.fornax.cartridges.sculptor.dsl</project>
+    <project>org.fornax.cartridges.sculptor.gui.dsl</project>
+  </projects>
+  <buildSpec>
+    <buildCommand>
+      <name>org.eclipse.jdt.core.javabuilder</name>
+    </buildCommand>
+  </buildSpec>
+  <natures>
+    <nature>org.eclipse.jdt.core.javanature</nature>
+  </natures>
+</projectDescription>

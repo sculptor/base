@@ -1,0 +1,40 @@
+import sculptordsl;
+
+/*
+ * This extension file is intended to be used for defining
+ * general extensions for the domain model. 
+ */
+
+String debugTrace(String msg) :
+    JAVA org.fornax.cartridges.sculptor.dsl.DslHelper.debugTrace(java.lang.String);
+
+String error(String msg) :
+    JAVA org.fornax.cartridges.sculptor.dsl.DslHelper.error(java.lang.String);
+
+boolean isAttributeProperty(DslAnyProperty prop) :
+	false;
+
+boolean isAttributeProperty(DslAttribute prop) :
+	true;
+	
+boolean isAttributeProperty(DslDtoAttribute prop) :
+	true;
+
+boolean isEnumProperty(DslAnyProperty prop) :
+	false;
+
+boolean isEnumProperty(DslReference prop) :
+	prop.domainObjectType.metaType == DslEnum;
+	
+boolean isEnumProperty(DslDtoReference prop) :
+	prop.domainObjectType.metaType == DslEnum;
+
+boolean isBasicTypeProperty(DslAnyProperty prop) :
+	false;
+
+boolean isBasicTypeProperty(DslReference prop) :
+	prop.domainObjectType.metaType == DslBasicType;
+	
+boolean isBasicTypeProperty(DslDtoReference prop) :
+	prop.domainObjectType.metaType == DslBasicType;
+

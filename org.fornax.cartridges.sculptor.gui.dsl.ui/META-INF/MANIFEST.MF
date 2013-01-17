@@ -1,0 +1,22 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: org.fornax.cartridges.sculptor.gui.dsl.ui
+Bundle-Vendor: Sculptor DSL UI Plug-in
+Bundle-Version: 2.2.0.0
+Bundle-SymbolicName: org.fornax.cartridges.sculptor.gui.dsl.ui; singleton:=true
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.eclipse.ui.editors,
+ org.eclipse.ui.ide,
+ org.eclipse.ui,
+ org.antlr.runtime,
+ org.fornax.cartridges.sculptor.gui.dsl;bundle-version="2.0.0",
+ org.eclipse.xtext.ui.shared,
+ org.eclipse.xtext.ui
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Export-Package: org.fornax.cartridges.sculptor.gui.dsl.ui,
+ org.fornax.cartridges.sculptor.gui.dsl.ui.contentassist,
+ org.fornax.cartridges.sculptor.gui.dsl.ui.labeling,
+ org.fornax.cartridges.sculptor.gui.dsl.ui.outline,
+ org.fornax.cartridges.sculptor.gui.dsl.ui.contentassist.antlr
+Bundle-Activator: org.fornax.cartridges.sculptor.gui.dsl.ui.internal.SculptorguidslActivator
+Import-Package: org.apache.log4j

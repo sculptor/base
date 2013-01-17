@@ -1,0 +1,43 @@
+<assembly>
+  <id>release</id>
+  <formats>
+    <format>tar.gz</format>
+    <format>zip</format>
+  </formats>
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>target/site</directory>
+      <outputDirectory>docs</outputDirectory>
+      <includes>
+        <include>site/apidocs/**</include>
+        <include>site/xref/**</include>
+        <include>site/xref-test/**</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+  <moduleSets>
+    <moduleSet>
+      <includes>
+          <include>org.fornax.cartridges:org.fornax.cartridges.emf.sculptor.dsl</include>
+          <!-- <include>org.fornax.cartridges:org.fornax.cartridges.emf.sculptor.dsl.editor</include> -->
+		  <include>org.fornax.cartridges:fornax-cartridges-sculptor-metamodel</include>
+		  <include>org.fornax.cartridges:fornax-cartridges-sculptor-generator</include>
+		  <include>org.fornax.cartridges:fornax-cartridges-sculptor-reference</include>
+		  <include>org.fornax.cartridges:fornax-cartridges-sculptor-framework</include>
+		  <!--
+		  <include>org.fornax.cartridges:fornax-cartridges-sculptor-examples-helloworld</include>
+		  <include>org.fornax.cartridges:fornax-cartridges-sculptor-examples-library</include>
+		  -->
+      </includes>
+      <binaries>
+        <outputDirectory>lib</outputDirectory>
+        <includeDependencies>true</includeDependencies>
+        <unpack>false</unpack>
+      </binaries>
+      <sources>
+        <outputDirectory></outputDirectory>
+      </sources>
+    </moduleSet>
+  </moduleSets>
+</assembly>

@@ -1,0 +1,5 @@
+import '%1$s' 
+
+gui %2$s for %3$s {
+
+}

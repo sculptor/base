@@ -1,0 +1,9 @@
+import sculptormetamodel;
+
+extension extensions::properties;
+
+around extensions::properties::getResourceDir(Application application, String name) :
+  application.name.toLowerCase() + "/" + ctx.proceed(); 
+
+around extensions::properties::getResourceDir(Module module, String name) :
+  module.application.name.toLowerCase() + "/" + ctx.proceed();

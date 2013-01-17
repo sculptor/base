@@ -1,0 +1,270 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+
+«DEFINE propertyConstructorBase FOR DomainObject»
+    «IF !getConstructorParameters().isEmpty -»
+    public «name»«IF gapClass»Base«ENDIF»(«EXPAND parameterTypeAndName FOREACH getConstructorParameters() SEPARATOR ","») {
+        «IF !getConstructorParameters().isEmpty -»
+        super(«FOREACH getSuperConstructorParameters() AS a SEPARATOR ","»«a.name»«ENDFOREACH»);
+        «ENDIF-»
+        «FOREACH getConstructorParameters().removeAll(getSuperConstructorParameters()) AS a-»
+	        «IF a.validateNotNullInConstructor() -»
+	        	«EXPAND validateNotNull(a.name) -»
+	        «ENDIF-»
+	        «IF a.metaType == Reference && ((Reference) a).many -»
+	        	this.«a.name».addAll(«a.name»);
+	        «ELSEIF a.isUnownedReference() && mongoDb() -»
+	        	this.«a.name»«a.unownedReferenceSuffix()» = («a.name» == null ? null : «a.name».getId());
+	        	this.«a.name» = «a.name»;
+	        	this.«a.name»IsLoaded = true;
+	        «ELSE-»
+	        	this.«a.name» = «a.name»;
+	        «ENDIF-»
+        «ENDFOREACH -»
+    }
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE propertyConstructorBaseIdReferences FOR DomainObject»
+    «IF !getConstructorParameters().isEmpty && getConstructorParameters().exists(e|e.isUnownedReference()) -»
+    public «name»«IF gapClass»Base«ENDIF»(«EXPAND parameterTypeAndNameIdReference FOREACH getConstructorParameters() SEPARATOR ","») {
+        «IF !getConstructorParameters().isEmpty -»
+        super(«FOREACH getSuperConstructorParameters() AS a SEPARATOR ","»«a.name»«a.unownedReferenceSuffix()»«ENDFOREACH»);
+        «ENDIF-»
+        «FOREACH getConstructorParameters().removeAll(getSuperConstructorParameters()) AS a-»
+	        «IF a.metaType == Reference && ((Reference) a).many -»
+	        	«IF a.validateNotNullInConstructor() -»
+		        	«EXPAND validateNotNull(a.name + a.unownedReferenceSuffix()) -»
+		        «ENDIF-»
+	        	this.«a.name»«a.unownedReferenceSuffix()».addAll(«a.name»«a.unownedReferenceSuffix()»);
+	        «ELSEIF a.isUnownedReference() -»
+	        	«IF a.validateNotNullInConstructor() -»
+		        	«EXPAND validateNotNull(a.name + a.unownedReferenceSuffix()) -»
+		        «ENDIF-»
+	        	this.«a.name»«a.unownedReferenceSuffix()» = «a.name»«a.unownedReferenceSuffix()»;
+	        «ELSE-»
+	        	«IF a.validateNotNullInConstructor() -»
+		        	«EXPAND validateNotNull(a.name) -»
+		        «ENDIF-»
+	        	this.«a.name» = «a.name»;
+	        «ENDIF-»
+        «ENDFOREACH -»
+    }
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE propertyConstructorBaseIdReferencesSubclass FOR DomainObject»
+    «IF !getConstructorParameters().isEmpty && getConstructorParameters().exists(e|e.isUnownedReference()) -»
+    public «name»(«EXPAND parameterTypeAndNameIdReference FOREACH getConstructorParameters() SEPARATOR ","») {
+        super(«FOREACH getConstructorParameters() AS a SEPARATOR ","»«a.name»«a.unownedReferenceSuffix()»«ENDFOREACH»);
+    }
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE validateNotNull(String field) FOR DomainObject -»
+org.apache.commons.lang.Validate.notNull(«field», "«name».«field» must not be null");
+«ENDDEFINE»
+
+«DEFINE validateNotNull(String field) FOR DataTransferObject -»
+        if («field» == null) {
+            throw new IllegalArgumentException("«name».«field» must not be null");
+        }
+«ENDDEFINE»
+
+«DEFINE propertyConstructorSubclass FOR DomainObject»
+    «IF !getConstructorParameters().isEmpty -»
+    public «name»(«EXPAND parameterTypeAndName FOREACH getConstructorParameters() SEPARATOR ","») {
+        super(«FOREACH getConstructorParameters() AS a SEPARATOR ","»«a.name»«ENDFOREACH»);
+    }
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE limitedConstructor FOR DomainObject»
+	«LET getConstructorParameters() AS allParameters»
+	«LET getLimitedConstructorParameters() AS parameters»
+    «IF !parameters.isEmpty && allParameters.size != parameters.size »
+    public «name»(«EXPAND parameterTypeAndName FOREACH parameters SEPARATOR ","») {
+        this(«FOREACH allParameters AS a SEPARATOR ","
+        	»«IF parameters.contains(a)»«a.name»«ELSE»null«ENDIF»«ENDFOREACH»);
+    }
+    «ENDIF»
+    «ENDLET»
+    «ENDLET»
+«ENDDEFINE»
+
+«DEFINE limitedConstructor FOR Event»
+	«EXPAND limitedEventConstructor»
+«ENDDEFINE»
+
+«DEFINE limitedEventConstructor FOR DomainObject»
+	«LET getConstructorParameters() AS allParameters»
+	«LET getLimitedConstructorParameters() AS parameters»
+    «IF !parameters.isEmpty && allParameters.size != parameters.size »
+    public «name»(«EXPAND parameterTypeAndName FOREACH parameters SEPARATOR ","») {
+        this(«FOREACH allParameters AS a SEPARATOR ","
+        	»«IF parameters.contains(a)»«a.name»«ELSE»null«ENDIF»«ENDFOREACH»);
+    }
+    «ENDIF»
+    «ENDLET»
+    
+    «LET getLimitedConstructorParameters().reject(e|e.name=="recorded") AS parameters2»
+    «IF !parameters2.isEmpty && allParameters.size != parameters2.size »
+    /**
+     * Current time is used for recorded timestamp
+     */ 
+    public «name»(«EXPAND parameterTypeAndName FOREACH parameters2 SEPARATOR ","») {
+        this(«FOREACH allParameters AS a SEPARATOR ","
+        	»«IF a.name=="recorded"»new «a.getTypeName()»()«
+        	ELSEIF parameters2.contains(a)»«a.name»«
+        	ELSE»null«ENDIF»«ENDFOREACH»);
+    }
+    «ENDIF»
+    «ENDLET»
+    
+    «ENDLET»
+«ENDDEFINE»
+
+«DEFINE minimumConstructor FOR DomainObject»
+	«LET getLimitedConstructorParameters() AS limitedParameters»
+	«LET getMinimumConstructorParameters() AS parameters»
+    «IF !parameters.isEmpty && limitedParameters.size != parameters.size »
+    public «name»(«EXPAND parameterTypeAndName FOREACH parameters SEPARATOR ","») {
+        this(«FOREACH limitedParameters AS a SEPARATOR ","
+        	»«IF parameters.contains(a)»«a.name»«ELSE»null«ENDIF»«ENDFOREACH»);
+    }
+    «ENDIF»
+    «ENDLET»
+    «ENDLET»
+«ENDDEFINE»
+
+«DEFINE factoryMethod FOR DomainObject»
+	«LET getConstructorParameters() AS allParameters»
+	«LET getLimitedConstructorParameters() AS parameters»
+    «IF !parameters.isEmpty »
+    /**
+     * Creates a new «name». Typically used with static import to
+     * achieve fluent interface.
+     */
+    public static «name» «name.toFirstLower()»(«EXPAND parameterTypeAndName FOREACH parameters SEPARATOR ","») {
+        return new «name»(«FOREACH allParameters AS a SEPARATOR ","
+        	»«IF parameters.contains(a)»«a.name»«ELSE»null«ENDIF»«ENDFOREACH»);
+    }
+    «ENDIF»
+    «ENDLET»
+    «ENDLET»
+«ENDDEFINE»
+
+«DEFINE factoryMethod FOR Event»
+	«EXPAND eventFactoryMethod»
+«ENDDEFINE»
+
+«DEFINE eventFactoryMethod FOR DomainObject»
+	«LET getConstructorParameters() AS allParameters»
+	«LET getLimitedConstructorParameters().reject(e|e.name=="recorded") AS parameters»
+    «IF !parameters.isEmpty »
+    /**
+     * Creates a new «name». Typically used with static import to
+     * achieve fluent interface.
+     * Current time is used for recorded timestamp.
+     */
+    public static «name» «name.toFirstLower()»(«EXPAND parameterTypeAndName FOREACH parameters SEPARATOR ","») {
+        return new «name»(«FOREACH allParameters AS a SEPARATOR ","
+        	»«IF a.name == "recorded"»new «a.getTypeName()»()«ELSEIF parameters.contains(a)»«a.name»«ELSE»null«ENDIF»«ENDFOREACH»);
+    }
+    «ENDIF»
+    «ENDLET»
+    «ENDLET»
+«ENDDEFINE»
+
+«DEFINE parameterTypeAndNameIdReference FOR NamedElement»
+	«EXPAND parameterTypeAndName»
+«ENDDEFINE»
+
+«DEFINE parameterTypeAndNameIdReference FOR Reference»
+	«IF !isUnownedReference()»
+		«EXPAND parameterTypeAndName»
+	«ELSE»
+		«IF many-»
+		«IF isGenerateParameterName()» @«fw("annotation.Name")»("«name»")«ENDIF» «getCollectionInterfaceType()»<«getJavaType("IDTYPE")»> «name»«unownedReferenceSuffix()»
+		«ELSE-»
+		«IF isGenerateParameterName()» @«fw("annotation.Name")»("«name»")«ENDIF» «getJavaType("IDTYPE")» «name»«unownedReferenceSuffix()»
+		«ENDIF-»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE parameterTypeAndName FOR NamedElement»
+«ENDDEFINE»
+
+«DEFINE parameterTypeAndName FOR TypedElement»
+«EXPAND parameterAnnotations» «getTypeName()» «name»
+«ENDDEFINE»
+
+«DEFINE parameterTypeAndName FOR Reference»
+«IF many-»
+«EXPAND parameterAnnotations» «getCollectionInterfaceType()»<«getTypeName()»> «name»
+«ELSE-»
+«EXPAND parameterAnnotations» «getTypeName()» «name»
+«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE parameterAnnotations FOR NamedElement -»
+«IF isGenerateParameterName()» @«fw("annotation.Name")»("«name»")«ENDIF»
+«ENDDEFINE»
+
+«DEFINE copyModifier(DomainObject target) FOR Attribute»
+	/**
+	 * Creates a copy of this instance, but with another «name».
+	 */
+    public «target.name» with«name.toFirstUpper()»(«getTypeName()» «name») {
+    	if («fw("util.EqualsHelper")».equals(«name», «getGetAccessor()»())) {
+    	    return «IF target.gapClass»(«target.name») «ENDIF»this;
+    	}
+    	return new «target.name»(«FOREACH target.getConstructorParameters() AS a SEPARATOR ", "
+        	»«IF a == this»«this.name»«ELSE»«a.getGetAccessor()»()«ENDIF»«ENDFOREACH»);
+    };
+«ENDDEFINE»
+
+«DEFINE copyModifier(DomainObject target) FOR Reference»
+	/**
+	 * Creates a copy of this instance, but with another «name».
+	 */
+    public «target.name» with«name.toFirstUpper()»(«getTypeName()» «name») {
+    	if («fw("util.EqualsHelper")».equals(«name», «getGetAccessor()»())) {
+    	    return «IF target.gapClass»(«target.name») «ENDIF»this;
+    	}
+    	return new «target.name»(«FOREACH target.getConstructorParameters() AS a SEPARATOR ", "
+        	»«IF a == this»«this.name»«ELSE»«a.getGetAccessor()»()«ENDIF»«ENDFOREACH»);
+    };
+«ENDDEFINE»
+
+«DEFINE abstractCopyModifier FOR Attribute»
+	/**
+	 * Creates a copy of this instance, but with another «name».
+	 */
+    public abstract «getDomainObject().name» with«name.toFirstUpper()»(«getTypeName()» «name»);
+«ENDDEFINE»
+
+«DEFINE abstractCopyModifier FOR Reference»
+	/**
+	 * Creates a copy of this instance, but with another «name».
+	 */
+    public abstract «from.name» with«name.toFirstUpper()»(«getTypeName()» «name»);
+«ENDDEFINE»

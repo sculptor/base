@@ -1,0 +1,17 @@
+import "classpath:/nested4.btdesign"
+import "classpath:/nested3.btdesign"
+import "classpath:/nested2.btdesign"
+
+Application Nested {
+    basePackage = org.fornax.cartridges.sculptor.test.nested
+
+    Module nested1 {
+    	ValueObject A {
+    		String a
+    		- @B b
+    	}
+    }
+   
+}
+
+

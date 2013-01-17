@@ -1,0 +1,222 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::dbhelper»
+«EXTENSION extensions::properties»
+
+«DEFINE ddl FOR Application»
+    «FILE "dbschema/" + name + "_ddl.sql" TO_GEN_RESOURCES-»
+«IF isDdlDropToBeGenerated()»    
+-- ###########################################
+-- # Drop entities
+-- ###########################################
+
+-- Many to many relations
+    «EXPAND dropTable FOREACH resolveManyToManyRelations(false)»
+-- Normal entities
+    «EXPAND dropTable FOREACH getDomainObjectsInCreateOrder(false).select(e | !isInheritanceTypeSingleTable(getRootExtends(e.extends)))»
+«ENDIF»
+-- ###########################################
+-- # Create new entities
+-- ###########################################
+
+-- Normal entities
+    «EXPAND createTable(false) FOREACH getDomainObjectsInCreateOrder(true).select(d | !isInheritanceTypeSingleTable(getRootExtends(d.extends)))-»
+    «EXPAND foreignKeyAlter FOREACH getDomainObjectsInCreateOrder(true).select(e | !isInheritanceTypeSingleTable(getRootExtends(e.extends))) -»
+	«EXPAND extendsForeignKeyAlter FOREACH getDomainObjectsInCreateOrder(true).select(d | d.extends != null && !isInheritanceTypeSingleTable(getRootExtends(d.extends)))»
+-- Many to many relations
+    «EXPAND createTable(true) FOREACH resolveManyToManyRelations(true)-»
+
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE dropTable FOR DomainObject-»
+DROP TABLE IF EXISTS «getDatabaseName()»;
+«ENDDEFINE»
+
+«DEFINE createTable(Boolean manyToManyRelationTable) FOR DomainObject»
+«LET {}.toSet() AS alreadyUsedColumns-»
+CREATE TABLE «getDatabaseName()» (
+«EXPAND columns(manyToManyRelationTable, false, alreadyUsedColumns)-»
+«IF isInheritanceTypeSingleTable()»«EXPAND inheritanceSingleTable(alreadyUsedColumns)»«ENDIF-»
+«IF extends != null»«EXPAND extendsForeignKey(!alreadyUsedColumns.isEmpty)»«ENDIF-»
+«EXPAND uniqueConstraint -»
+)«EXPAND afterCreateTable»;
+«ENDLET-»
+«ENDDEFINE»
+
+«DEFINE afterCreateTable FOR DomainObject -»
+«ENDDEFINE»
+
+«DEFINE columns(Boolean manyToManyRelationTable, boolean initialComma, Set[String] alreadyDone) FOR DomainObject-»
+«LET attributes.reject(e | e.transient || alreadyDone.contains(e.getDatabaseName()) || e.isSystemAttributeToPutLast() ) 
+	AS currentAttributes -»
+«FOREACH currentAttributes AS e»«alreadyDone.add(e.getDatabaseName()) -> ""»«ENDFOREACH-»
+«LET getBasicTypeReferences().reject(e | e.transient || alreadyDone.contains(e.getDatabaseName())) 
+	AS currentBasicTypeReferences -»
+«FOREACH currentBasicTypeReferences AS e»«alreadyDone.add(e.getDatabaseName()) -> ""»«ENDFOREACH-»
+«LET getEnumReferences().reject(e | e.transient || alreadyDone.contains(e.getDatabaseName())) 
+	AS currentEnumReferences -»
+«FOREACH currentEnumReferences AS e»«alreadyDone.add(e.getDatabaseName()) -> ""»«ENDFOREACH-»
+«LET module == null ? {} : module.application.modules.domainObjects.references.select(e | !e.transient && e.to == this && e.many && e.opposite == null && e.isInverse()).reject(e|alreadyDone.contains(e.getDatabaseName())) 
+	AS currentUniManyToThisReferences -»
+«FOREACH currentUniManyToThisReferences AS e»«alreadyDone.add(e.getDatabaseName()) -> ""»«ENDFOREACH-»
+«LET references.select(r | !r.transient && !r.many && r.to.hasOwnDatabaseRepresentation()).reject(e | (e.isOneToOne() && e.isInverse()) || alreadyDone.contains(e.getDatabaseName()))
+	AS currentOneReferences -»
+«FOREACH currentOneReferences AS e»«alreadyDone.add(e.getDatabaseName()) -> ""»«ENDFOREACH-»
+«LET attributes.reject(e | e.transient || alreadyDone.contains(e.getDatabaseName()) || ! e.isSystemAttributeToPutLast() ) 
+	AS currentSystemAttributesToPutLast -»
+«FOREACH currentSystemAttributesToPutLast AS e»«alreadyDone.add(e.getDatabaseName()) -> ""»«ENDFOREACH-»
+«IF initialComma && !currentAttributes.isEmpty»,
+«ENDIF-»
+«EXPAND column("") FOREACH currentAttributes SEPARATOR ",\n"-»
+«IF (initialComma || !currentAttributes.isEmpty) && !currentOneReferences.isEmpty»,
+«ENDIF-»
+«EXPAND foreignKey(manyToManyRelationTable) FOREACH currentOneReferences SEPARATOR ",\n"-»
+«IF ((initialComma || !currentAttributes.isEmpty) || !currentOneReferences.isEmpty) && !currentUniManyToThisReferences.isEmpty»,
+«ENDIF-»
+«EXPAND uniManyForeignKey FOREACH currentUniManyToThisReferences SEPARATOR ",\n"-»
+«IF ((initialComma || !currentAttributes.isEmpty) || !currentOneReferences.isEmpty || !currentUniManyToThisReferences.isEmpty) && !currentBasicTypeReferences.isEmpty -»,
+«ENDIF-»
+«EXPAND containedColumns("", false) FOREACH currentBasicTypeReferences SEPARATOR ",\n"-»
+«IF ((initialComma || !currentAttributes.isEmpty) || !currentOneReferences.isEmpty || !currentUniManyToThisReferences.isEmpty || !currentBasicTypeReferences.isEmpty) && !currentEnumReferences.isEmpty -»,
+«ENDIF-»
+«EXPAND enumColumn("", false) FOREACH currentEnumReferences SEPARATOR ",\n"-»
+«IF ((initialComma || !currentAttributes.isEmpty) || !currentOneReferences.isEmpty || !currentUniManyToThisReferences.isEmpty || !currentBasicTypeReferences.isEmpty || !currentEnumReferences.isEmpty) && !currentSystemAttributesToPutLast.isEmpty -»,
+«ENDIF»
+«EXPAND column("") FOREACH currentSystemAttributesToPutLast SEPARATOR ",\n"-»
+«ENDLET -»
+«ENDLET -»
+«ENDLET -»
+«ENDLET -»
+«ENDLET -»
+«ENDLET -»
+«ENDDEFINE»
+
+«DEFINE column(String prefix) FOR Attribute-»
+«EXPAND column(prefix, false) -»
+«ENDDEFINE»
+
+«DEFINE column(String prefix, boolean parentIsNullable) FOR Attribute-»
+  «getDatabaseName(prefix, this)» «getDatabaseType()»«parentIsNullable ? "" : getDatabaseTypeNullability()»«
+  IF name == "id"» AUTO_INCREMENT PRIMARY KEY«ENDIF-»«
+  IF index»,
+    INDEX («getDatabaseName(prefix, this)»)«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE containedColumns(String prefix, boolean parentIsNullable) FOR Reference-»
+«LET to.attributes.reject(e | e.transient) AS containedAttributes -»
+«LET to.references.select(r | !r.transient && r.to.metaType == Enum) AS containedEnumReferences -»
+«LET to.references.select(r | !r.transient && r.to.metaType == BasicType) AS containedBasicTypeReferences -»
+  «EXPAND column(getDatabaseName(prefix, this), parentIsNullable || nullable) FOREACH containedAttributes SEPARATOR ",
+  "-»«IF !containedEnumReferences.isEmpty»«IF !containedAttributes.isEmpty»,
+  «ENDIF»«ENDIF»«EXPAND enumColumn(getDatabaseName(prefix, this), parentIsNullable || nullable) FOREACH containedEnumReferences SEPARATOR ",
+  "-»«IF !containedBasicTypeReferences.isEmpty»«IF !containedAttributes.isEmpty || !containedEnumReferences.isEmpty»,
+  «ENDIF»«ENDIF»«EXPAND containedColumns(getDatabaseName(), parentIsNullable || nullable) FOREACH containedBasicTypeReferences SEPARATOR ",
+  "-»
+«ENDLET -»
+«ENDLET -»
+«ENDLET -»
+«ENDDEFINE»
+
+«DEFINE enumColumn(String prefix, boolean parentIsNullable) FOR Reference-»
+  «getDatabaseName(prefix, this)» «getEnumDatabaseType()»«parentIsNullable ? "" : getDatabaseTypeNullability()»«ENDDEFINE»
+
+«DEFINE inheritanceSingleTable(Set[String] alreadyUsedColumns) FOR DomainObject -»
+,
+«EXPAND discriminatorColumn -»
+«EXPAND columns(false, true, alreadyUsedColumns) FOREACH getAllSubclasses() -»
+«ENDDEFINE»
+
+«DEFINE discriminatorColumn FOR DomainObject-»
+  «inheritance.discriminatorColumnName()» «inheritance.getDiscriminatorColumnDatabaseType()-» NOT NULL,
+  INDEX («inheritance.discriminatorColumnName()»)«
+ENDDEFINE»
+
+«DEFINE foreignKey(Boolean manyToManyRelationTable) FOR Reference-»
+  «IF hasOpposite() && "list" == opposite.getCollectionType()-»
+  «opposite.getListIndexColumnName()» «getListIndexDatabaseType()»,
+  «ENDIF-»
+  «getForeignKeyName()» «getForeignKeyType()»«
+  IF manyToManyRelationTable-»,
+    FOREIGN KEY («getForeignKeyName()») REFERENCES «to.getRootExtends().getDatabaseName()»(«to.getRootExtends().getIdAttribute().getDatabaseName()»)«
+  	IF (opposite != null) && opposite.isDbOnDeleteCascade()» ON DELETE CASCADE«ENDIF»«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE foreignKeyAlter FOR DomainObject-»
+  «EXPAND foreignKeyAlter FOREACH references.select(r | !r.transient && !r.many && r.to.hasOwnDatabaseRepresentation()).reject(e|e.isOneToOne() && e.isInverse())-»
+  «EXPAND uniManyForeignKeyAlter FOREACH references.select(r | !r.transient && r.many && r.opposite == null && r.isInverse() && (r.to.hasOwnDatabaseRepresentation()))»
+«ENDDEFINE»
+
+«DEFINE foreignKeyAlter FOR Reference-»
+-- Reference from «from.name».«getForeignKeyName()» to «to.name»
+ALTER TABLE «from.getDatabaseName()» ADD CONSTRAINT FK_«truncateLongDatabaseName(from.getDatabaseName(), getDatabaseName())»
+  FOREIGN KEY («getForeignKeyName()») REFERENCES «to.getRootExtends().getDatabaseName()»(«to.getRootExtends().getIdAttribute().getDatabaseName()»)«
+  	IF (opposite != null) && opposite.isDbOnDeleteCascade()» ON DELETE CASCADE«ENDIF»;
+«ENDDEFINE»
+
+«DEFINE extendsForeignKey(boolean initialComma) FOR DomainObject-»
+«IF initialComma»,
+«ENDIF-»
+  «extends.getExtendsForeignKeyName()» «extends.getForeignKeyType()-» NOT NULL«
+ENDDEFINE»
+
+«DEFINE extendsForeignKeyAlter FOR DomainObject-»
+-- Entity «name» extends «extends.getRootExtends().name»
+ALTER TABLE «getDatabaseName()» ADD CONSTRAINT FK_«getDatabaseName()»_«extends.getExtendsForeignKeyName()»
+  FOREIGN KEY («extends.getExtendsForeignKeyName()») REFERENCES «extends.getRootExtends().getDatabaseName()»(«extends.getRootExtends().getIdAttribute().getDatabaseName()»);
+«ENDDEFINE»
+
+«REM»TODO: never called and possibly incorrect, remove?«ENDREM»
+«DEFINE discriminatorIndex FOR DomainObject-»
+-- Index for discriminator in «extends.getRootExtends().name»
+ALTER TABLE «getDatabaseName()» ADD INDEX `DTYPE`(`DTYPE`);
+ALTER TABLE «getDatabaseName()» ADD INDEX FK_«getDatabaseName()»_«extends.getExtendsForeignKeyName()»
+  FOREIGN KEY («extends.getExtendsForeignKeyName()») REFERENCES «extends.getRootExtends().getDatabaseName()»(«extends.getRootExtends().getIdAttribute().getDatabaseName()»);
+«ENDDEFINE»
+
+«DEFINE uniManyForeignKey FOR Reference-»
+  «IF "list" == getCollectionType()-»
+  «getListIndexColumnName()» «getListIndexDatabaseType()»,
+  «ENDIF-»
+  «getOppositeForeignKeyName()» «from.getForeignKeyType()-»
+«ENDDEFINE»
+
+«DEFINE uniManyForeignKeyAlter FOR Reference-»
+-- Entity «to.name» inverse referenced from «from.name».«name»
+ALTER TABLE «to.getDatabaseName()» ADD CONSTRAINT FK_«truncateLongDatabaseName(to.getDatabaseName(), from.getDatabaseName())»
+	FOREIGN KEY («getOppositeForeignKeyName()») REFERENCES «from.getRootExtends().getDatabaseName()»(«from.getRootExtends().getIdAttribute().getDatabaseName()»);
+«ENDDEFINE»
+
+«DEFINE uniqueConstraint FOR DomainObject-»
+«IF hasUniqueConstraints()-»,
+«IF attributes.exists(a | a.isUuid()) -»
+  CONSTRAINT UNIQUE («attributes.select(a | a.isUuid()).first().getDatabaseName()»)
+  	«ELSE -»
+  CONSTRAINT UNIQUE («FOREACH getAllNaturalKeys() AS key SEPARATOR ", " »«
+  		IF key.isBasicTypeReference()»«FOREACH
+  			((Reference) key).to.getAllNaturalKeys() AS a SEPARATOR ", "»«getDatabaseName(key.getDatabaseName(), a)»«ENDFOREACH»«
+  		ELSE»«key.getDatabaseName()»«
+  		ENDIF»«
+  		ENDFOREACH»)
+	«ENDIF»
+«ENDIF»
+«ENDDEFINE»
+
+

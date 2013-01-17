@@ -1,0 +1,13 @@
+<assembly>
+  <id>repository</id>
+  <formats>
+    <format>zip</format>
+    <format>tar.gz</format>
+  </formats>
+  <repositories>
+    <repository>
+      <includeMetadata>true</includeMetadata>
+      <outputDirectory>m2/repository</outputDirectory>
+    </repository>
+  </repositories>
+</assembly>

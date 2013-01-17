@@ -1,0 +1,366 @@
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::helper»
+
+«DEFINE resource FOR Resource»
+	«EXPAND resourceBase»
+	«IF gapClass»
+		«EXPAND resourceSubclass»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE resourceBase FOR Resource»
+    «FILE javaFileName(getRestPackage() + "." + name + (gapClass ? "Base" : ""))»
+«javaHeader()»
+package «getRestPackage()»;
+
+«IF gapClass»
+/**
+ * Generated base class for implementation of «name».
+ * <p>Make sure that subclass defines the following annotations:
+ * <pre>
+«EXPAND springControllerAnnotation»
+ * </pre>
+ */
+«ELSE»
+ /**
+ * Resource Implementation of «name».
+ */
+	«EXPAND springControllerAnnotation»
+«ENDIF»
+public «IF gapClass»abstract «ENDIF»class «name»«IF gapClass»Base«ENDIF» «extendsLitteral()» {
+
+    public «name»«IF gapClass»Base«ENDIF»() {
+    }
+    
+    «IF isServiceContextToBeGenerated()»
+		«EXPAND serviceContext»
+    «ENDIF»
+    
+    «EXPAND initBinder»
+    
+    «EXPAND delegateServices »
+        
+    «EXPAND resourceMethod FOREACH operations.reject(op | op.isImplementedInGapClass())»
+    
+    «EXPAND resourceAbstractMethod FOREACH operations.select(op | op.isImplementedInGapClass()) »
+    
+    «EXPAND resourceMethodFromForm FOREACH operations.select(e|e.httpMethod == HttpMethod::POST || e.httpMethod == HttpMethod::PUT)»
+    
+    «EXPAND handleExceptions»
+    
+    «EXPAND resourceHook FOR this»
+}
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE resourceSubclass FOR Resource»
+    «FILE javaFileName(getRestPackage() + "." + name) TO_SRC»
+«javaHeader()»
+package «getRestPackage()»;
+
+/**
+ * Implementation of «name».
+ */
+«EXPAND springControllerAnnotation»
+public class «name» extends «name»Base {
+
+    public «name»() {
+    }
+
+    «EXPAND resourceMethod FOREACH operations.select(op | op.isImplementedInGapClass()) »
+
+}
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE initBinder FOR Resource»
+	«LET operations.select(e|e.httpMethod == HttpMethod::GET && e.domainObjectType != null).collect(e|e.domainObjectType).first()
+		AS primaryDomainObject»
+	@org.springframework.web.bind.annotation.InitBinder
+    protected void initBinder(org.springframework.web.bind.WebDataBinder binder) throws Exception {
+        binder.registerCustomEditor(String.class, new org.springframework.beans.propertyeditors.StringTrimmerEditor(false));
+        «IF isJpaProviderAppEngine() && primaryDomainObject != null»
+        	binder.registerCustomEditor(com.google.appengine.api.datastore.Key.class, new «primaryDomainObject.name»IdKeyEditor());
+        «ENDIF»
+    }
+    
+	    «IF isJpaProviderAppEngine() && primaryDomainObject != null»
+	    	«EXPAND gaeKeyIdPropertyEditor FOR primaryDomainObject»
+	    «ENDIF»
+    «ENDLET»
+«ENDDEFINE»
+
+«DEFINE gaeKeyIdPropertyEditor FOR DomainObject»
+    private static class «name»IdKeyEditor extends java.beans.PropertyEditorSupport {
+        @Override
+        public void setAsText(String text) {
+            if (text == null) {
+                setValue(null);
+            } else {
+                com.google.appengine.api.datastore.Key key = com.google.appengine.api.datastore.KeyFactory.createKey(
+                	«getDomainPackage()».«name».class.getSimpleName(), Long.valueOf(text));
+                setValue(key);
+            }
+        }
+
+        @Override
+        public String getAsText() {
+            com.google.appengine.api.datastore.Key key = (com.google.appengine.api.datastore.Key) getValue();
+            return (key == null ? null : String.valueOf(key.getId()));
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE serviceContext FOR Resource»
+    protected «fw("errorhandling.ServiceContext")» serviceContext() {
+        return «fw("errorhandling.ServiceContextStore")».get();
+    }
+«ENDDEFINE»
+
+«DEFINE springControllerAnnotation FOR Resource»
+@org.springframework.stereotype.Controller
+«ENDDEFINE»
+
+«DEFINE delegateServices FOR Resource»
+	«FOREACH getDelegateServices() AS delegateService »
+    	@org.springframework.beans.factory.annotation.Autowired
+        private «getServiceapiPackage(delegateService)».«delegateService.name» «delegateService.name.toFirstLower()»;
+
+        protected «getServiceapiPackage(delegateService)».«delegateService.name» get«delegateService.name»() {
+            return «delegateService.name.toFirstLower()»;
+        }
+    «ENDFOREACH»
+«ENDDEFINE»
+
+«DEFINE resourceMethod FOR ResourceOperation»
+	«IF formatJavaDoc() == "" »
+	«formatJavaDoc()»
+	«ELSEIF delegate != null -»
+    /**
+     * Delegates to {@link «getServiceapiPackage(delegate.service)».«delegate.service.name»#«delegate.name»}
+     */
+    «ENDIF -»
+    «EXPAND resourceMethodAnnotation(false)»
+    «EXPAND resourceMethodSignature» {
+    «IF isImplementedInGapClass() »
+		«EXPAND resourceMethodHandWritten»
+    «ELSEIF delegate == null»
+    	«EXPAND resourceMethodReturn»
+    «ELSE»
+    	«EXPAND resourceMethodValidation»
+    	«EXPAND resourceMethodDelegation»
+    	«EXPAND resourceMethodModelMapResult»
+        «EXPAND resourceMethodReturn»
+    «ENDIF»
+    }
+«ENDDEFINE»
+
+«DEFINE resourceMethodSignature FOR ResourceOperation»
+«getVisibilityLitteral()» «IF returnString != null»String«ELSE»«getTypeName()»«ENDIF» «name»(«EXPAND annotatedParamTypeAndName(this, false) FOREACH parameters SEPARATOR ", "-») «
+    EXPAND templates::common::Exception::throws»
+«ENDDEFINE»
+
+«DEFINE resourceMethodFromForm FOR ResourceOperation»
+	«IF !hasHint("headers") || (getHint("headers") != "content-type=application/x-www-form-urlencoded")»
+    /**
+     * This method is needed for form data «httpMethod.toString()». Delegates to {@link #«name»}
+     */
+    «EXPAND resourceMethodAnnotation(true)»
+    «getVisibilityLitteral()» «IF returnString != null»String«ELSE»«getTypeName()»«ENDIF» «name»FromForm(«EXPAND annotatedParamTypeAndName(this, true) FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws» {
+    	«IF returnString != null || getTypeName() != "void"»return «ENDIF»«name»(«FOREACH parameters AS p SEPARATOR ", "»«p.name»«ENDFOREACH»);
+    }
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE resourceMethodHandWritten FOR ResourceOperation»
+	«LET resource.operations.selectFirst(e | e.httpMethod == HttpMethod::POST) AS postOperation»
+	«LET resource.operations.selectFirst(e | e.httpMethod == HttpMethod::PUT) AS putOperation»
+	«LET parameters.selectFirst(e|e.type == "ModelMap") AS modelMapParam»
+	«IF name == "createForm" && returnString != null && modelMapParam != null && postOperation != null»
+		«EXPAND resourceCreateFormMethodHandWritten(modelMapParam, postOperation)»
+	«ELSEIF name == "updateForm" && returnString != null && modelMapParam != null»
+		«EXPAND resourceUpdateFormMethodHandWritten(modelMapParam, putOperation)»
+	«ELSE»	
+    	// TODO Auto-generated method stub
+        throw new UnsupportedOperationException("«name» not implemented");
+        «IF modelMapParam != null -»
+			// «modelMapParam.name».addAttribute("result", result);
+		«ENDIF -»
+        «IF returnString != null»// return "«returnString»";«ENDIF»
+    «ENDIF»
+	«ENDLET»
+	«ENDLET»
+	«ENDLET»
+«ENDDEFINE»
+
+«DEFINE resourceCreateFormMethodHandWritten(Parameter modelMapParam, ResourceOperation postOperation) FOR ResourceOperation»
+	«LET postOperation.parameters.first() AS firstParam»
+		«IF firstParam.domainObjectType != null -»
+			«firstParam.domainObjectType.getDomainPackage()».«firstParam.domainObjectType.name» «firstParam.name» = new «firstParam.domainObjectType.getDomainPackage()».«firstParam.domainObjectType.name»(); 
+			«modelMapParam.name».addAttribute("«firstParam.name»", «firstParam.name»);
+		«ENDIF-»
+		return "«returnString»";
+	«ENDLET»
+«ENDDEFINE»
+
+«DEFINE resourceUpdateFormMethodHandWritten(Parameter modelMapParam, ResourceOperation putOperation) FOR ResourceOperation»
+	«LET putOperation.parameters.first() AS firstParam -»
+	«LET resource.operations
+		.selectFirst(e | e.httpMethod == HttpMethod::GET && e.domainObjectType != null && e.domainObjectType == firstParam.domainObjectType && e.type == null && e.collectionType == null)
+		AS getOperation -»
+	«LET getOperation.delegate AS findByIdOperation -»
+    	«IF findByIdOperation == null -»
+    		// TODO: can't update due to no matching findById method in service
+    	«ELSE -»
+    		«findByIdOperation.getTypeName()» «firstParam.name» =
+    		get«findByIdOperation.service.name»().«findByIdOperation.name»(«
+        	FOREACH findByIdOperation.parameters AS parameter SEPARATOR ", "»«IF parameter.getTypeName() == serviceContextClass()
+            	»serviceContext()«ELSE»«parameter.name»«ENDIF»«ENDFOREACH»);
+            «modelMapParam.name».addAttribute("«firstParam.name»", «firstParam.name»);
+    	«ENDIF -»
+    	return "«returnString»";
+    «ENDLET-»
+    «ENDLET-»
+	«ENDLET-»
+«ENDDEFINE»
+
+
+
+«DEFINE resourceMethodValidation FOR ResourceOperation»
+«ENDDEFINE»
+
+«DEFINE resourceMethodDelegation FOR ResourceOperation»
+	«IF httpMethod == HttpMethod::DELETE && path.contains("{id}") && parameters.notExists(e|e.name == "id") && parameters.exists(e | e.domainObjectType != null) -»
+		«EXPAND resourceMethodDeleteDelegation»
+	«ELSE -»
+		«IF delegate.getTypeName() != "void"»«delegate.getTypeName()» result = «ENDIF»
+	    	«delegate.service.name.toFirstLower()».«delegate.name»(«
+	        	FOREACH delegate.parameters AS parameter SEPARATOR ", "»«IF parameter.getTypeName() == serviceContextClass()
+	            	»serviceContext()«ELSE»«parameter.name»«ENDIF»«ENDFOREACH»);
+    «ENDIF-»
+«ENDDEFINE»
+
+«DEFINE resourceMethodDeleteDelegation FOR ResourceOperation»
+    «LET delegate.service.operations.select(e|e.domainObjectType != null && e.collectionType == null && e.parameters.exists(p|p.type == e.domainObjectType.getIdAttributeType())).first() 
+    	AS findByIdOperation -»
+    	«IF findByIdOperation == null -»
+    		// TODO: can't delete due to no matching findById method in service
+    	«ELSE -»
+    		«findByIdOperation.getTypeName()» deleteObj =
+    		«delegate.service.name.toFirstLower()».«findByIdOperation.name»(«
+        	FOREACH findByIdOperation.parameters AS parameter SEPARATOR ", "»«IF parameter.getTypeName() == serviceContextClass()
+            	»serviceContext()«ELSE»«parameter.name»«ENDIF»«ENDFOREACH»);
+            «delegate.service.name.toFirstLower()».«delegate.name»(«
+        	FOREACH delegate.parameters AS parameter SEPARATOR ", "»«IF parameter.getTypeName() == serviceContextClass()
+            	»serviceContext()«ELSE»deleteObj«ENDIF»«ENDFOREACH»);
+    	«ENDIF -»
+    «ENDLET-»
+«ENDDEFINE»
+
+«DEFINE resourceMethodReturn FOR ResourceOperation»
+	«IF returnString != null && returnString.contains("{id}")»
+    	return String.format("«returnString.replacePlaceholder("{id}", "%s") »", result.getId()«IF isJpaProviderAppEngine()».getId()«ENDIF»);
+    «ELSEIF returnString != null»
+    	return "«returnString»";
+    «ELSEIF getTypeName() != "void"»
+    	return result;
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE resourceMethodModelMapResult FOR ResourceOperation»
+	«LET parameters.selectFirst(e|e.type == "ModelMap") AS modelMapParam»
+		«IF modelMapParam != null && delegate.getTypeName() != "void"»
+			«modelMapParam.name».addAttribute("result", result);
+		«ENDIF»
+	«ENDLET»
+«ENDDEFINE»
+
+«DEFINE resourceAbstractMethod FOR ResourceOperation»
+    /* 
+    «EXPAND resourceMethodAnnotation(false) -»
+    «EXPAND resourceMethodSignature» */
+	«getVisibilityLitteral()» abstract «IF returnString != null»String«ELSE»«getTypeName()»«ENDIF» «name»(«EXPAND paramTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws»;
+«ENDDEFINE»
+
+«DEFINE resourceMethodAnnotation(boolean formDataHeader) FOR ResourceOperation
+»@org.springframework.web.bind.annotation.RequestMapping(value = "«path»", method=org.springframework.web.bind.annotation.RequestMethod.«httpMethod.toString()»«
+	IF formDataHeader», headers = "content-type=application/x-www-form-urlencoded"«ELSEIF hasHint("headers")», headers = "«getHint("headers")»"«ENDIF»«
+	IF hasHint("params")», params = "«getHint("params")»"«ENDIF»)«
+ENDDEFINE»
+
+«DEFINE generatedName FOR ResourceOperation»
+«IF returnString != null»"«getHint('return')»"«ELSE»""«ENDIF»
+«ENDDEFINE»
+
+«DEFINE paramTypeAndName FOR Parameter»
+«getTypeName()» «name»
+«ENDDEFINE»
+
+«REM»Must format this carefully because it is included in comment«ENDREM»
+«DEFINE annotatedParamTypeAndName(ResourceOperation op, boolean formData) FOR Parameter »«
+IF op.httpMethod == HttpMethod::DELETE && domainObjectType != null && domainObjectType.getIdAttribute() != null && op.path.contains("{id}")
+	»@org.springframework.web.bind.annotation.PathVariable("id") «domainObjectType.getIdAttributeType()» id«
+ELSE
+	»«IF op.path.contains("{" + name + "}")
+	»@org.springframework.web.bind.annotation.PathVariable("«name»") «
+	ELSEIF formData && domainObjectType != null
+	»@org.springframework.web.bind.annotation.ModelAttribute("«name»") «
+	ELSEIF domainObjectType != null
+	»@org.springframework.web.bind.annotation.RequestBody «
+	ELSEIF isRestRequestParameter()
+	»@org.springframework.web.bind.annotation.RequestParam("«name»") «
+	ENDIF
+	»«getTypeName()» «name»«
+ENDIF
+»«ENDDEFINE»
+
+«DEFINE handleExceptions FOR Resource»
+	«LET operations.select(e | e.throws != null).collect(e | e.getExceptions()).flatten().toSet()
+		AS allExceptions»
+		«EXPAND handleNotFoundException FOREACH allExceptions.select(e|e.endsWith("NotFoundException"))»
+	«ENDLET»
+	«EXPAND handleIllegalArgumentException FOR "java.lang.IllegalArgumentException"»
+	«EXPAND handleIllegalArgumentException FOR fw("errorhandling.ValidationException")»
+	«EXPAND handleSystemException FOR fw("errorhandling.SystemException")»
+	«IF operations.exists(e | e.httpMethod == HttpMethod::POST || e.httpMethod == HttpMethod::PUT || e.httpMethod == HttpMethod::DELETE)»
+		«EXPAND handleOptimisticLockingException FOR fw("errorhandling.OptimisticLockingException")»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE handleNotFoundException FOR String»
+    @org.springframework.web.bind.annotation.ExceptionHandler
+    public void handleException(«this» e, javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        response.sendError(org.springframework.http.HttpStatus.NOT_FOUND.value(), e.getMessage());
+    }
+«ENDDEFINE»
+
+«DEFINE handleOptimisticLockingException FOR String»
+    @org.springframework.web.bind.annotation.ExceptionHandler
+    public void handleException(«this» e, javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        response.sendError(org.springframework.http.HttpStatus.CONFLICT.value(), e.getMessage());
+    }
+«ENDDEFINE»
+
+«DEFINE handleIllegalArgumentException FOR String»
+    @org.springframework.web.bind.annotation.ExceptionHandler
+    public void handleException(«this» e, javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        response.sendError(org.springframework.http.HttpStatus.BAD_REQUEST.value(), e.getMessage());
+    }
+«ENDDEFINE»
+
+«DEFINE handleSystemException FOR String»
+    @org.springframework.web.bind.annotation.ExceptionHandler
+    public void handleException(«this» e, javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        response.sendError(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE.value(), e.getMessage());
+    }
+«ENDDEFINE»
+
+
+«REM»Extension point to generate more stuff in service implementation.
+User AROUND templates::rest::Resource::resourceHook FOR Resource
+in SpecialCases.xpt«ENDREM»
+«DEFINE resourceHook FOR Resource»
+«ENDDEFINE»

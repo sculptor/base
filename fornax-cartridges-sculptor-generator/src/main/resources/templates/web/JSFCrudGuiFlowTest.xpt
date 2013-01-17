@@ -1,0 +1,884 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::guihelper»
+
+«DEFINE flowTest FOR GuiApplication»
+	«EXPAND flowTest FOREACH modules.userTasks»
+«ENDDEFINE »
+
+«DEFINE flowTest FOR UserTask»
+«ENDDEFINE »
+
+«DEFINE flowTest FOR CreateTask»
+	«EXPAND createUpdateFlowTestBase »
+	«EXPAND createUpdateFlowTest »
+«ENDDEFINE »
+
+«DEFINE flowTest FOR UpdateTask»
+	«EXPAND createUpdateFlowTestBase »
+	«EXPAND createUpdateFlowTest »
+«ENDDEFINE »
+
+«DEFINE flowTest FOR DeleteTask»
+	«EXPAND deleteFlowTestBase »
+	«EXPAND deleteFlowTest »
+«ENDDEFINE »
+
+«DEFINE flowTest FOR ListTask»
+	«EXPAND listFlowTestBase »
+	«EXPAND listFlowTest »
+«ENDDEFINE »
+
+«DEFINE flowTest FOR ViewTask»
+	«EXPAND viewFlowTestBase »
+	«EXPAND viewFlowTest »
+«ENDDEFINE »
+
+«DEFINE createUpdateFlowTest FOR UserTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "Test") TO_SRC_TEST »
+«javaHeader()»
+package «this.module.getWebPackage()»;
+
+public class «name.toFirstUpper()»Test extends «name.toFirstUpper()»TestBase {
+
+	/**
+	 * Populates the valid form values.
+	 */
+	protected void populateFormSuccess(«module.getWebPackage()».«name.toFirstUpper()»Form form) {
+		// TODO Auto-generated method stub, remove next line and assign valid form values
+    	«REM»«EXPAND populateFormObject »«ENDREM»
+	}
+	
+	/**
+	 * Populates the invalid form values. It is possible to throw 
+	 * UnsupportedOperationException to skip testFormSubmitError.
+	 */
+	protected void populateFormError(«module.getWebPackage()».«name.toFirstUpper()»Form form) {
+		// TODO Auto-generated method stub, remove next line and assign some invalid form values
+    	«REM»«EXPAND populateFormObject »«ENDREM»
+	}
+	
+	«IF (this.metaType == UpdateTask) && (((UpdateTask) this).findDOWith != null) -»
+	/**
+	 * Creates the «for.name» object to update.
+	 */
+	protected «for.getDomainPackage()».«for.name» findById() {
+		// TODO Auto-generated method stub, remove next line and create the «for.name» object to update
+    	return null;
+	}
+	«ENDIF -»
+}
+	
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE createUpdateFlowTestBase FOR UserTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "TestBase") TO_GEN_SRC_TEST»
+«javaHeader()»
+package «this.module.getWebPackage()»;
+
+public abstract class «name.toFirstUpper()»TestBase extends org.springframework.webflow.test.execution.AbstractXmlFlowExecutionTests {
+
+	«EXPAND createUpdateFlowSetUp »
+	«EXPAND createUpdateFlowTestStart »	
+	«REM» TODO a lot of work migrating from webflow 1 to 2
+	«EXPAND createUpdateFlowTestFormSubmitSuccess »
+	«EXPAND createUpdateFlowTestFormSubmitError »
+	«EXPAND createUpdateFlowTestFormCancel »
+	«EXPAND createUpdateFlowTestConfirmSubmit »
+	«EXPAND createUpdateFlowTestConfirmCancel »
+	«ENDREM»
+	«EXPAND repositoryStub »
+	«EXPAND getForm »
+}	
+	«ENDFILE»
+«ENDDEFINE»
+
+«REM»TODO refactor for webflow2«ENDREM»
+«DEFINE createUpdateFlowTestFormSubmitSuccess FOR UserTask »
+    public void testFormSubmitSuccess() {
+        // set up
+        testStartFlow();
+        
+        «IF getPrimaryService() != null -»
+        // expectations
+        mockery.checking(new org.jmock.Expectations() {{
+            never(«getPrimaryService().name.toFirstLower()»);
+        }});
+        «ENDIF »
+        
+        // execute
+        «module.getWebPackage()».«name.toFirstUpper()»Form form = («name.toFirstUpper()»Form) getFlowAttribute("«name»Form");
+        assertNotNull(form);
+        populateFormSuccess(form);
+        org.springframework.webflow.execution.support.ApplicationView view = applicationView(signalEvent("submit"));
+        
+        // verify
+        assertCurrentStateEquals("confirm");
+        assertViewNameEquals("/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/confirm.xhtml", view);
+        «IF getPrimaryService() != null -»
+        mockery.assertIsSatisfied();
+        «ENDIF»
+    }
+    
+    /**
+     * Subclass populates the valid form values.
+     */
+    //protected abstract void populateFormSuccess(«module.getWebPackage()».«name.toFirstUpper()»Form form);
+
+
+«ENDDEFINE»
+
+«REM»TODO refactor for webflow2«ENDREM»
+«DEFINE createUpdateFlowTestFormSubmitError FOR UserTask »
+    public void testFormSubmitError() {
+        // set up
+        testStartFlow();
+        
+        «IF getPrimaryService() != null -»
+        // expectations
+        mockery.checking(new org.jmock.Expectations() {{
+            never(«getPrimaryService().name.toFirstLower()»);
+        }});
+        «ENDIF -»
+        
+        // execute
+        «module.getWebPackage()».«name.toFirstUpper()»Form form = («name.toFirstUpper()»Form) getFlowAttribute("«name»Form");
+        assertNotNull(form);
+        try {
+            populateFormError(form);
+        } catch (UnsupportedOperationException e) {
+            // Subclass may throw UnsupportedOperationException to skip this test method
+            return;
+        }
+        signalEvent("submit");
+        assertCurrentStateEquals("input");
+        «IF getPrimaryService() != null -»
+        mockery.assertIsSatisfied();
+        «ENDIF -»
+    }
+    
+    /**
+     * Subclass populates the invalid form values.
+     * Subclass may throw UnsupportedOperationException 
+     * to skip testFormSubmitError.
+     */
+    protected abstract void populateFormError(«module.getWebPackage()».«name.toFirstUpper()»Form form);
+     
+«ENDDEFINE»
+
+«REM»TODO refactor for webflow2«ENDREM»
+«DEFINE createUpdateFlowTestFormCancel FOR UserTask »
+    public void testFormCancel() {
+        // set up
+        testStartFlow();
+        
+        // expectations
+        mockery.checking(new org.jmock.Expectations() {{
+        «IF getPrimaryService() != null -»
+            never(«getPrimaryService().name.toFirstLower()»);
+		«ENDIF -»            
+        }});
+        
+        // execute
+        signalEvent("cancel", new org.springframework.webflow.test.MockParameterMap());
+        
+        // verify
+        assertFlowExecutionEnded();
+        mockery.assertIsSatisfied();
+    }
+«ENDDEFINE»
+
+«REM»TODO refactor for webflow2«ENDREM»
+«DEFINE createUpdateFlowTestConfirmSubmit FOR UserTask »
+    public void testConfirmSubmit() {
+        // set up        
+        testFormSubmitSuccess();
+
+        «IF getPrimaryServiceOperation()  != null -»        
+        // expectations
+        mockery.checking(new org.jmock.Expectations() {{
+            one(«getPrimaryService().name.toFirstLower()»).«getPrimaryServiceOperation().name»(«IF isServiceContextToBeGenerated()»with(any(«serviceContextClass()».class)), «ENDIF»with(any(«for.getDomainPackage()».«for.name».class)));
+        }});
+        «ENDIF -»
+                
+        // execute
+        org.springframework.webflow.execution.support.ApplicationView view = applicationView(signalEvent("submit"));
+        
+        // verify
+        assertFlowExecutionEnded();
+        assertViewNameEquals("/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/finish.xhtml", view);
+        «IF getPrimaryService() != null -»        
+        mockery.assertIsSatisfied();
+        «ENDIF -»
+    }
+«ENDDEFINE»
+
+«REM»TODO refactor for webflow2«ENDREM»
+«DEFINE createUpdateFlowTestConfirmCancel FOR UserTask »
+    public void testConfirmCancel() {
+        // set up        
+        testFormSubmitSuccess();
+        
+        // expectations
+        mockery.checking(new org.jmock.Expectations() {{
+        «IF getPrimaryService() != null -»
+            never(«getPrimaryService().name.toFirstLower()»);
+        «ENDIF -»   
+        }});
+        
+        // execute
+        signalEvent("cancel");
+        
+        // verify        
+        assertFlowExecutionEnded();
+        mockery.assertIsSatisfied();
+    }
+«ENDDEFINE»
+
+
+«DEFINE populateFormObject FOR UserTask»
+	«EXPAND populateFormObjectProperty FOREACH this.viewProperties.reject(e|e.isSystemAttribute()).reject(p | p.metaType == DerivedReferenceViewProperty) -»
+«ENDDEFINE»
+
+«DEFINE populateFormObjectProperty FOR ViewDataProperty -»
+	«LET (userTask.metaType == CreateTask) || isChangeable() AS editable -»
+	«IF editable -»
+		«IF isNullable()»// «ENDIF»«EXPAND populateFormObjectPropertyImpl -»
+	«ENDIF -»
+	«ENDLET -»
+«ENDDEFINE »
+
+«DEFINE populateFormObjectPropertyImpl FOR ViewDataProperty -»
+form.set«name.toFirstUpper()»(null);
+«ENDDEFINE »
+
+«DEFINE populateFormObjectPropertyImpl FOR ReferenceViewProperty -»
+	«IF isRequired() -»
+form.setRequired«name.toFirstUpper()»(null);
+	«ENDIF-»
+«ENDDEFINE »
+
+«REM»TODO refactor for webflow2«ENDREM»
+«DEFINE deleteFlowTestConfirmSubmit FOR DeleteTask »
+    public void testConfirmSubmit() {
+        // set up        
+        testStartFlow();
+
+        // expectations
+        mockery.checking(new org.jmock.Expectations() {{
+        «IF getPrimaryServiceOperation() != null -»        
+            one(«getPrimaryService().name.toFirstLower()»).«getPrimaryServiceOperation().name»(«IF isServiceContextToBeGenerated()»with(any(«serviceContextClass()».class)), «ENDIF»with(any(«for.getDomainPackage()».«for.name».class)));
+        «ENDIF -»
+        }});
+                
+        // execute
+        org.springframework.webflow.execution.support.ApplicationView view = applicationView(signalEvent("submit"));
+        
+        // verify
+        assertFlowExecutionEnded();
+        assertViewNameEquals("/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/finish.xhtml", view);
+        mockery.assertIsSatisfied();
+    }
+«ENDDEFINE»
+
+«REM»TODO refactor for webflow2«ENDREM»
+«DEFINE deleteFlowTestConfirmCancel FOR DeleteTask »
+    public void testConfirmCancel() {
+        // set up        
+        testStartFlow();
+        
+        «IF getPrimaryService() != null -»
+        // expectations
+        mockery.checking(new org.jmock.Expectations() {{
+            never(«getPrimaryService().name.toFirstLower()»);
+        }});
+        «ENDIF -»
+        
+        // execute
+        org.springframework.webflow.execution.support.ApplicationView view = applicationView(signalEvent("cancel"));
+        
+        // verify        
+        assertFlowExecutionEnded();
+        assertViewNameEquals("/WEB-INF/«IF !gapClass»generated/«ENDIF»flows/«module.name»/«name»/finish.xhtml", view);
+        «IF getPrimaryService() != null -»        
+        mockery.assertIsSatisfied();
+        «ENDIF -»
+    }
+«ENDDEFINE»
+
+«DEFINE fakeFindById FOR UserTask »
+    private «fakeObjectInstantiatorClass()»<«for.getDomainPackage()».«for.name»> fakeObjectInstantiator = new «fakeObjectInstantiatorClass()»<«for.getDomainPackage()».«for.name»>(«for.getDomainPackage()».«for.name».class);
+    
+    /**
+     * Creates the «for.name» object to «taskType».
+     * It doesn't matter what instance we use. This method 
+     * creates a fake instance using reflection, since 
+     * default constructor might not be visible.
+     */
+    protected «for.getDomainPackage()».«for.name» findById() {
+        return fakeObjectInstantiator.createFakeObject();
+    }
+«ENDDEFINE»
+
+«DEFINE createUpdateFlowSetUp FOR UserTask »
+    private org.jmock.Mockery mockery = new org.jmock.Mockery();
+    «FOREACH this.getUsedServices() AS service»
+	private «service.getServiceapiPackage()».«service.name» «service.name.toFirstLower()»;
+	«ENDFOREACH»
+    «IF metaType == UpdateTask -»
+    private org.springframework.webflow.core.collection.MutableAttributeMap flowInput;
+    «ENDIF -»
+
+    public void setUp() throws Exception {
+	    «IF metaType == UpdateTask -»
+        flowInput = new org.springframework.webflow.core.collection.LocalAttributeMap();
+        	«IF ((UpdateTask) this).findDOWith == null -»
+        	flowInput.put("«for.name»", new «fakeObjectInstantiatorClass()»<«for.getDomainPackage()».«for.name»>(«for.getDomainPackage()».«for.name».class).createFakeObject());
+        	«ELSE -»
+		    flowInput.put("id", new «for.getIdAttributeType()»("17"));
+        	«ENDIF -»
+        «ENDIF -»
+		«FOREACH this.getUsedServices() AS service»
+		«service.name.toFirstLower()» = mockery.mock(«service.getServiceapiPackage()».«service.name».class);
+		«ENDFOREACH» 
+    	super.setUp();
+    }
+    
+    «EXPAND createUpdateRegisterMockery »
+    
+    «EXPAND getFlowDefinitionResource »
+    
+«ENDDEFINE»
+
+
+«DEFINE getFlowDefinitionResource FOR UserTask »
+    @Override
+    protected org.springframework.webflow.config.FlowDefinitionResource getResource(
+            org.springframework.webflow.config.FlowDefinitionResourceFactory resourceFactory) {
+        return resourceFactory.createFileResource("src/main/webapp/WEB-INF/«IF gapClass»«ELSE»generated/«ENDIF»flows/«module.name»/«name»/«name»-flow.xml");
+    }
+    «IF gapClass»
+	@Override
+	protected org.springframework.webflow.config.FlowDefinitionResource[] getModelResources(org.springframework.webflow.config.FlowDefinitionResourceFactory resourceFactory) {
+		FlowDefinitionResource base = new FlowDefinitionResource("«module.name»/«name»Base", new org.springframework.core.io.FileSystemResource(
+                new java.io.File("src/main/webapp/WEB-INF/generated/flows/«module.name»/«name»/«name»-base.xml")), null);
+        return new org.springframework.webflow.config.FlowDefinitionResource[] {base};
+   		
+	}
+	«ENDIF»
+«ENDDEFINE»
+«DEFINE repositoryStub FOR UserTask »
+	«EXPAND repositoryStub(false)»
+«ENDDEFINE»
+
+«DEFINE repositoryStub FOR UpdateTask »
+	«EXPAND repositoryStub(findDOWith != null)»
+«ENDDEFINE»
+
+«DEFINE repositoryStub FOR DeleteTask »
+	«EXPAND repositoryStub(findDOWith != null)»
+«ENDDEFINE»
+«DEFINE repositoryStub(boolean findById) FOR UserTask »
+	private «conversationDomainObjectRepositoryInterface()» repository = new RepositoryStub();
+	
+    private class RepositoryStub implements «conversationDomainObjectRepositoryInterface()» {
+
+		«IF findById -»
+        @SuppressWarnings("unchecked")
+        «ENDIF-»
+        public <T> T get(Class<T> clazz, java.io.Serializable id) {
+        	«IF findById -»
+        	return (T) findById();
+        	«ELSE -»
+            return new «fakeObjectInstantiatorClass()»<T>(clazz).createFakeObject();
+            «ENDIF -»
+        }
+
+        public void revert(Object obj) {
+        }
+        
+        public void clear() {
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE createUpdateRegisterMockery FOR UserTask »
+	«LET viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base) AS subflowReferences -»
+    @Override
+    protected void configureFlowBuilderContext(org.springframework.webflow.test.MockFlowBuilderContext builderContext) {
+    	builderContext.getFlowBuilderServices().setConversionService(new org.springframework.faces.model.converter.FacesConversionService());
+		«name.toFirstUpper()»Action action = new «name.toFirstUpper()»Action();
+    	action.setRepository(repository);
+    	«FOREACH this.getUsedServices() AS service»
+        action.set«service.name»(«service.name.toFirstLower()»);
+        «ENDFOREACH»
+    	builderContext.registerBean("«name»Action", action);    	
+    	builderContext.registerBean("webExceptionAdvice", new «webExceptionAdviceClass()»());
+        «FOREACH this.getUsedServices() AS service»
+		builderContext.registerBean("«service.name.toFirstLower()»«IF isEar()»Proxy«ENDIF»", «service.name.toFirstLower()»);
+		«ENDFOREACH»
+        builderContext.registerBean("repository", repository);
+        //builderContext.registerBean("messageSource", new org.springframework.context.support.StaticMessageSource());
+
+		«FOREACH subflowReferences AS refProp»
+			«IF refProp.isCreateSubTaskAvailable() -»
+			getFlowDefinitionRegistry().registerFlowDefinition(stubSubflow("«refProp.getCreateTransition().to.name»-flow"));
+			«ENDIF -»
+			«IF refProp.isUpdateSubTaskAvailable() -»				
+			getFlowDefinitionRegistry().registerFlowDefinition(stubSubflow("«refProp.getUpdateTransition().to.name»-flow"));
+			«ENDIF -»
+			getFlowDefinitionRegistry().registerFlowDefinition(stubSubflow("«refProp.getViewTransition().to.name»-flow"));
+		«ENDFOREACH»
+	}
+	
+	«IF !subflowReferences.isEmpty -»
+		«EXPAND stubSubflow »
+	«ENDIF -»
+	«ENDLET -»
+«ENDDEFINE»
+
+«DEFINE stubSubflow FOR UserTask »
+    private org.springframework.webflow.engine.Flow stubSubflow(String subflowId) {
+        org.springframework.webflow.engine.Flow subflow = new org.springframework.webflow.engine.Flow(subflowId);
+        subflow.setInputMapper(new org.springframework.binding.mapping.Mapper() {
+            public org.springframework.binding.mapping.MappingResults map(Object source, Object target) {
+                assertEquals("id of value 1 not provided as input", new «for.getIdAttributeType()»("1"), ((org.springframework.webflow.core.collection.AttributeMap) source).get("id"));
+                return null;
+            }
+        });
+
+        // test responding to finish result
+        new org.springframework.webflow.engine.EndState(subflow, "finish");
+        return subflow;
+    }
+«ENDDEFINE »
+«DEFINE getForm FOR UserTask »
+    protected «module.getWebPackage()».«name.toFirstUpper()»Form getForm() {
+        return («module.getWebPackage()».«name.toFirstUpper()»Form) getFlowAttribute("«name»Form");
+    }
+
+«ENDDEFINE»
+
+«DEFINE createUpdateFlowTestStart FOR UserTask »
+«ENDDEFINE »
+
+«DEFINE createUpdateFlowTestStart FOR CreateTask »
+	@SuppressWarnings("unchecked")
+    public void testStartFlow() {
+    	// expectations
+        mockery.checking(new org.jmock.Expectations() {
+            {
+            	«LET ((List[ReferenceViewProperty]) getReferencesPropertiesChildrenToSelect().filterOutDuplicateReferenceViewProperty()) AS refProperties»
+	                «FOREACH refProperties AS refProp»
+	                	«LET refProp.getRelatedAddTask() AS addTask»
+							atLeast(1).of(«addTask.getPrimaryService().name.toFirstLower()»).«addTask.getPrimaryServiceOperation().name»(«
+								FOREACH addTask.getPrimaryServiceOperation().parameters AS param SEPARATOR ", "»with(any(«param.getTypeName()».class))«ENDFOREACH»);
+							«IF addTask.getPrimaryServiceOperation().isPagedResult()»
+							will(returnValue(new «addTask.getPrimaryServiceOperation().getTypeName()»(new java.util.ArrayList(), 0, 100, 100)));
+							«ELSE»
+							will(returnValue(new java.util.ArrayList()));
+							«ENDIF»
+						«ENDLET»
+					«ENDFOREACH»
+				«ENDLET»
+            }
+        });
+        startFlow(new org.springframework.webflow.test.MockExternalContext());
+        assertCurrentStateEquals("input");
+        mockery.assertIsSatisfied();
+    }
+«ENDDEFINE»
+
+«DEFINE createUpdateFlowTestStart FOR UpdateTask »
+	@SuppressWarnings("unchecked")
+    public void testStartFlow() {
+	    
+    	// expectations
+        mockery.checking(new org.jmock.Expectations() {
+            {
+            	«IF findDOWith != null -»
+            	«IF findDOWith.getExceptions().size > 0 -»
+                try {
+                «ENDIF»
+                	one(«findDOWith.service.name.toFirstLower()»).«findDOWith.name»(
+                	«FOREACH findDOWith.parameters AS param SEPARATOR ", "»with(any(«param.getTypeName()».class))«ENDFOREACH»
+                	);
+                «IF findDOWith.getExceptions().size > 0 -»
+                }«FOREACH findDOWith.getExceptions() AS exc » 
+                catch («exc» e) {}«ENDFOREACH»
+                «ENDIF»
+                will(returnValue(findById()));
+                «ENDIF -»
+                «LET ((List[ReferenceViewProperty]) getReferencesPropertiesChildrenToSelect().filterOutDuplicateReferenceViewProperty()) AS refProperties»
+	                «FOREACH refProperties AS refProp»
+	                	«LET refProp.getRelatedAddTask() AS addTask»
+							atLeast(1).of(«addTask.getPrimaryService().name.toFirstLower()»).«addTask.getPrimaryServiceOperation().name»(«
+								FOREACH addTask.getPrimaryServiceOperation().parameters AS param SEPARATOR ", "»with(any(«param.getTypeName()».class))«ENDFOREACH»);
+							«IF addTask.getPrimaryServiceOperation().isPagedResult()»
+							will(returnValue(new «addTask.getPrimaryServiceOperation().getTypeName()»(new java.util.ArrayList(), 0, 100, 100)));
+							«ELSE»
+							will(returnValue(new java.util.ArrayList()));
+							«ENDIF»
+						«ENDLET»
+					«ENDFOREACH»
+				«ENDLET»
+            }
+        });
+    	    
+        startFlow(flowInput, new org.springframework.webflow.test.MockExternalContext());
+        assertCurrentStateEquals("input");
+ 
+        mockery.assertIsSatisfied();
+    }
+    
+    «IF findDOWith != null -»
+    /**
+     * Subclass will return «for.name» to update.
+     */
+    protected abstract «for.getDomainPackage()».«for.name» findById();
+    «ENDIF -»
+«ENDDEFINE»
+
+«DEFINE deleteFlowTest FOR DeleteTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "Test") TO_SRC_TEST »
+	package «this.module.getWebPackage()»;
+
+	/**
+	 * Test class for delete flow. All test methods are in 
+	 * the generated base class.
+	 */	
+	public class «name.toFirstUpper()»Test extends «name.toFirstUpper()»TestBase {
+		
+	}
+	
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE deleteFlowTestBase FOR DeleteTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "TestBase") TO_GEN_SRC_TEST»
+«javaHeader()»
+package «this.module.getWebPackage()»;
+
+public abstract class «name.toFirstUpper()»TestBase extends org.springframework.webflow.test.execution.AbstractXmlFlowExecutionTests {
+
+	«EXPAND deleteFlowSetUp »	
+	«EXPAND deleteFlowTestStart » 
+	«REM» TODO a lot of work migrating from webflow 1 to 2
+	«EXPAND deleteFlowTestConfirmSubmit »
+	«EXPAND deleteFlowTestConfirmCancel »
+	«ENDREM»
+	«EXPAND repositoryStub »
+}	
+	«ENDFILE»
+«ENDDEFINE»
+«DEFINE deleteFlowSetUp FOR DeleteTask »
+    private org.jmock.Mockery mockery = new org.jmock.Mockery();
+    «IF getPrimaryService() != null -»
+    private «getPrimaryService().getServiceapiPackage()».«getPrimaryService().name» «getPrimaryService().name.toFirstLower()»;
+    «ENDIF -»
+    private org.springframework.webflow.core.collection.MutableAttributeMap flowInput;
+
+    public void setUp() throws Exception {
+        flowInput = new org.springframework.webflow.core.collection.LocalAttributeMap();
+        flowInput.put("id", new «for.getIdAttributeType()»("17"));
+        «IF getPrimaryService() != null -»    
+	    «getPrimaryService().name.toFirstLower()» = mockery.mock(«getPrimaryService().getServiceapiPackage()».«getPrimaryService().name».class);
+		«ENDIF -»
+    	super.setUp();
+    }
+    
+    
+    @Override
+    protected void configureFlowBuilderContext(org.springframework.webflow.test.MockFlowBuilderContext builderContext) {
+    	builderContext.getFlowBuilderServices().setConversionService(new org.springframework.faces.model.converter.FacesConversionService());	
+		«name.toFirstUpper()»Action action = new «name.toFirstUpper()»Action();
+    	action.setRepository(repository);
+    	«IF getPrimaryServiceOperation() != null -»
+        action.set«getPrimaryService().name»(«getPrimaryService().name.toFirstLower()»);
+        «ENDIF -»
+    	builderContext.registerBean("«name»Action", action);
+    	builderContext.registerBean("webExceptionAdvice", new «webExceptionAdviceClass()»());
+    «IF getPrimaryService() != null -»
+        builderContext.registerBean("«getPrimaryService().name.toFirstLower()»«IF isEar()»Proxy«ENDIF»", «getPrimaryService().name.toFirstLower()»);
+    «ENDIF -»
+        builderContext.registerBean("repository", repository);
+        //serviceRegistry.registerBean("messageSource", new org.springframework.context.support.StaticMessageSource());
+	}
+
+    
+    «EXPAND getFlowDefinitionResource »
+    
+«ENDDEFINE»
+
+«DEFINE deleteFlowTestStart FOR DeleteTask »
+    public void testStartFlow() {
+	    «IF findDOWith != null -»
+    	// expectations
+        mockery.checking(new org.jmock.Expectations() {
+            {
+            	«IF findDOWith.getExceptions().size > 0 -»
+                try {
+            	«ENDIF»
+                	atLeast(1).of(«findDOWith.service.name.toFirstLower()»).«findDOWith.name»(
+                	«FOREACH findDOWith.parameters AS param SEPARATOR ", "»with(any(«param.getTypeName()».class))«ENDFOREACH»
+                	);
+            	«IF findDOWith.getExceptions().size > 0 -»
+                }«FOREACH findDOWith.getExceptions() AS exc » 
+                catch («exc» e) {}«ENDFOREACH»
+                «ENDIF»
+                will(returnValue(findById()));
+            }
+        });
+    	«ENDIF -»    
+        startFlow(flowInput, new org.springframework.webflow.test.MockExternalContext());
+        assertCurrentStateEquals("confirm");
+        «IF findDOWith != null -»
+        mockery.assertIsSatisfied();
+        «ENDIF -»
+    }
+    
+    «IF findDOWith != null -»
+    	«EXPAND fakeFindById »
+    «ENDIF -»
+«ENDDEFINE»
+
+«DEFINE listFlowTest FOR ListTask »
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "Test") TO_SRC_TEST »
+«javaHeader()»
+package «this.module.getWebPackage()»;
+
+	/**
+	 * Test class for list flow. All test methods are in 
+	 * the generated base class.
+	 */	
+	public class «name.toFirstUpper()»Test extends «name.toFirstUpper()»TestBase {
+	
+}
+	
+	«ENDFILE»
+«ENDDEFINE»
+«DEFINE listFlowTestBase FOR ListTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "TestBase") TO_GEN_SRC_TEST»
+«javaHeader()»
+package «this.module.getWebPackage()»;
+
+public abstract class «name.toFirstUpper()»TestBase extends org.springframework.webflow.test.execution.AbstractXmlFlowExecutionTests {
+
+	«EXPAND listFlowSetUp »	
+	«EXPAND listFlowTestStart »
+	«EXPAND repositoryStub »
+}	
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE listFlowSetUp FOR ListTask »
+    private org.jmock.Mockery mockery = new org.jmock.Mockery();
+	«IF getPrimaryService() != null -»
+    private «getPrimaryService().getServiceapiPackage()».«getPrimaryService().name» «getPrimaryService().name.toFirstLower()»;
+    «ENDIF -»
+
+    public void setUp() throws Exception {
+        «IF getPrimaryService() != null -»    
+	    «getPrimaryService().name.toFirstLower()» = mockery.mock(«getPrimaryService().getServiceapiPackage()».«getPrimaryService().name».class);
+		«ENDIF -»    
+    	super.setUp();
+    }
+    
+    «EXPAND listFlowRegisterMockServices -»
+    
+    «EXPAND getFlowDefinitionResource »
+    
+«ENDDEFINE»
+
+«DEFINE listFlowRegisterMockServices FOR ListTask »
+    @Override
+    protected void configureFlowBuilderContext(org.springframework.webflow.test.MockFlowBuilderContext builderContext) {
+    	builderContext.getFlowBuilderServices().setConversionService(new org.springframework.faces.model.converter.FacesConversionService());
+    	«name.toFirstUpper()»Action action = new «name.toFirstUpper()»Action();
+    	action.setRepository(repository);
+    	«IF getPrimaryServiceOperation() != null -»
+        action.set«getPrimaryService().name»(«getPrimaryService().name.toFirstLower()»);
+        «ENDIF -»
+    	builderContext.registerBean("«name»Action", action);
+		
+    	builderContext.registerBean("webExceptionAdvice", new «webExceptionAdviceClass()»());
+        builderContext.registerBean("repository", repository);
+        //builderContext.registerBean("messageSource", new org.springframework.context.support.StaticMessageSource());
+    	«IF getPrimaryService() != null -»
+        builderContext.registerBean("«getPrimaryService().name.toFirstLower()»«IF isEar()»Proxy«ENDIF»", «getPrimaryService().name.toFirstLower()»);
+        «ENDIF -»
+
+		getFlowDefinitionRegistry().registerFlowDefinition(stubSubflow("«subTaskTransitions.select(t | t.to.metaType == ViewTask).first().to.name»-flow"));
+		«IF isUpdateSubTaskAvailable() -»
+		getFlowDefinitionRegistry().registerFlowDefinition(stubSubflow("«subTaskTransitions.select(t | t.to.metaType == UpdateTask).first().to.name»-flow"));
+		«ENDIF -»
+		«IF isDeleteSubTaskAvailable() -»
+		getFlowDefinitionRegistry().registerFlowDefinition(stubSubflow("«subTaskTransitions.select(t | t.to.metaType == DeleteTask).first().to.name»-flow"));
+		«ENDIF -»
+	}
+
+	«EXPAND stubSubflow »
+«ENDDEFINE»
+
+«DEFINE listFlowTestStart FOR ListTask »
+    public void testStartFlow() {
+	    «IF getPrimaryServiceOperation() != null -»
+    	// expectations
+        mockery.checking(new org.jmock.Expectations() {
+            {
+                one(«getPrimaryService().name.toFirstLower()»).«getPrimaryServiceOperation().name»(«
+					FOREACH getPrimaryServiceOperation().parameters AS param SEPARATOR ", "»with(any(«param.getTypeName()».class))«ENDFOREACH»);
+				«IF getPrimaryServiceOperation().isPagedResult()»
+				will(returnValue(new «getPrimaryServiceOperation().getTypeName()»(new java.util.ArrayList<«for.getDomainPackage()».«for.name»>(), 0, 100, 100)));
+				«ELSE»
+				will(returnValue(new java.util.ArrayList<«for.getDomainPackage()».«for.name»>()));
+				«ENDIF»
+                
+                
+            }
+        });
+    	«ENDIF -»    
+        startFlow(new org.springframework.webflow.test.MockExternalContext());
+        assertCurrentStateEquals("list");
+        «IF getPrimaryService() != null -»
+        mockery.assertIsSatisfied();
+        «ENDIF -»
+    }
+    
+«ENDDEFINE»
+
+«DEFINE viewFlowTest FOR ViewTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "Test") TO_SRC_TEST »
+«javaHeader()»	
+package «this.module.getWebPackage()»;
+
+	/**
+	 * Test class for view flow. All test methods are in 
+	 * the generated base class.
+	 */	
+	public class «name.toFirstUpper()»Test extends «name.toFirstUpper()»TestBase {
+	
+}
+	
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE viewFlowTestBase FOR ViewTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "TestBase") TO_GEN_SRC_TEST»
+«javaHeader()»
+package «this.module.getWebPackage()»;
+
+public abstract class «name.toFirstUpper()»TestBase extends org.springframework.webflow.test.execution.AbstractXmlFlowExecutionTests {
+
+	«EXPAND viewFlowSetUp »	
+	«EXPAND viewFlowTestStart »
+	«EXPAND repositoryStub »
+}	
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE viewFlowSetUp FOR ViewTask »
+    private org.jmock.Mockery mockery = new org.jmock.Mockery();
+	«IF getPrimaryServiceOperation() != null -»
+    private «getPrimaryService().getServiceapiPackage()».«getPrimaryService().name» «getPrimaryService().name.toFirstLower()»;
+    «ENDIF -»
+    private org.springframework.webflow.core.collection.MutableAttributeMap flowInput;
+
+    public void setUp() throws Exception {
+        flowInput = new org.springframework.webflow.core.collection.LocalAttributeMap();
+        «IF findDOWith == null -»
+            flowInput.put("«for.name»", new «fakeObjectInstantiatorClass()»<«for.getDomainPackage()».«for.name»>(«for.getDomainPackage()».«for.name».class).createFakeObject());
+            «ELSE -»
+            flowInput.put("id", new «for.getIdAttributeType()»("17"));
+            «ENDIF -»
+        «IF getPrimaryServiceOperation() != null -»    
+	    «getPrimaryService().name.toFirstLower()» = mockery.mock(«getPrimaryService().getServiceapiPackage()».«getPrimaryService().name».class);
+		«ENDIF -»    
+    	super.setUp();
+    }
+    
+    @Override
+    protected void configureFlowBuilderContext(org.springframework.webflow.test.MockFlowBuilderContext builderContext) {
+    	builderContext.getFlowBuilderServices().setConversionService(new org.springframework.faces.model.converter.FacesConversionService());
+    	«name.toFirstUpper()»Action action = new «name.toFirstUpper()»Action();
+    	action.setRepository(repository);
+    	«IF getPrimaryServiceOperation() != null -»
+        action.set«getPrimaryService().name»(«getPrimaryService().name.toFirstLower()»);
+        «ENDIF -»
+    	builderContext.registerBean("«name»Action", action);
+    	builderContext.registerBean("webExceptionAdvice", new «webExceptionAdviceClass()»());
+        builderContext.registerBean("repository", repository);
+        //serviceRegistry.registerBean("messageSource", new org.springframework.context.support.StaticMessageSource());
+        «IF getPrimaryServiceOperation() != null -»
+        builderContext.registerBean("«getPrimaryService().name.toFirstLower()»«IF isEar()»Proxy«ENDIF»", «getPrimaryService().name.toFirstLower()»);
+        «ENDIF -»
+	«LET viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base) AS subflowReferences -»
+		«FOREACH subflowReferences AS refProp»
+			getFlowDefinitionRegistry().registerFlowDefinition(stubSubflow("«refProp.getViewTransition().to.name»-flow"));
+		«ENDFOREACH»
+	}
+	
+	«IF !subflowReferences.isEmpty -»
+	
+		«EXPAND stubSubflow »
+	«ENDIF -»
+	«ENDLET -»
+	
+    «EXPAND getFlowDefinitionResource »
+    
+«ENDDEFINE»
+
+«DEFINE viewFlowTestStart FOR ViewTask »
+    public void testStartFlow() {
+	    «IF getPrimaryServiceOperation() != null -»
+    	// expectations
+        mockery.checking(new org.jmock.Expectations() {
+            {
+				«IF getPrimaryServiceOperation().getExceptions().size > 0 -»
+                try {
+				«ENDIF»
+                	atLeast(1).of(«getPrimaryService().name.toFirstLower()»).«getPrimaryServiceOperation().name»(
+                	«FOREACH getPrimaryServiceOperation().parameters AS param SEPARATOR ", "»with(any(«param.getTypeName()».class))«ENDFOREACH»
+                	);
+				«IF getPrimaryServiceOperation().getExceptions().size > 0 -»
+                }«FOREACH getPrimaryServiceOperation().getExceptions() AS exc » 
+                catch («exc» e) {}«ENDFOREACH»
+				«ENDIF»
+                will(returnValue(findById()));
+            }
+        });
+    	«ENDIF -»    
+        startFlow(flowInput, new org.springframework.webflow.test.MockExternalContext());
+        assertCurrentStateEquals("view");
+        «IF getPrimaryServiceOperation() != null -»
+        mockery.assertIsSatisfied();
+        «ENDIF -»
+    }
+    
+    «IF getPrimaryServiceOperation() != null -»
+    	«EXPAND fakeFindById »
+    «ENDIF -»
+«ENDDEFINE»
+
+
+

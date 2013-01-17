@@ -1,0 +1,5 @@
+import "classpath:/model-smartclient.btdesign"
+
+Application SmartlientGuiPart {
+	basePackage=org.fornax.cartridges.sculptor.smartclient
+}

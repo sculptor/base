@@ -1,0 +1,447 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::dbhelper»
+«EXTENSION extensions::properties»
+
+«DEFINE xmlElementAnnotation FOR Reference»
+	«IF transient»
+	    @javax.xml.bind.annotation.XmlTransient
+	«ELSEIF many»
+		@javax.xml.bind.annotation.XmlElementWrapper(name = "«name»")
+		@javax.xml.bind.annotation.XmlElement(name = "«name.singular()»")
+	«ELSE»
+	    @javax.xml.bind.annotation.XmlElement(«formatAnnotationParameters({
+		    		required, "required", "true",
+		    		nullable, "nillable", "true"
+		    	})»)
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE oneReferenceAttributeAnnotations FOR Reference»
+	«IF isJpaAnnotationOnFieldToBeGenerated()»
+		«IF isJpaAnnotationToBeGenerated() && from.isPersistent()»
+			«EXPAND oneReferenceJpaAnnotations»
+		«ENDIF»
+		«IF isValidationAnnotationToBeGeneratedForObject()»
+			«EXPAND oneReferenceValidationAnnotations»
+		«ENDIF»
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE oneReferenceAppEngineKeyAnnotation FOR Reference»
+		@javax.persistence.Basic
+		@javax.persistence.Column(
+	    	«formatAnnotationParameters({
+	    		true, "name", '"' + getDatabaseName() + '"',
+	    		!nullable, "nullable", nullable
+	    	})»)
+«ENDDEFINE»
+
+«DEFINE oneReferenceGetterAnnotations FOR Reference»
+	«IF !isJpaAnnotationOnFieldToBeGenerated()»
+		«IF isJpaAnnotationToBeGenerated()»
+			«EXPAND oneReferenceJpaAnnotations»
+		«ENDIF»
+		«IF isValidationAnnotationToBeGeneratedForObject()»
+			«EXPAND oneReferenceValidationAnnotations»
+		«ENDIF»
+    «ENDIF»
+    «IF isXmlElementToBeGenerated()»
+		«EXPAND xmlElementAnnotation»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE oneReferenceJpaAnnotations FOR Reference»
+	«IF isJpaAnnotationToBeGenerated() && (from.isPersistent() || (isJpa2() && from.isEmbeddable()))»
+		«IF transient»
+			@javax.persistence.Transient
+		«ELSE»
+			«IF isBasicTypeReference()»
+			    «EXPAND basicTypeJpaAnnotation»
+			«ELSEIF isEnumReference()»
+			    «EXPAND enumJpaAnnotation»
+			«ELSE»
+				«IF isJpa2() || (hasOwnDatabaseRepresentation(from) && hasOwnDatabaseRepresentation(to))»
+					«IF isOneToOne()»
+						«EXPAND oneToOneJpaAnnotation»
+					«ELSE»
+						«EXPAND manyToOneJpaAnnotation»
+					«ENDIF»
+					«EXPAND oneReferenceOnDeleteJpaAnnotation»
+				«ELSE»
+					@javax.persistence.Transient
+				«ENDIF»
+			«ENDIF»
+			«IF isJpaProviderHibernate() && cache»
+				@org.hibernate.annotations.Cache(usage = «getHibernateCacheStrategy()»)
+			«ENDIF»
+			«IF isJpaProviderHibernate() && getHibernateCascadeType() != null»
+				@org.hibernate.annotations.Cascade(«getHibernateCascadeType()»)
+			«ENDIF»
+		«ENDIF»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE oneReferenceOnDeleteJpaAnnotation FOR Reference»
+	«REM»use orphanRemoval in JPA2«ENDREM»
+	«IF isJpa1() && isJpaProviderHibernate() && hasOpposite() && isDbOnDeleteCascade(opposite)»
+	@org.hibernate.annotations.OnDelete(action = org.hibernate.annotations.OnDeleteAction.CASCADE)
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE basicTypeJpaAnnotation FOR Reference»
+	    @javax.persistence.Embedded
+	    «IF isJpaProviderAppEngine() -»
+	    @javax.persistence.OneToOne(fetch = javax.persistence.FetchType.EAGER)
+	    «ENDIF -»
+        «IF !useJpaDefaults()»
+	    @javax.persistence.AttributeOverrides({
+            «EXPAND attributeOverride(getDatabaseName(), "", nullable) FOREACH {}.addAll(to.attributes).addAll(to.references.select(e | e.isBasicTypeReference() || e.isEnumReference())) SEPARATOR ","»
+    	})
+        	«IF isJpa2() && isAssociationOverrideNeeded()»
+            «REM»TODO: not sufficient if embeddable is used in more than one entity«ENDREM»
+        @javax.persistence.AssociationOverrides({
+                «EXPAND associationOverride(from.getDatabaseName(), nullable) FOREACH to.references.select(e | !e.isBasicTypeReference() && !e.isEnumReference()) SEPARATOR ","»
+        })
+    	   «ENDIF»
+        «ENDIF»
+«ENDDEFINE»
+
+«DEFINE enumJpaAnnotation FOR Reference»
+    «LET getEnum() AS enum»
+        @javax.persistence.Column(
+            «formatAnnotationParameters({
+                true, "name", '"' + getDatabaseName() + '"',
+                !nullable, "nullable", false,
+                enum.isOfTypeString(), "length", getEnumDatabaseLength()
+            })»)
+	    «IF (enum.isOrdinaryEnum())»
+            «IF !enum.ordinal»
+            @javax.persistence.Enumerated(javax.persistence.EnumType.STRING)
+            «ELSE»
+            @javax.persistence.Enumerated
+            «ENDIF»
+	    «ELSE»
+            «EXPAND nonOrdinaryEnumTypeAnnotation»
+	    «ENDIF»
+    «ENDLET»
+«ENDDEFINE»
+
+«DEFINE nonOrdinaryEnumTypeAnnotation FOR Reference»
+    «LET getEnum() AS enum»
+        «IF isJpaProviderHibernate()»
+            «EXPAND hibernateEnumTypeAnnotation»
+        «ELSEIF isJpaProviderEclipseLink()»
+            @org.eclipse.persistence.annotations.Convert("EnumConverter")
+        «ELSEIF isJpaProviderOpenJpa()»
+            @org.apache.openjpa.persistence.jdbc.Strategy("«getApplicationBasePackage()».util.EnumHandler")
+        «ENDIF»
+    «ENDLET»
+«ENDDEFINE»
+
+«DEFINE hibernateEnumTypeAnnotation FOR Reference»
+    «LET getEnum() AS enum»
+    «IF isJpa1()»
+        @org.hibernate.annotations.Type(type="«enum.name»")
+    «ELSE»
+        «LET 4 AS INTEGER»
+        @org.hibernate.annotations.Type(
+        type="«getApplicationBasePackage()».util.EnumUserType",
+        parameters = {
+            @org.hibernate.annotations.Parameter(name = "enumClass", value = "«enum.getDomainObjectTypeName()»")
+            «IF (!enum.isOfTypeString())»
+            , @org.hibernate.annotations.Parameter(name = "type", value = "«INTEGER»")
+            «ENDIF»
+            })
+        «ENDLET»
+    «ENDIF»
+    «ENDLET»
+«ENDDEFINE»
+
+«DEFINE oneToOneJpaAnnotation FOR Reference»
+		@javax.persistence.OneToOne(
+			«formatAnnotationParameters({
+				!nullable, "optional", false,
+				isInverse(), "mappedBy", '"' + opposite.name + '"',
+				getCascadeType() != null, "cascade", getCascadeType(),
+				isOrphanRemoval(getCascadeType()), "orphanRemoval", true,
+				getFetchType() != null, "fetch", getFetchType()
+			})»)
+	«IF !isInverse()»
+	    @javax.persistence.JoinColumn(
+	    	«formatAnnotationParameters({
+		    	true, "name", '"' + getDatabaseName() + '"',
+                !isJpaProviderOpenJpa() && !nullable, "nullable", false,
+		    	isSimpleNaturalKey() && (isJpa2() || isJpaProviderHibernate()), "unique", "true"
+		    	})»)
+		«IF isJpaProviderHibernate()»
+		@org.hibernate.annotations.ForeignKey(name = "FK_«truncateLongDatabaseName(from.getDatabaseName(), getDatabaseName())»")
+          «IF getHibernateFetchType() != null»
+            @org.hibernate.annotations.Fetch(«getHibernateFetchType()»)
+          «ENDIF»
+		«ENDIF»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE manyToOneJpaAnnotation FOR Reference»
+	    @javax.persistence.ManyToOne(
+			«formatAnnotationParameters({
+				!nullable, "optional", false,
+				getCascadeType() != null, "cascade", getCascadeType(),
+				getFetchType() != null, "fetch", getFetchType()
+			})»)
+	«IF !hasOpposite() || !opposite.isList()»
+	    @javax.persistence.JoinColumn(«formatAnnotationParameters({
+		    	true, "name", '"' + getDatabaseName() + '"',
+                !isJpaProviderOpenJpa() && !nullable, "nullable", false,
+		    	isSimpleNaturalKey() && (isJpa2() || isJpaProviderHibernate()), "unique", "true"
+		    	})»)
+		«IF isJpaProviderHibernate()»
+        «REM»TODO: set databasename for embeddables (basictype) to avoid this case handling ?«ENDREM»
+		  «IF isJpa2() && from.isEmbeddable()»
+        @org.hibernate.annotations.ForeignKey(name = "FK_«truncateLongDatabaseName(from.name.toUpperCase(), getDatabaseName())»")
+		  «ELSE»
+        @org.hibernate.annotations.ForeignKey(name = "FK_«truncateLongDatabaseName(from.getDatabaseName(), getDatabaseName())»")
+		  «ENDIF»
+          «IF getHibernateFetchType() != null»
+            @org.hibernate.annotations.Fetch(«getHibernateFetchType()»)
+          «ENDIF»
+        «ELSEIF isJpaProviderOpenJpa()»
+        «REM»OpenJPA delete parent/child in an incorrect order«ENDREM»
+        «REM»TODO: watch issue OPENJPA-1936«ENDREM»
+          «IF isJpa2() && from.isEmbeddable()»
+        @org.apache.openjpa.persistence.jdbc.ForeignKey(
+            name = "FK_«truncateLongDatabaseName(from.name.toUpperCase(), getDatabaseName())»",
+            deleteAction=org.apache.openjpa.persistence.jdbc.ForeignKeyAction.NULL)
+          «ELSE»
+        @org.apache.openjpa.persistence.jdbc.ForeignKey(
+            name = "FK_«truncateLongDatabaseName(from.getDatabaseName(), getDatabaseName())»",
+            deleteAction=org.apache.openjpa.persistence.jdbc.ForeignKeyAction.NULL)
+          «ENDIF»
+        «ENDIF»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE oneReferenceValidationAnnotations FOR Reference»
+	«getValidationAnnotations()»
+«ENDDEFINE»
+
+«DEFINE attributeOverride(String columnPrefix, String attributePrefix, boolean referenceIsNullable) FOR Object»
+«ENDDEFINE»
+
+«DEFINE attributeOverride(String columnPrefix, String attributePrefix, boolean referenceIsNullable) FOR Attribute»
+    @javax.persistence.AttributeOverride(
+        name="«attributePrefix + name»",
+        column = @javax.persistence.Column(
+            «formatAnnotationParameters({
+                true, "name", '"' + getDatabaseName(columnPrefix, this) + '"',
+                !(referenceIsNullable || (!referenceIsNullable && nullable)), "nullable", false,
+                getDatabaseLength() != null, "length", getDatabaseLength()
+            })»))
+«ENDDEFINE»
+
+«DEFINE attributeOverride(String columnPrefix, String attributePrefix, boolean referenceIsNullable) FOR Reference»
+    «IF isBasicTypeReference()»
+        «EXPAND attributeOverride(getDatabaseName(columnPrefix, this), name + ".", this.nullable) FOREACH to.attributes SEPARATOR ","»
+    «ELSEIF isEnumReference()»
+    «LET getEnum() AS enum»
+        @javax.persistence.AttributeOverride(
+            name="«name»",
+            column = @javax.persistence.Column(
+            «formatAnnotationParameters({
+                true, "name", '"' + getDatabaseName(columnPrefix, this) + '"',
+                !referenceIsNullable, "nullable", false,
+                !enum.ordinal, "length", getEnumDatabaseLength()
+            })»))
+    «ENDLET»
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE associationOverride(String prefix, boolean referenceIsNullable) FOR Reference»
+    «REM»TODO: verify the table and column naming«ENDREM»
+    «IF many»
+        @javax.persistence.AssociationOverride(
+            name="«name»",
+            joinTable = @javax.persistence.JoinTable(
+                name="«getDatabaseName(prefix + "_" + from.getDatabaseName(), to)»",
+                joinColumns= @javax.persistence.JoinColumn(name = "«prefix»")
+                «IF isInverse()»
+                , inverseJoinColumns= @javax.persistence.JoinColumn(name = "«to.getDatabaseName()»")
+                «ENDIF»
+                ))
+    «ELSE»
+        @javax.persistence.AssociationOverride(
+            name="«name»",
+            joinColumns = @javax.persistence.JoinColumn(
+                name="«getDatabaseName(from.getDatabaseName(), to)»",
+                nullable=true))
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE oneReferenceSetterAnnotations FOR Reference»
+«ENDDEFINE»
+
+«DEFINE manyReferenceAttributeAnnotations FOR Reference»
+	«IF isJpaAnnotationOnFieldToBeGenerated()»
+	    «IF isJpaAnnotationToBeGenerated()»
+		    «EXPAND manyReferenceJpaAnnotations»
+	    «ENDIF»
+	    «IF isValidationAnnotationToBeGeneratedForObject()»
+		    «EXPAND manyReferenceValidationAnnotations»
+	    «ENDIF»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE manyReferenceGetterAnnotations FOR Reference»
+	«IF !isJpaAnnotationOnFieldToBeGenerated()»
+	    «IF isJpaAnnotationToBeGenerated()»
+		    «EXPAND manyReferenceJpaAnnotations»
+	    «ENDIF»
+	    «IF isValidationAnnotationToBeGeneratedForObject()»
+		    «EXPAND manyReferenceValidationAnnotations»
+	    «ENDIF»
+	«ENDIF»
+	«IF isXmlElementToBeGenerated()»
+    	«EXPAND xmlElementAnnotation»
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE manyReferenceAppEngineKeyAnnotation FOR Reference»
+		@javax.persistence.Column(
+	    	«formatAnnotationParameters({
+	    		true, "name", '"' + getDatabaseName() + '"',
+	    		!nullable, "nullable", nullable
+	    	})»)
+«ENDDEFINE»
+
+«DEFINE manyReferenceJpaAnnotations FOR Reference»
+	«IF isJpaAnnotationToBeGenerated() && from.isPersistent()»
+		«IF !transient»
+		  «IF (hasOwnDatabaseRepresentation(from) && hasOwnDatabaseRepresentation(to)) ||
+		      (isJpa2() && hasOwnDatabaseRepresentation(to) && from.isEmbeddable())»
+			«IF isOneToMany()»
+				«EXPAND oneToManyJpaAnnotation»
+			«ENDIF»
+			«IF isManyToMany()»
+				«EXPAND manyToManyJpaAnnotation»
+			«ENDIF»
+            «IF isJpa2() && isList() && hasHint("orderColumn")»
+                @javax.persistence.OrderColumn(name="«getListIndexColumnName()»")
+            «ENDIF»
+			«IF orderBy != null»
+				@javax.persistence.OrderBy("«orderBy»")
+			«ENDIF»
+			«IF isJpaProviderHibernate() && cache»
+				@org.hibernate.annotations.Cache(usage = «getHibernateCacheStrategy()»)
+			«ENDIF»
+			«IF isJpaProviderHibernate() && getHibernateFetchType() != null»
+				@org.hibernate.annotations.Fetch(«getHibernateFetchType()»)
+			«ENDIF»
+			«IF isJpaProviderHibernate() && getHibernateCascadeType() != null»
+				@org.hibernate.annotations.Cascade(«getHibernateCascadeType()»)
+			«ENDIF»
+          «ELSEIF isJpa2() &&
+                    ((hasOwnDatabaseRepresentation(from) && to.isEmbeddable()) ||
+                    (from.isEmbeddable() && to.isEmbeddable()))»
+                «EXPAND elementCollectionJpaAnnotation»
+          «ENDIF»
+		«ELSE»
+			@javax.persistence.Transient
+		«ENDIF»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE oneToManyJpaAnnotation FOR Reference»
+		@javax.persistence.OneToMany(
+			«formatAnnotationParameters({
+				getCascadeType() != null, "cascade", getCascadeType(),
+				isOrphanRemoval(getCascadeType(), this), "orphanRemoval", true,
+				hasOpposite() && (getCollectionType() != "list"), "mappedBy", '"' + opposite.name + '"',
+				getFetchType() != null, "fetch", getFetchType()
+			})»)
+	«IF isJpaProviderHibernate() && !isInverse()»
+		@org.hibernate.annotations.ForeignKey(
+			name = "FK_«truncateLongDatabaseName(getManyToManyJoinTableName(), getOppositeForeignKeyName())»"
+			, inverseName = "FK_«truncateLongDatabaseName(getManyToManyJoinTableName(), getForeignKeyName())»")
+	«ENDIF»
+	«REM»TODO: add support for unidirectional onetomany relationships with and without jointable«ENDREM»
+	«REM»
+	«IF !isUnidirectionalToManyWithoutJoinTable() && isJpa2()»
+		@javax.persistence.JoinTable(
+			name = "«getManyToManyJoinTableName()»",
+			joinColumns = @javax.persistence.JoinColumn(name = "«getOppositeForeignKeyName()»"),
+			inverseJoinColumns = @javax.persistence.JoinColumn(name = "«getForeignKeyName()»"))
+	«ENDIF»
+	«ENDREM»
+	«IF isInverse() && (!hasOpposite() || isList())»
+		@javax.persistence.JoinColumn(name = "«getOppositeForeignKeyName()»")
+        «IF isJpaProviderHibernate()»
+		@org.hibernate.annotations.ForeignKey(name = "FK_«truncateLongDatabaseName(from.getDatabaseName(), to.getDatabaseName())»")
+    	«ENDIF -»
+	«ENDIF»
+    «IF isJpa1() && isList() && isJpaProviderHibernate()»
+	    @org.hibernate.annotations.IndexColumn(name="«getListIndexColumnName()»")
+	«ENDIF -»
+    «IF isJpa1() && isJpaProviderEclipseLink() && !to.isAggregateRoot()»
+	    @org.eclipse.persistence.annotations.PrivateOwned
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE elementCollectionJpaAnnotation FOR Reference»
+    «REM»nested element collections are not allowed by jpa, some provider may support this, we not«ENDREM»
+    «REM»TODO: add a constraint for to avoid nested element collections«ENDREM»
+        @javax.persistence.ElementCollection(
+            «formatAnnotationParameters({
+                getFetchType() != null, "fetch", getFetchType()
+            })»)
+«ENDDEFINE»
+
+«DEFINE elementCollectionTableJpaAnnotation FOR Reference»
+    «REM»It's not possible to overwrite the collection table later, therefore we can not use it here«ENDREM»
+    «REM»
+        @javax.persistence.CollectionTable(
+            name="«getElementCollectionTableName()»",
+            joinColumns = @javax.persistence.JoinColumn(name = "«getOppositeForeignKeyName()»"))
+    «ENDREM»
+«ENDDEFINE»
+
+«DEFINE manyToManyJpaAnnotation FOR Reference»
+		@javax.persistence.ManyToMany(
+			«formatAnnotationParameters({
+				getCascadeType() != null, "cascade", getCascadeType(),
+				isInverse(), "mappedBy", '"' + opposite.name + '"',
+				getFetchType() != null, "fetch", getFetchType()
+			})»)
+	«IF !isInverse()»
+		@javax.persistence.JoinTable(
+			name = "«getManyToManyJoinTableName()»",
+			joinColumns = @javax.persistence.JoinColumn(name = "«getOppositeForeignKeyName()»"),
+			inverseJoinColumns = @javax.persistence.JoinColumn(name = "«getForeignKeyName()»"))
+        «IF isJpaProviderHibernate()»
+		@org.hibernate.annotations.ForeignKey(
+			name = "FK_«truncateLongDatabaseName(getManyToManyJoinTableName(), getOppositeForeignKeyName())»",
+			inverseName = "FK_«truncateLongDatabaseName(getManyToManyJoinTableName(), getForeignKeyName())»")
+    	«ENDIF -»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE manyReferenceValidationAnnotations FOR Reference»
+	«getValidationAnnotations()»
+«ENDDEFINE»

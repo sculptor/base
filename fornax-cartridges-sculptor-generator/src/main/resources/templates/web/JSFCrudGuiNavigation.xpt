@@ -1,0 +1,365 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::guihelper»
+
+«DEFINE navigation FOR GuiApplication»
+	«EXPAND template»
+	«EXPAND header»
+	«EXPAND footer»
+
+«IF isDynamicMenu()»
+	«EXPAND menuIncDynamic»
+	«EXPAND menuBean»
+«ELSE»
+	«EXPAND menuInc»
+«ENDIF»	
+
+	«EXPAND indexWelcome»
+«ENDDEFINE»
+
+«DEFINE template FOR GuiApplication»
+	«FILE "WEB-INF/common/template.xhtml" TO_WEBROOT-»
+	«EXPAND JSFCrudGuiFlowJsf::docType-»
+	<html «EXPAND JSFCrudGuiFlowJsf::faceletsXmlns»>
+	<head>
+		<title><h:outputFormat value="#{msg['navigation.title']}">
+					<f:param value="#{msg['model.application.name']}" />
+				</h:outputFormat></title>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+		<t:stylesheet path="/themes/basic/style.css" />
+	</head>
+	<body>
+		<div id="header">
+			<ui:include src="header.html" />
+		</div>
+		<div class="menu">
+			<ui:include src="/WEB-INF/generated/common/menu.html" />
+		</div>
+		<div id="breadCrumb">
+			«EXPAND breadCrumb»
+		</div> 
+		<div id="main">
+			<ui:insert name="content" />
+		</div>
+		<div id="footer">
+			<ui:include src="footer.html" />
+		</div>
+	</body>
+	</html>
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE header FOR GuiApplication-»
+«FILE "WEB-INF/common/header.html" TO_WEBROOT-»
+	<div></div>
+«ENDFILE »
+«ENDDEFINE »
+
+«DEFINE breadCrumb FOR GuiApplication»
+	<c:forEach var="item" items="${a:breadCrumb(flowExecutionContext,msg)}" varStatus="status" begin="0" step="1">
+		<c:if test="${status.last}">
+			<span class="lastItem">#{item.crudOperation} #{item.domainObjectName}</span>
+		</c:if>
+		<c:if test="${not status.last}">#{item.crudOperation} #{item.domainObjectName} #{" &gt; "}</c:if>
+	</c:forEach>
+«ENDDEFINE»
+
+«DEFINE menuBean FOR GuiApplication»
+«FILE javaFileName(this.basePackage + "." + name.toFirstUpper() + "DynamicMenu") -»
+«javaHeader()»
+package «this.basePackage»;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.faces.context.FacesContext;
+
+import org.apache.myfaces.custom.navmenu.NavigationMenuItem;
+import org.springframework.context.MessageSource;
+
+
+public class «name.toFirstUpper()»DynamicMenu implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	private final String MSG__NAV_LIST="navigation.list";
+	private final String MSG__NAV_CREATE="navigation.create";
+	
+	protected MessageSource messages;
+	
+	protected NavigationMenuItem[] navItems;
+
+	public «name.toFirstUpper()»DynamicMenu() {
+	}
+
+	protected void init(){
+	«LET menuTasksGroupedByTarget() AS menuTasks »
+		List<NavigationMenuItem> navigationsMenuItems = new ArrayList<NavigationMenuItem>();
+		
+		«EXPAND menuDynamic FOREACH menuTasks »
+	«ENDLET»
+		
+		navItems=navigationsMenuItems.toArray(new NavigationMenuItem[0]);
+	}
+		
+	«LET menuTasksGroupedByTarget() AS menuTasks »
+		«EXPAND menuCreateMethods FOREACH menuTasks »
+	«ENDLET»
+	
+	
+	protected String createJsCookmenuJavaScriptLink(String link) {
+		return "eval:window.location.href=\"" + getContext() + link+"\"";
+	}
+	
+	protected String getContext() {
+		return FacesContext.getCurrentInstance().getExternalContext()
+				.getRequestContextPath();
+	}
+	
+	protected NavigationMenuItem createMenuItem(String label, String action,
+			String icon, boolean split) {
+		NavigationMenuItem menuItem = new NavigationMenuItem(label, action,
+				icon, split);
+		menuItem.setTarget(null);
+		return menuItem;
+	}
+/*
+	private void printMap(Map map) {
+		Iterator iterator = map.entrySet().iterator();
+		while (iterator.hasNext()) {
+			Map.Entry entry = (Map.Entry) iterator.next();
+			System.out.println("[" + entry.getKey() + "]=[" + entry.getValue()
+					+ "]");
+		}
+	}
+*/
+    public NavigationMenuItem[] getNavItems() {
+    	if(this.navItems==null){
+    		 init();
+    		/* 
+    		ExternalContext externalContext = FacesContext.getCurrentInstance()
+					.getExternalContext();
+					 
+    		printMap(externalContext.getApplicationMap());
+			printMap(externalContext.getInitParameterMap());
+			printMap(externalContext.getRequestMap());
+			printMap(externalContext.getSessionMap());
+			printMap(externalContext.getRequestParameterMap());
+    		*/ 
+    	}
+        return navItems;
+    }
+
+    public void setNavItems(NavigationMenuItem[] navItems) {
+        this.navItems = navItems;
+    }
+
+    public void setMessages(MessageSource messages) {
+        this.messages = messages;
+    }   
+
+    public String getMessage(String messageKey, Object[] messageParameter) {
+
+        //TODO maybe we need locale from FacesContext
+        String message = this.messages.getMessage(messageKey, messageParameter, null);
+		return message;
+    }
+
+    public String getMessage(String messageKey, Object messageParameter) {
+
+        //TODO maybe we need locale from FacesContext
+        String message = this.messages.getMessage(messageKey,
+            new Object[] { messageParameter }, null);
+		return message;
+    }
+    
+    protected String getCreateActionImageUrl(){
+    	return "/img/create.png"; 
+    }
+    
+    protected String getListActionImageUrl(){
+    	return "/img/list.png"; 
+    }
+    
+    protected String getItemImageUrl(){
+    	return "/img/item.png"; 
+    }
+	
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE menuDynamic FOR UserTaskGroup -»
+«IF !this.userTasks.typeSelect(CreateTask).isEmpty || !this.userTasks.typeSelect(ListTask).isEmpty-»
+		navigationsMenuItems.add(create«for.name.toFirstUpper()»MenuItem());
+«ENDIF-»
+«ENDDEFINE »
+
+«DEFINE menuCreateMethods FOR UserTaskGroup -»
+«IF !this.userTasks.typeSelect(CreateTask).isEmpty || !this.userTasks.typeSelect(ListTask).isEmpty-»
+	
+	protected NavigationMenuItem create«for.name.toFirstUpper()»MenuItem() {
+	
+	«IF !this.userTasks.typeSelect(CreateTask).isEmpty && !this.userTasks.typeSelect(ListTask).isEmpty-»
+		NavigationMenuItem[] «for.name.toFirstLower()»ChildrenMenuItems = new NavigationMenuItem[2];
+		«for.name.toFirstLower()»ChildrenMenuItems[0]=«EXPAND menuItemDynamic FOR this.userTasks.typeSelect(ListTask).first()-»;
+		«for.name.toFirstLower()»ChildrenMenuItems[1]=«EXPAND menuItemDynamic FOR this.userTasks.typeSelect(CreateTask).first()-»;
+	«ELSEIF !this.userTasks.typeSelect(CreateTask).isEmpty-»
+		NavigationMenuItem[] «for.name.toFirstLower()»ChildrenMenuItems = new NavigationMenuItem[1];
+		«for.name.toFirstLower()»ChildrenMenuItems[0]=«EXPAND menuItemDynamic FOR this.userTasks.typeSelect(CreateTask).first()-»;
+	«ELSEIF !this.userTasks.typeSelect(ListTask).isEmpty-»
+		NavigationMenuItem[] «for.name.toFirstLower()»ChildrenMenuItems = new NavigationMenuItem[1];
+		«for.name.toFirstLower()»ChildrenMenuItems[0]=«EXPAND menuItemDynamic FOR this.userTasks.typeSelect(ListTask).first()-»;
+	«ENDIF-»
+	
+		NavigationMenuItem «for.name.toFirstLower()»MenuItem = createMenuItem(
+					getMessage("model.DomainObject.«for.name»",null), «for.name.toFirstLower()»ChildrenMenuItems[0].getAction(), getItemImageUrl(), false);
+		«for.name.toFirstLower()»MenuItem.setNavigationMenuItems(«for.name.toFirstLower()»ChildrenMenuItems);
+		
+		return «for.name.toFirstLower()»MenuItem;
+	}
+	
+«ENDIF-»
+«ENDDEFINE »
+
+«DEFINE menuItemDynamic FOR ListTask-»
+
+«REM»	
+		createMenuItem(getMessage(MSG__NAV_LIST,getMessage("model.DomainObject.«for.name».plural",null)),"flowId:«name»-flow", "iconUrl", false)
+«ENDREM»
+		createMenuItem(getMessage(MSG__NAV_LIST,getMessage("model.DomainObject.«for.name».plural",null)),createJsCookmenuJavaScriptLink("/«springServletMapping()»/«module.name»/«name»"), getListActionImageUrl(), false)
+«ENDDEFINE »
+
+«DEFINE menuItemDynamic FOR CreateTask-»
+«REM»	
+		createMenuItem(getMessage(MSG__NAV_CREATE,getMessage("model.DomainObject.«for.name»",null)),"flowId:«name»-flow", "iconUrl", false)
+«ENDREM»
+		createMenuItem(getMessage(MSG__NAV_CREATE,getMessage("model.DomainObject.«for.name»",null)),createJsCookmenuJavaScriptLink("/«springServletMapping()»/«module.name»/«name»"), getCreateActionImageUrl(), false)
+«ENDDEFINE » 
+
+
+
+«DEFINE menuIncDynamic FOR GuiApplication»
+«FILE "WEB-INF/generated/common/menu.html" TO_GEN_WEBROOT-»
+	<h:form «EXPAND JSFCrudGuiFlowJsf::faceletsXmlns-»>
+		<input type="hidden" name="jscook_action"/>
+		<t:jscookMenu layout="vbr" theme="ThemeOffice">
+			<t:navigationMenuItems value="#{dynamicMenu.navItems}" />
+		</t:jscookMenu>	
+	</h:form>
+«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE menuInc FOR GuiApplication»
+«FILE "WEB-INF/generated/common/menu.html" TO_GEN_WEBROOT-»
+«REM»
+	<h:form «EXPAND JSFCrudGuiFlowJsf::faceletsXmlns»>
+«ENDREM»
+		<table «EXPAND JSFCrudGuiFlowJsf::faceletsXmlns»>
+			<tr>
+			«LET menuTasksGroupedByTarget() AS menuTasks »
+				«EXPAND menu FOREACH menuTasks »
+			«ENDLET»
+				<td>#{" "}</td>
+			</tr>
+		</table>
+«REM»
+	</h:form>
+«ENDREM»
+«ENDFILE»
+«ENDDEFINE»
+	
+«REM»Kind of abstract method, not used, concrete implementations 
+for subclasses of UserTask are defined«ENDREM»
+«DEFINE menu FOR UserTask-»
+«ENDDEFINE »
+
+
+«DEFINE menu FOR UserTaskGroup -»
+<td class="contentCell">
+«IF !this.userTasks.typeSelect(CreateTask).isEmpty-»
+	«EXPAND menuItem FOR this.userTasks.typeSelect(CreateTask).first()»
+«ELSE-»<br />
+«ENDIF-»
+«IF !this.userTasks.typeSelect(ListTask).isEmpty-»
+	«EXPAND menuItem FOR this.userTasks.typeSelect(ListTask).first()»
+«ELSE-»<br />
+«ENDIF-»
+</td>
+«ENDDEFINE »
+
+«DEFINE menuItem FOR ListTask-»
+<a href="#{facesContext.externalContext.context.contextPath}/«springServletMapping()»/«module.name»/«name»">
+<h:outputFormat value="#{msg['navigation.list']}">
+	<f:param value="#{msg«resolveModuleName()»['model.DomainObject.«for.name».plural']}" />
+</h:outputFormat>
+</a><br/>
+«REM»
+	<h:commandLink action="flowId:«name»-flow">
+		<h:outputFormat value="#{msg['navigation.list']}">
+			<f:param value="#{msg«resolveModuleName()»['model.DomainObject.«for.name».plural']}" />
+		</h:outputFormat>
+	</h:commandLink><br />
+«ENDREM» 
+«ENDDEFINE »
+
+«DEFINE menuItem FOR CreateTask-»
+<a href="#{facesContext.externalContext.context.contextPath}/«springServletMapping()»/«module.name»/«name»">
+<h:outputFormat value="#{msg['navigation.create']}">
+	<f:param value="#{msg«resolveModuleName()»['model.DomainObject.«for.name»']}" />
+</h:outputFormat>
+</a><br/>
+«REM»	
+	<h:commandLink action="flowId:«name»-flow">
+		<h:outputFormat value="#{msg['navigation.create']}">
+			<f:param value="#{msg«resolveModuleName()»['model.DomainObject.«for.name»']}" />
+		</h:outputFormat>
+	</h:commandLink><br />
+«ENDREM»
+«ENDDEFINE » 
+
+«DEFINE footer FOR GuiApplication-»
+«FILE "WEB-INF/common/footer.html" TO_WEBROOT-»
+<div></div>
+«ENDFILE »
+«ENDDEFINE »
+
+«DEFINE indexWelcome FOR GuiApplication-»
+	«FILE "index.xhtml" TO_WEBROOT-»
+	«EXPAND JSFCrudGuiFlowJsf::docType-»
+	<html «EXPAND JSFCrudGuiFlowJsf::faceletsXmlns»>
+	<body>
+		<ui:composition template="WEB-INF/common/template.xhtml">
+			<ui:define name="content">
+				<h1><h:outputFormat value="#{msg['welcome.header']}">
+						<f:param value="#{msg['model.application.name']}" />
+					</h:outputFormat></h1>
+			</ui:define>
+		</ui:composition>
+	</body>
+	</html>	
+	«ENDFILE »
+	
+	«FILE "index.jsp" TO_WEBROOT-»
+	<% response.sendRedirect(request.getContextPath() + "/«springServletMapping()»/index.xhtml"); %>
+	«ENDFILE »
+«ENDDEFINE»

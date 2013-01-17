@@ -1,0 +1,12 @@
+Application AuditRepo { 
+    basePackage=org.foo 
+
+	Module audit { 
+		ValueObject AuditEntry { 
+			scaffold 
+			String infoObject 
+			String payload 
+			Date recorded 
+		} 
+	} 
+}

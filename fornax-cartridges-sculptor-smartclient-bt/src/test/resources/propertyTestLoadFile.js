@@ -1,0 +1,4 @@
+SOME TEXT
+ON
+MORE ČŤŽ
+LINES

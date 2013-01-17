@@ -1,0 +1,145 @@
+import sculptordsl;
+
+/*
+ * This extension file is intended to be used for defining
+ * general extensions for the domain model. 
+ */
+
+List[emf::EObject] allLocalElements(emf::EObject x):
+	{x.eRootContainer}.union(x.eRootContainer.eAllContents);
+
+String id(emf::EObject x) :
+	let p = x.metaType.getProperty("name") :
+		p==null?
+			null :
+			p.get(x);
+				
+List[emf::EObject] allElements(emf::EObject x):
+	cachedAllElements(x.eRootContainer);
+
+private cached List[emf::EObject] cachedAllElements(emf::EObject x):
+	x.allLocalElements()
+			.union(x.allLocalElements().typeSelect(DslImport).collect(e | e.cachedLoad(true).allLocalElements()))
+		.flatten().toSet();
+
+private cached List[emf::EObject] cachedLoad(DslImport dslImport, boolean forceLinking) :
+	dslImport.importURI.load(dslImport, forceLinking);
+
+List[emf::EObject] load(String uri, emf::EObject contextElement) :
+	load(uri, contextElement, true);
+
+List[emf::EObject] load(String uri, emf::EObject contextElement, boolean forceLinking) :
+	JAVA org.fornax.cartridges.sculptor.dsl.ModelLoad.load(java.lang.String, org.eclipse.emf.ecore.EObject, java.lang.Boolean);
+	
+DslApplication application(emf::EObject this) :
+   eRootContainer !=null ? eRootContainer : this;
+
+allModules(emf::EObject this) :
+ allElements().typeSelect(DslModule);
+
+List[DslDomainObject] allDomainObjects(emf::EObject this) :
+ allElements().typeSelect(DslDomainObject);
+
+List[DslEntity] allEntities(emf::EObject this) :
+ allElements().typeSelect(DslEntity);
+
+List[DslService] allServices(emf::EObject this) :
+ allElements().typeSelect(DslService);
+
+List[DslDomainObject] domainObjects(DslModule this) :
+	this.domainObjects.typeSelect(DslDomainObject);
+
+/**
+ * Return all the domain objects with the given name.
+ */
+List[DslSimpleDomainObject] domainObjectsForAttributeType(sculptordsl::DslAttribute this) :
+       allElements().typeSelect(DslSimpleDomainObject).select(e | e.id() == this.type);
+              
+List[DslSimpleDomainObject] domainObjectsForType(sculptordsl::DslComplexType this) :
+       allElements().typeSelect(DslSimpleDomainObject).select(e | e.id() == this.type);
+       
+List[DslSimpleDomainObject] domainObjectsForExtendsName(sculptordsl::DslDomainObject this) :
+       allElements().typeSelect(DslSimpleDomainObject).select(e | e.id() == this.extendsName);
+
+/**
+ * Return all the domain objects with the given name.
+ */
+List[DslSimpleDomainObject] domainObjectsForName(sculptordsl::DslSimpleDomainObject this) :
+       allElements().typeSelect(DslSimpleDomainObject).select(e | e.id() == this.id());
+
+/**
+ * Return all the objects with the same type and name as the one passed in.
+ */
+List[emf::EObject] objectsWithSameTypeAndName(emf::EObject this) :
+       allElements().select(e | (e.metaType == this.metaType) && (e.id() == this.id()));
+
+Collection[DslAttribute] getAllAttributes(DslSimpleDomainObject domainObject) :
+	{};
+
+Collection[DslAttribute] getAllAttributes(DslDomainObject domainObject) :
+    domainObject.getSuperAllAttributes().
+        addAll(domainObject.attributes);
+        
+Collection[DslDtoAttribute] getAllAttributes(DslDataTransferObject domainObject) :
+    domainObject.getSuperAllAttributes().
+        addAll(domainObject.attributes);        
+
+private Collection[DslAttribute] getSuperAllAttributes(DslDomainObject domainObject) :
+	{};
+	
+private Collection[DslAttribute] getSuperAllAttributes(DslEntity domainObject) :
+    (domainObject.extends() == null) ?
+        {} :
+        domainObject.extends().getAllAttributes();
+
+private Collection[DslAttribute] getSuperAllAttributes(DslValueObject domainObject) :
+    (domainObject.extends() == null) ?
+        {} :
+        domainObject.extends().getAllAttributes();
+
+private Collection[DslDtoAttribute] getSuperAllAttributes(DslDataTransferObject domainObject) :
+    (domainObject.extends() == null) ?
+        {} :
+        domainObject.extends().getAllAttributes();
+
+Collection[DslReference] getAllReferences(DslSimpleDomainObject domainObject) :
+	{};
+
+Collection[DslReference] getAllReferences(DslDomainObject domainObject) :
+    domainObject.getSuperAllReferences().
+        addAll(domainObject.references);
+        
+Collection[DslDtoReference] getAllReferences(DslDataTransferObject domainObject) :
+    domainObject.getSuperAllReferences().
+        addAll(domainObject.references);        
+
+private Collection[DslReference] getSuperAllReferences(DslDomainObject domainObject) :
+	{};
+
+private Collection[DslReference] getSuperAllReferences(DslEntity domainObject) :
+    (domainObject.extends() == null) ?
+        {} :
+        domainObject.extends().getAllReferences();
+
+private Collection[DslReference] getSuperAllReferences(DslValueObject domainObject) :
+    (domainObject.extends() == null) ?
+        {} :
+        domainObject.extends().getAllReferences();
+
+private Collection[DslDtoReference] getSuperAllReferences(DslDataTransferObject domainObject) :
+    (domainObject.extends() == null) ?
+        {} :
+        domainObject.extends().getAllReferences();
+
+DslSimpleDomainObject extends(DslSimpleDomainObject domainObject) :
+	JAVA org.fornax.cartridges.sculptor.dsl.DslHelper.getExtends(org.fornax.cartridges.sculptor.dsl.sculptordsl.DslSimpleDomainObject);
+
+Collection[DslSimpleDomainObject] getSubclasses(DslSimpleDomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.dsl.DslHelper.getSubclasses(org.fornax.cartridges.sculptor.dsl.sculptordsl.DslSimpleDomainObject);
+
+cached Collection[DslSimpleDomainObject] getAllSubclasses(DslSimpleDomainObject domainObject) :
+    getAllSubclassesImpl(domainObject);
+
+private Collection[DslSimpleDomainObject] getAllSubclassesImpl(DslSimpleDomainObject domainObject) :
+	JAVA org.fornax.cartridges.sculptor.dsl.DslHelper.getAllSubclasses(org.fornax.cartridges.sculptor.dsl.sculptordsl.DslSimpleDomainObject);
+	

@@ -1,0 +1,24 @@
+<workflow>
+
+	<cartridge file="sculptorworkflow.mwe">
+		<modelFile value="classpath:/model.btdesign"/>
+	</cartridge>
+
+	<component adviceTarget="modelTransformation"
+				class="org.eclipse.internal.xtend.xtend.XtendAdvice">
+		<extensionAdvice value="extensions::SpecialCases" />
+	</component>
+
+	<component adviceTarget="dslTransformation"
+				class="org.eclipse.internal.xtend.xtend.XtendAdvice">
+		<extensionAdvice value="extensions::SpecialCases" />
+	</component>
+	
+	<component adviceTarget="generator" id="reflectionAdvice"
+			class="org.eclipse.xpand2.GeneratorAdvice">
+		<advices value="templates::SpecialCases" />
+		<extensionAdvices value="extensions::SpecialCases" />
+		<fileEncoding value="iso-8859-1" />
+	</component>
+	
+</workflow>

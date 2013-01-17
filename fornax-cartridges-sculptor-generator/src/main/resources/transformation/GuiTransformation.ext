@@ -1,0 +1,290 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptorguidsl;
+import sculptordsl;
+import sculptormetamodel;
+import sculptorguimetamodel;
+
+extension transformation::DslTransformation;
+
+extension extensions::helper;
+extension extensions::guihelper;
+extension extensions::properties;
+
+transformAddTask(GuiApplication app) :
+	app.modules.transformAddTask();
+
+transformAddTask(GuiModule currentModule) :
+	let allTasks = currentModule.application.modules.userTasks:
+	currentModule.userTasks.addAll(
+		allTasks.select(e | e.metaType == CreateTask || e.metaType == UpdateTask).viewProperties.
+    	typeSelect(ReferenceViewProperty).reject(e|e.base).
+    	select(e | e.target.getFindAllMethod() != null).
+    	select(e | e.target.module.name == currentModule.name).
+    	reject(e | allTasks.typeSelect(AddTask).select(a | a.for == e.target).size > 0). 
+    	target.toSet().transformAddTask());
+	
+create sculptorguimetamodel::AddTask this transformAddTask(DomainObject domainObject) :
+	setName("add" + domainObject.name) ->
+	setTaskType("add") ->
+	setFor(domainObject) ->
+	setConversationRoot(false) ->
+	setFindDOWith(domainObject.getFindAllMethod()) ->
+	viewProperties.addAll(domainObject.createPreviewProperties(this));
+
+create sculptorguimetamodel::ViewDataProperty this transformProperty(NamedElement element, UserTask task, DslGuiApplication dslGuiApp) :
+	// Never used, only purpose is to be an 'abstract' placeholder
+	error("Unexpected call to transformProperty(NamedElement element, UserTask task): " + element);
+
+create sculptorguimetamodel::AttributeViewProperty this transformProperty(Attribute att, UserTask task, DslGuiApplication dslGuiApp) :
+	setName(att.name) ->
+	setAttribute(att) ->
+	setUserTask(task) ->
+	setMessageKey(task.for.messageKey(att.name));
+
+List[sculptorguimetamodel::ViewDataProperty] transformProperty(Reference ref, UserTask task, DslGuiApplication dslGuiApp) :
+	let doSkips = dslGuiApp != null ? dslGuiApp.modules.skipDomainObjects.do.transform() : {} :
+	(
+	if (ref.to.metaType == BasicType) then
+		error("Unexpected call to transformProperty(Reference ref, UserTask task) for " + task.name + " : " + ref)
+	else if (ref.to.metaType == Enum) then
+		{transformEnumProperty(ref, task)}
+	else if (ref.to.abstract) then
+		// check if the domain object of the reference target is in the skip list defined in the dsl, and if so, reject it
+		// this is a special case for skips on subclasses, since we can't reject them when creating the default gui dsl
+		// structure because we have no possibility to represent them at that moment
+		ref.childReferenceTargets().reject(r | doSkips.contains(r.target)).transformDerivedReferenceTarget(task)
+	else
+		ref.referenceTargets().transformReferenceTarget(task)
+	);
+
+create sculptorguimetamodel::ReferenceViewProperty this transformReferenceTarget(ReferenceTarget refTarget, UserTask task) :
+	setName(refTarget.reference.name) ->
+	setReference(refTarget.reference) ->
+	setTarget(refTarget.target) ->
+	setUserTask(task) ->
+	setMessageKey(refTarget.target.messageKey(refTarget.reference.name)) ->
+	setBase((refTarget.target.getSubclasses().size > 0) ? true : false);
+ 
+create sculptorguimetamodel::DerivedReferenceViewProperty this transformDerivedReferenceTarget(ReferenceTarget refTarget, UserTask task) :
+	setName(refTarget.reference.name) ->
+	setReference(refTarget.reference) ->
+	setTarget(refTarget.target) ->
+	setUserTask(task) ->
+	setMessageKey(refTarget.target.messageKey(refTarget.reference.name)) ->
+	setDerivedFrom(createReferenceTarget(refTarget.target.extends, refTarget.reference).transformReferenceTarget(task));
+
+
+create sculptorguimetamodel::BasicTypeViewProperty this transformBasicTypeAttributeProperty(Attribute att, Reference ref, UserTask task) :
+	setName(ref.name + att.name.toFirstUpper()) ->
+	setAttribute(att) ->
+	setReference(ref) ->
+	setUserTask(task) ->
+	setMessageKey(task.for.messageKey(ref.name + '.' + att.name));
+
+
+create sculptorguimetamodel::EnumViewProperty this transformEnumProperty(Reference ref, UserTask task) :
+	setName(ref.name) ->
+	setReference(ref) ->
+	setUserTask(task) ->
+	setMessageKey(task.for.messageKey(ref.name));
+	
+create sculptorguimetamodel::BasicTypeEnumViewProperty this transformBasicTypeEnumProperty(Reference enumRef, Reference basicTypeRef, UserTask task) :
+	setName(basicTypeRef.name + enumRef.name.toFirstUpper()) ->
+	setReference(enumRef) ->
+	setBasicTypeReference(basicTypeRef) ->
+	setUserTask(task) ->
+	setMessageKey(task.for.messageKey(basicTypeRef.name + '.' + enumRef.name));
+
+
+private List[sculptorguimetamodel::ViewDataProperty] createPreviewProperties(DomainObject target, UserTask parentTask) :
+	{}.addAll(target.getAllReferences().select(e|e.to.metaType == BasicType).transformBasicTypeReferences(parentTask)).
+	addAll(target.getAllAttributes().reject(att | att.isSystemAttribute()).reject(att|att.name == "id").transformProperty(parentTask, null));
+
+private List[sculptorguimetamodel::ViewDataProperty] createPreviewProperties(DomainObject target) :
+	target.createPreviewProperties(target.createSurrogatePreviewTask());
+
+private create sculptorguimetamodel::ViewTask this createSurrogatePreviewTask(DomainObject domainObject) :
+	setName("preview" + domainObject.name) ->
+	setTaskType("preview") ->
+	setFor(domainObject);
+
+List[sculptorguimetamodel::ViewDataProperty] transformBasicTypeReferences(Reference ref, UserTask task) :
+	ref.to.getAllNonSystemAttributes().transformBasicTypeAttributeProperty(ref, task).
+	addAll(ref.to.getAllReferences().select(e | e.to.metaType == Enum).transformBasicTypeEnumProperty(ref, task));
+
+private List[sculptorguimetamodel::ReferenceTarget] referenceTargets(Reference ref) :
+	(ref.to.abstract) ? 
+		ref.to.getSubclasses().createReferenceTarget(ref) : 
+		{ref.to.createReferenceTarget(ref)};
+		
+private List[sculptorguimetamodel::ReferenceTarget] childReferenceTargets(Reference ref) :
+	(ref.to.abstract) ? 
+		ref.to.getSubclasses().createReferenceTarget(ref) : 
+		{ref.to.createReferenceTarget(ref)};
+
+create sculptorguimetamodel::ReferenceTarget this createReferenceTarget(DomainObject target, Reference ref) :
+	setReference(ref) ->
+	setTarget(target);
+
+private String messageKey(DomainObject for, String suffix) :
+	'model.DomainObject.' + for.name + '.' + suffix;
+
+
+prepareTransformSubtaskTransitions(UserTask task) :
+    null;
+
+prepareTransformSubtaskTransitions(CreateTask task) :
+	task.getAllReferencesForSubTasks().createReferenceHolder(task)
+	    .subTaskTransitionHolders.createSubTaskTransitionAddSideEffect(task);
+
+prepareTransformSubtaskTransitions(UpdateTask task) :
+	task.getAllReferencesForSubTasks().createReferenceHolder(task)
+	    .subTaskTransitionHolders.createSubTaskTransitionAddSideEffect(task);
+
+prepareTransformSubtaskTransitions(DeleteTask task) :
+	task.getAllReferencesForSubTasks().createReferenceHolder(task)
+	    .subTaskTransitionHolders.createSubTaskTransitionAddSideEffect(task);
+
+prepareTransformSubtaskTransitions(ViewTask task) :
+	task.getAllReferencesForSubTasks().createReferenceHolder(task)
+	    .subTaskTransitionHolders.createSubTaskTransitionAddSideEffect(task);
+
+
+transformSubtaskTransitions(UserTask task) :
+	null;
+
+transformSubtaskTransitions(CreateTask task) :
+	task.subTaskTransitions.addAll(task.getAllReferencesForSubTasks().createReferenceHolder(task)
+	    .subTaskTransitionHolders.createSubTaskTransition(task).select(e|e.to != null));
+
+transformSubtaskTransitions(UpdateTask task) :
+	task.subTaskTransitions.addAll(task.getAllReferencesForSubTasks().createReferenceHolder(task)
+	    .subTaskTransitionHolders.createSubTaskTransition(task).select(e|e.to != null));
+
+transformSubtaskTransitions(DeleteTask task) :
+	task.subTaskTransitions.addAll(task.getAllReferencesForSubTasks().createReferenceHolder(task)
+	    .subTaskTransitionHolders.createSubTaskTransition(task).select(e|e.to != null));
+
+transformSubtaskTransitions(ViewTask task) :
+	task.subTaskTransitions.addAll(task.getAllReferencesForSubTasks().createReferenceHolder(task)
+	    .subTaskTransitionHolders.createSubTaskTransition(task).select(e|e.to != null));
+
+transformSubtaskTransitions(ListTask task) :
+	let updateTransition = task.createSubTaskTransition("update") :
+	let deleteTransition = task.createSubTaskTransition("delete") :
+	
+	task.subTaskTransitions.add(task.createSubTaskTransition("view")) ->
+	
+	if updateTransition.to != null then
+		task.subTaskTransitions.add(updateTransition) ->
+	if deleteTransition.to != null then
+   		task.subTaskTransitions.add(deleteTransition);
+	     
+
+create sculptorguimetamodel::TmpReferenceHolder this createReferenceHolder(Reference ref, CreateTask task) :
+	setReference(ref) -> 
+	if ref.isCreateSubTaskAvailable() then 
+	    subTaskTransitionHolders.addAll(ref.createSubTaskTransitionHolders("create", task)) ->
+	if ref.isUpdateSubTaskAvailable() then
+	    subTaskTransitionHolders.addAll(ref.createSubTaskTransitionHolders("update", task)) ->
+	subTaskTransitionHolders.addAll(ref.createSubTaskTransitionHolders("view", task)) ->
+	if ref.isAddSubTaskAvailable() then
+	    subTaskTransitionHolders.addAll(ref.createSubTaskTransitionHolders("add", task));
+
+create sculptorguimetamodel::TmpReferenceHolder this createReferenceHolder(Reference ref, UpdateTask task) :
+	setReference(ref) -> 
+	if ref.isCreateSubTaskAvailable() then
+	    subTaskTransitionHolders.addAll(ref.createSubTaskTransitionHolders("create", task)) ->
+	if ref.isUpdateSubTaskAvailable() then
+	    subTaskTransitionHolders.addAll(ref.createSubTaskTransitionHolders("update", task)) ->
+	subTaskTransitionHolders.addAll(ref.createSubTaskTransitionHolders("view", task)) ->
+	if ref.isAddSubTaskAvailable() then
+	    subTaskTransitionHolders.addAll(ref.createSubTaskTransitionHolders("add", task));
+
+create sculptorguimetamodel::TmpReferenceHolder this createReferenceHolder(Reference ref, DeleteTask task) :
+	setReference(ref) ->
+	subTaskTransitionHolders.addAll(ref.createSubTaskTransitionHolders("view", task));
+
+create sculptorguimetamodel::TmpReferenceHolder this createReferenceHolder(Reference ref, ViewTask task) :
+	setReference(ref) -> 
+	subTaskTransitionHolders.addAll(ref.createSubTaskTransitionHolders("view", task));
+
+List[sculptorguimetamodel::TmpSubTaskTransitionHolder] createSubTaskTransitionHolders(Reference ref, String toTaskType, UserTask task) :
+	ref.referenceTargets().createSubTaskTransitionHolder(toTaskType, task);
+	
+create sculptorguimetamodel::TmpSubTaskTransitionHolder this createSubTaskTransitionHolder(ReferenceTarget refTarget, String toTaskType, UserTask task) :
+	setToTaskType(toTaskType) ->
+	setTo(refTarget.target);
+
+sculptorguimetamodel::SubTaskTransition createSubTaskTransitionAddSideEffect(sculptorguimetamodel::TmpSubTaskTransitionHolder subTaskTransitionHolder, sculptorguimetamodel::UserTask fromTask) :
+	let transition = createSubTaskTransition(subTaskTransitionHolder, fromTask):
+	let module = fromTask.module.application.modules.select(e | e.userTasks.contains(transition.to)) :
+	if transition.to != null &&  !module.userTasks.contains(transition.to) then module.userTasks.add(transition.to);
+
+create sculptorguimetamodel::SubTaskTransition this createSubTaskTransition(sculptorguimetamodel::TmpSubTaskTransitionHolder subTaskTransitionHolder, sculptorguimetamodel::UserTask fromTask) :
+	let allTasks = fromTask.module.application.modules.userTasks :
+	setForReference(subTaskTransitionHolder.referenceHoler.reference) ->
+	setFrom(fromTask) ->
+	switch (subTaskTransitionHolder.toTaskType) { 
+	   case 'create' :
+	   		setTo(allTasks.typeSelect(CreateTask).select(e | e.for == subTaskTransitionHolder.to).first())
+	   case 'update' : 
+	   		setTo(allTasks.typeSelect(UpdateTask).select(e | e.for == subTaskTransitionHolder.to).first())
+	   case 'view' : 
+	   		setTo(allTasks.typeSelect(ViewTask).select(e | e.for == subTaskTransitionHolder.to).first())
+	   case 'delete' : 
+	   		setTo(allTasks.typeSelect(DeleteTask).select(e | e.for == subTaskTransitionHolder.to).first())
+	   case 'list' : 
+	   		setTo(allTasks.typeSelect(ListTask).select(e | e.for == subTaskTransitionHolder.to).first())
+	   case 'add' : 
+	   		setTo(allTasks.typeSelect(AddTask).select(e | e.for == subTaskTransitionHolder.to).first())
+	   default : 
+	   		null 
+	} ->
+	if (to == null) then 
+		setName("unknownSubtask")
+	else 
+		setName(to.name + "Subtask")
+	;
+	
+create sculptorguimetamodel::SubTaskTransition this createSubTaskTransition(sculptorguimetamodel::ListTask fromTask, String toTaskType) :
+	let allTasks = fromTask.module.application.modules.userTasks :
+	setName(toTaskType + " subtask") -> 
+	setFrom(fromTask) ->
+	switch (toTaskType) { 
+	   case 'view' : 
+	   		setTo(allTasks.typeSelect(ViewTask).select(e | e.for == fromTask.for).first())
+	   case 'update' : 
+	   		setTo(allTasks.typeSelect(UpdateTask).select(e | e.for == fromTask.for && e.getPrimaryServiceOperation() != null).first())
+	   case 'delete' : 
+	   		setTo(allTasks.typeSelect(DeleteTask).select(e | e.for == fromTask.for && e.getPrimaryServiceOperation() != null).first())
+	   default : null 
+	};
+	
+transformRelatedTransitions(UserTask task) :
+    task.viewProperties.typeSelect(ReferenceViewProperty).transformRelatedTransitions();
+    
+transformRelatedTransitions(ReferenceViewProperty refProp) :
+	refProp.relatedTransitions.addAll(refProp.userTask.subTaskTransitions.select(t | t.forReference == refProp.reference && 
+		(t.to.for == refProp.target) || refProp.target.getSubclasses().contains(t.to.for)));
+
+transformRelatedTransitions(DerivedReferenceViewProperty refProp) :
+	refProp.relatedTransitions.addAll(refProp.userTask.subTaskTransitions.select(t | t.forReference == refProp.reference && 
+		t.to.for == refProp.target));
+	

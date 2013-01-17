@@ -1,0 +1,15 @@
+Application $artifactId.replace("-", "") {
+    basePackage=${package}
+
+    Module sample {
+    	
+    	Entity Planet {
+    		scaffold
+    		
+    		String name
+    		String message
+    	}
+    	
+    }
+       
+}

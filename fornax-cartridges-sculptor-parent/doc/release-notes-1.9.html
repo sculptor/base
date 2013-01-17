@@ -1,0 +1,159 @@
+<html>
+<head>
+<title>Release Notes - Fornax Cartridge Sculptor - Version 1.9.x</title>
+</head>
+<body>
+
+<h1>
+Release Notes - Fornax Cartridge Sculptor - Version 1.9.0
+</h1>
+
+<h2>        Bug
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-477'>CSC-477</a>] -         Relax constraint of key reference 
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-480'>CSC-480</a>] -         Wrong unique constraint annotation when using inheritance
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-481'>CSC-481</a>] -         Wrong null check in DTO for primitive types
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-487'>CSC-487</a>] -         Wrong NotFoundException name in repository
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-490'>CSC-490</a>] -         GenericEnumUserType NotSerializableException
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-491'>CSC-491</a>] -         Bidirectional List collection not working
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-494'>CSC-494</a>] -         wrong annotation for ManyToMany and own databaseTable
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-495'>CSC-495</a>] -         Wrong default cascade for one-to-one
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-497'>CSC-497</a>] -         DDL: Duplicate foreign key columns when inheritance SINGLE_TABLE
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-500'>CSC-500</a>] -         PagedResult subList Not Serializable
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-507'>CSC-507</a>] -         fetchType LAZY
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-508'>CSC-508</a>] -         Remove constraint: Missing natural key
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-509'>CSC-509</a>] -         DDL: wrong comma when inheritance without columns
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-511'>CSC-511</a>] -         DDL: Wrong index when inheritanceType SINGLE_TABLE
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-515'>CSC-515</a>] -         Webservice annotations not generated when no gap
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-534'>CSC-534</a>] -         Truncate db name of foreign key
+</li>
+</ul>
+    
+<h2>        Improvement
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-117'>CSC-117</a>] -         CRUD Gui part 2
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-130'>CSC-130</a>] -         JSF: Text area for long fields
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-137'>CSC-137</a>] -         Improved logging in error handling
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-139'>CSC-139</a>] -         Hibernate natural-id
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-367'>CSC-367</a>] -         JSF client - custom validation support
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-377'>CSC-377</a>] -         Add constraint: For many-to-many it doesn't make sense to use an ordered List
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-407'>CSC-407</a>] -         More visualization
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-439'>CSC-439</a>] -         Improvements of Aggregates
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-441'>CSC-441</a>] -         DSL: Repository name should be optional
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-478'>CSC-478</a>] -         Possibility to disable constraints
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-479'>CSC-479</a>] -         Improve dsl model formatting
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-482'>CSC-482</a>] -         Index column for unidirectional many List reference
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-498'>CSC-498</a>] -         Constraint reference between persistence units
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-499'>CSC-499</a>] -         ToStringStyle
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-501'>CSC-501</a>] -         JavaDoc for enum values
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-502'>CSC-502</a>] -         OpenEJB logger
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-503'>CSC-503</a>] -         EJB3: Possibility to teardown openejb testserver explicitly
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-504'>CSC-504</a>] -         Organize import not done for junit tests
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-505'>CSC-505</a>] -         version not nullable
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-506'>CSC-506</a>] -         findByKey fallback to use uuid
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-510'>CSC-510</a>] -         Limiting result of finder (for example with paging) together with resultTransformer doesn't work - well know hibernate issue
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-512'>CSC-512</a>] -         DDL: hook to add extra to create table
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-516'>CSC-516</a>] -         Clob/Blob types
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-517'>CSC-517</a>] -         DDL Oracle: tablespace hint
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-518'>CSC-518</a>] -         EJB3: Improve Consumer baseclass
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-521'>CSC-521</a>] -         More hooks for annotations
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-522'>CSC-522</a>] -         transient should generate java transient field
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-523'>CSC-523</a>] -         Better configuration of maven-jetty-plugin
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-524'>CSC-524</a>] -         GAE 1.3.5
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-525'>CSC-525</a>] -         databaseJoinTable and databaseJoinColumn
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-526'>CSC-526</a>] -         Remove limitation that Reference opposite must be defined last
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-527'>CSC-527</a>] -         Composite key may have some nullable
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-530'>CSC-530</a>] -         Possibility to skip generation of composite key inner class
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-531'>CSC-531</a>] -         client jar file for sculptor framework
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-532'>CSC-532</a>] -         outlet fileEncoding
+</li>
+</ul>
+    
+<h2>        New Feature
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-58'>CSC-58</a>] -         Operation parameter name optional
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-155'>CSC-155</a>] -         GUI - Possibility to add custom transitions
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-162'>CSC-162</a>] -         GUI - Non persistent ValueObject
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-476'>CSC-476</a>] -         Generated documentation
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-489'>CSC-489</a>] -         Graphviz maven plugin
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-492'>CSC-492</a>] -         Support for MongoDb
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-493'>CSC-493</a>] -         Declare domain object id directly in dsl
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-496'>CSC-496</a>] -         GUI - CRUD for DTO
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-513'>CSC-513</a>] -         findByCondition.paging
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-514'>CSC-514</a>] -         For paging operation you can specify noLimit
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-520'>CSC-520</a>] -         Support for Event-Driven Architecture
+</li>
+</ul>
+        
+<h2>        Task
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-519'>CSC-519</a>] -         Deprecate old stuff
+</li>
+</ul>
+        
+	
+</body>	
+</html>

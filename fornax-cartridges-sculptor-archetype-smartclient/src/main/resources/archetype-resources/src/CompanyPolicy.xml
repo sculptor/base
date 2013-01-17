@@ -1,0 +1,9 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<change-set xmlns='http://drools.org/drools-5.0/change-set'
+		xmlns:xs='http://www.w3.org/2001/XMLSchema-instance'
+		xs:schemaLocation='http://drools.org/drools-5.0/change-set.xsd' >
+	<add>
+		<resource source='classpath:/CompanyPolicy.dslr' type='DSLR'/>
+		<resource source='classpath:/CompanyPolicy.dsl' type='DSL'/>
+	</add>
+</change-set>

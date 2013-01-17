@@ -1,0 +1,45 @@
+/*
+ * Copyright 2010 The Xtend Tools Team and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * This extensions provives miscelaneous utilits functions.
+ *
+ * @author Ingo Feltes
+ */
+ 
+/**
+ * Creates a random (type 4) UUID.
+ */
+String uuid():
+  JAVA org.fornax.utilities.xtendtools.lib.UtilsExtension.getUuid();
+
+/**
+ * Creates a time stamp using ISO 8601 format and the Z (Zulu) time zone.
+ */
+String timestamp():
+  JAVA org.fornax.utilities.xtendtools.lib.UtilsExtension.getTimeStamp();
+
+/**
+ * Creates a time stamp using the given pattern.
+ */
+String timestamp(String pattern):
+  JAVA org.fornax.utilities.xtendtools.lib.UtilsExtension.getTimeStamp(java.lang.String);
+
+/**
+ * Returns the login name of the current user.
+ */
+String userName():
+  JAVA org.fornax.utilities.xtendtools.lib.UtilsExtension.getUserName();

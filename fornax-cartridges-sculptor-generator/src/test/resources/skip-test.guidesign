@@ -1,0 +1,24 @@
+import 'platform:/resource/fornax-cartridges-sculptor-generator/src/test/resources/skip-test.btdesign' 
+
+gui LibraryWeb for Library {
+	
+	Module for media {
+		CreateTask for Library {
+			- name
+			- media
+			
+			list media use attributes location
+		}
+		
+		
+		skip CreateTask for Movie
+		skip ComicBook
+		skip MediaCharacter
+	}
+	Module for person {
+		skip Address
+		skip SummerHoliday 
+	}
+
+
+}

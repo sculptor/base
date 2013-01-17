@@ -1,0 +1,41 @@
+Application StringId {
+    basePackage=org.test
+
+
+    Module test {
+        Service EntityWithStringIdService {
+            @EntityWithStringId findById(String id);
+            @EntityWithStringId save(@EntityWithStringId value);
+            List<@EntityWithStringId> findAll;
+            delete(@EntityWithStringId value);
+        }
+        
+        Entity EntityWithStringId {
+            
+            String id
+            String message
+        }
+        
+        Service ValueObjectWithStringIdService {
+            @ValueObjectWithStringId findById(String id);
+            @ValueObjectWithStringId save(@ValueObjectWithStringId value);
+            List<@ValueObjectWithStringId> findAll;
+            delete(@ValueObjectWithStringId value);
+        }
+
+        
+        ValueObject ValueObjectWithStringId {
+            not persistent
+            String id
+            String message
+            - @ValueObjectWithStringId2 two
+        }
+        ValueObject ValueObjectWithStringId2 {
+            not persistent
+            String id
+            String message
+        }
+       
+        
+    }
+}

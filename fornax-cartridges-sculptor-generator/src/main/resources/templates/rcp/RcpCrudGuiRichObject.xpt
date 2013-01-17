@@ -1,0 +1,742 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+
+«EXTENSION extensions::helper»
+«EXTENSION extensions::guihelper»
+«EXTENSION extensions::properties»
+
+«DEFINE richObject FOR GuiApplication»
+	«EXPAND richObject FOREACH modules»
+«ENDDEFINE» 
+
+«DEFINE richObject FOR GuiModule»
+	«EXPAND richObject FOREACH groupByTarget()»
+	«EXPAND gapRichObject FOREACH groupByTarget()
+		.select(e | isGapClassToBeGenerated(e, "Rich" + e.for.name))»
+«ENDDEFINE»
+
+«DEFINE gapRichObject FOR UserTaskGroup»
+«LET "Rich" + for.name AS className»
+«FILE javaFileName(module.getRichClientPackage() + ".data." + className) TO_SRC -»
+«javaHeader()»
+package «module.getRichClientPackage()».data;
+
+«EXPAND richObjectSpringAnnotation»
+public class «className» extends «className»Base {
+	public «className»() {
+    }
+}
+«ENDFILE»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE richObject FOR UserTaskGroup»
+«LET "Rich" + for.name + gapSubclassSuffix(this, "Rich" + for.name) AS className»
+«FILE javaFileName(module.getRichClientPackage() + ".data." + className) -»
+«javaHeader()»
+package «module.getRichClientPackage()».data;
+
+«IF !className.endsWith("Base")»
+«EXPAND richObjectSpringAnnotation»
+«ENDIF»
+public «IF className.endsWith("Base")»abstract«ENDIF» class «className» extends «fw("richclient.data.AbstractRichObject")» implements java.io.Serializable {
+    «EXPAND richObjectSerialVersionUID»
+    
+    «EXPAND richObjectOriginal FOR for»
+    «EXPAND richObjectIsNew FOR for»
+    «EXPAND richObjectStale FOR for»
+    «EXPAND richObjectGetId FOR for»
+    
+    «IF hasReferenceViewProperties()»
+    	«EXPAND richObjectPopulated FOR for»
+    	«EXPAND richObjectAssociationLoader»
+    «ENDIF»
+    
+    «EXPAND richObjectViewDataProperty FOREACH getAggregatedViewProperties().reject(p | p.isSystemAttribute())»
+
+	«EXPAND richObjectUuidKey FOR for»    
+    
+	«EXPAND richObjectConstructor»
+    
+    «EXPAND richObjectUpdate»
+
+	«EXPAND richObjectFromDomainObject»
+	«EXPAND richObjectToDomainObject»
+	«EXPAND richObjectToCloneDomainObject»
+	«EXPAND richObjectToDomainObjectImpl»
+	«EXPAND richObjectToDomainObjectManyReferenceMethod(this) FOREACH 
+		getAggregatedViewProperties().typeSelect(ReferenceViewProperty).select(e|e.isMany()).collect(e|e.reference).toSet()»
+	
+	«EXPAND richObjectCreateBasicType(this) FOREACH 
+		getAggregatedViewProperties().typeSelect(BasicTypeViewProperty).collect(e|e.reference).toSet()»
+	
+	«EXPAND richObjectCreateOneReference(this) FOREACH 
+		getAggregatedViewProperties().typeSelect(ReferenceViewProperty).reject(e|e.isMany()).collect(e|e.reference).toSet()»
+	
+	«EXPAND richObjectFactory»
+}
+	«ENDFILE»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE richObjectSpringAnnotation FOR UserTaskGroup»
+@org.springframework.stereotype.Component("rich«for.name»")
+@org.springframework.context.annotation.Scope("prototype")
+«ENDDEFINE»
+
+«DEFINE richObjectSerialVersionUID FOR Object»
+    private static final long serialVersionUID = 1L;
+«ENDDEFINE»
+
+«DEFINE richObjectOriginal FOR DomainObject»
+    private «getDomainPackage()».«name» original;
+    
+    protected synchronized «getDomainPackage()».«name» getOriginalDomainObject() {
+        return original;
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectIsNew FOR DomainObject»
+    public synchronized boolean isNew() {
+        return (original == null || original.getId() == null);
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectGetId FOR DomainObject»
+    public synchronized Long getId() {
+        return (original == null ? null : original.getId());
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectStale FOR DomainObject»
+    private boolean staleState;
+    protected synchronized boolean isStale() {
+        return staleState;
+    }
+    protected synchronized void setStale(boolean stale) {
+        this.staleState = stale;
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectPopulated FOR DomainObject»
+    private «getDomainPackage()».«name» populated;
+    
+    protected synchronized «getDomainPackage()».«name» getPopulated() {
+        return populated;
+    }
+    
+    protected synchronized void populate() {
+        if (!isNew() && populated == null && associationLoader != null) {
+            populated = associationLoader.populateAssociations(original);
+        }
+    }
+«ENDDEFINE»
+
+
+«DEFINE richObjectViewDataProperty FOR ViewDataProperty»
+«ENDDEFINE»
+«DEFINE richObjectViewDataProperty FOR AttributeViewProperty»
+	«EXPAND richObjectPropertyField»
+	«EXPAND richObjectPropertyGetter»
+	«EXPAND richObjectPropertySetter»
+	«IF isDateOrDateTime() && isNullable()»
+		«EXPAND richObjectDefinedFlag»
+	«ENDIF»
+«ENDDEFINE»
+«DEFINE richObjectViewDataProperty FOR BasicTypeViewProperty»
+	«EXPAND richObjectPropertyField»
+	«EXPAND richObjectPropertyGetter»
+	«EXPAND richObjectPropertySetter»
+	«IF isDateOrDateTime() && isNullable()»
+		«EXPAND richObjectDefinedFlag»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE richObjectViewDataProperty FOR ReferenceViewProperty»
+«IF !base»
+    «EXPAND richObjectReferenceTargetFactory»
+	«IF isMany() -»
+		private java.util.List<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»> «resolveReferenceName().toFirstLower()»;
+		private volatile org.eclipse.core.databinding.observable.list.IObservableList observable«resolveReferenceName()»;
+		«EXPAND richObjectGetManyReference»
+		«EXPAND richObjectAddReference»
+		«EXPAND richObjectRemoveReference»
+	«ELSE»
+		private java.util.concurrent.atomic.AtomicReference<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»> «resolveReferenceName().toFirstLower()»Holder;
+		«EXPAND richObjectGetOneReference»
+		«EXPAND richObjectSetReference»
+	«ENDIF -»
+«ENDIF»
+«ENDDEFINE»
+
+«DEFINE richObjectReferenceTargetFactory FOR ReferenceViewProperty»
+    private «fw("richclient.data.RichObjectFactory")»<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»> rich«resolveReferenceName()»Factory;
+    /**
+     * Dependency injection
+     */
+    @javax.annotation.Resource(name="rich«target.name»Repository")
+    @org.springframework.beans.factory.annotation.Required
+    public void setRich«resolveReferenceName()»Factory(«fw("richclient.data.RichObjectFactory")»<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»> factory) {
+        rich«resolveReferenceName()»Factory = factory;
+    }
+    protected «fw("richclient.data.RichObjectFactory")»<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»> getRich«resolveReferenceName()»Factory() {
+        return rich«resolveReferenceName()»Factory;
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectGetManyReference FOR ReferenceViewProperty»
+    @SuppressWarnings("unchecked")
+    public synchronized java.util.List<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»> get«resolveReferenceName()»() {
+        if («resolveReferenceName().toFirstLower()» != null) {
+            return «resolveReferenceName().toFirstLower()»;
+        }
+        populate();
+        if (populated == null) {
+            «resolveReferenceName().toFirstLower()» = new java.util.ArrayList();
+        } else {
+            java.util.List<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»> items = new java.util.ArrayList<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»>();
+            for («reference.to.getDomainPackage()».«reference.to.name» each : populated.get«reference.name.toFirstUpper()»()) {
+            	«IF reference.to != target-»
+                if (!(each instanceof «target.getDomainPackage()».«target.name»)) {
+                    continue;
+                }
+                «ENDIF-» 
+                «relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name» rich«target.name» = rich«resolveReferenceName()»Factory.create();
+                rich«target.name».fromDomainObject(«IF reference.to != target»(«target.getDomainPackage()».«target.name») «ENDIF»each);
+                items.add(rich«target.name»);
+            }
+            «resolveReferenceName().toFirstLower()» = items;
+        }
+        return «resolveReferenceName().toFirstLower()»;
+    }
+    
+    public org.eclipse.core.databinding.observable.list.IObservableList getObservable«resolveReferenceName()»() {
+        if (observable«resolveReferenceName()» == null) {
+            observable«resolveReferenceName()» = «fw("richclient.databinding.ObservableUtil")».createWritableList(get«resolveReferenceName()»());
+        }
+        return observable«resolveReferenceName()»;
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectGetOneReference FOR ReferenceViewProperty»
+    @SuppressWarnings("unchecked")
+    public synchronized «relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name» get«resolveReferenceName()»() {
+        if («resolveReferenceName().toFirstLower()»Holder != null) {
+            return «resolveReferenceName().toFirstLower()»Holder.get();
+        }
+    
+        populate();
+        «resolveReferenceName().toFirstLower()»Holder = new java.util.concurrent.atomic.AtomicReference<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»>(); 
+        if (populated != null) {
+            «IF reference.to != target-»
+            if (populated.get«reference.name.toFirstUpper()»() instanceof «target.getDomainPackage()».«target.name») {
+            «ELSE»
+            if (populated.get«reference.name.toFirstUpper()»() != null) {
+            «ENDIF»
+            «resolveReferenceName().toFirstLower()»Holder.set(rich«resolveReferenceName()»Factory.create());
+            «resolveReferenceName().toFirstLower()»Holder.get().fromDomainObject(«IF reference.to != target»(«target.getDomainPackage()».«target.name») «ENDIF»populated.get«reference.name.toFirstUpper()»());
+            }
+        }
+        return «resolveReferenceName().toFirstLower()»Holder.get();
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectAddReference FOR ReferenceViewProperty»
+	public synchronized void add«resolveReferenceName().singular()»(«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name» «name.singular()») {
+	    Object oldValue;
+		int i = getObservable«resolveReferenceName()»().indexOf(«name.singular()»);
+        if (i == -1) {
+            oldValue = new Object(); // not used, but can't be null
+            getObservable«resolveReferenceName()»().add(«name.singular()»);
+        } else {
+            oldValue = getObservable«resolveReferenceName()»().get(i);
+            getObservable«resolveReferenceName()»().set(i, «name.singular()»);
+        }
+        
+        «IF reference.opposite != null»
+        	«LET userTask.module.application.groupByTarget().selectFirst(g | g.userTasks.exists(t | t == userTask)) AS group-»
+        if (oldValue != «name.singular()») {
+    	    «name.singular()».«reference.opposite.many ? "add" : "set"»«resolveReferenceName("", reference.opposite, userTask.for, "")
+    	        »(«IF isGapClassToBeGenerated(group, "Rich" + userTask.for.name)»(Rich«userTask.for.name») «ENDIF»this);
+	    }
+	    	«ENDLET-»
+	    «ENDIF»
+        
+        firePropertyChange("«resolveReferenceName().toFirstLower()»", oldValue, getObservable«resolveReferenceName()»());
+	}
+«ENDDEFINE»
+
+«DEFINE richObjectRemoveReference FOR ReferenceViewProperty»
+	public synchronized void remove«resolveReferenceName().singular()»(«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name» «name») {
+	    int i = getObservable«resolveReferenceName()»().indexOf(«name»);
+        if (i == -1) {
+            return;
+        }
+        Object oldValue = getObservable«resolveReferenceName()»().get(i);
+        getObservable«resolveReferenceName()»().remove(«name»);
+        
+        «IF reference.opposite != null»
+	    	«IF reference.opposite.many»
+	    		«LET userTask.module.application.groupByTarget().selectFirst(g | g.userTasks.exists(t | t == userTask)) AS group-»
+	    		«name».remove«resolveReferenceName("", reference.opposite, userTask.for, "")
+	    			»(«IF isGapClassToBeGenerated(group, "Rich" + userTask.for.name)»(Rich«userTask.for.name») «ENDIF»this);
+	    		«ENDLET-»
+	    	«ELSE»
+	    		«name».set«resolveReferenceName("", reference.opposite, userTask.for, "")»(null);
+	    	«ENDIF»
+	    «ENDIF»
+        
+        firePropertyChange("«resolveReferenceName().toFirstLower()»", oldValue, getObservable«resolveReferenceName()»());
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectSetReference FOR ReferenceViewProperty»
+	public synchronized void set«resolveReferenceName()»(«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name» «name») {
+	    if (this.«resolveReferenceName().toFirstLower()»Holder == null) {
+	        this.«resolveReferenceName().toFirstLower()»Holder = new java.util.concurrent.atomic.AtomicReference<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»>();
+	    }
+	    Object oldValue = this.«resolveReferenceName().toFirstLower()»Holder.get();
+		this.«resolveReferenceName().toFirstLower()»Holder.set(«name»);
+		
+		«IF reference.opposite != null»
+			«LET userTask.module.application.groupByTarget().selectFirst(g | g.userTasks.exists(t | t == userTask)) AS group-»
+		    if (oldValue != «name») {
+		        if («name.singular()» == null) {
+            	«IF reference.opposite.many»
+            	    ((«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name») oldValue).remove«resolveReferenceName("", reference.opposite, userTask.for, "")
+	    	            »(«IF isGapClassToBeGenerated(group, "Rich" + userTask.for.name)»(Rich«userTask.for.name») «ENDIF»this);
+            	«ELSE»
+            	    ((«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name») oldValue).set«resolveReferenceName("", reference.opposite, userTask.for, "")
+	    	            »(null);
+            	«ENDIF»
+	    	    } else {
+	                «name».«reference.opposite.many ? "add" : "set"»«resolveReferenceName("", reference.opposite, userTask.for, "")
+	    	            »(«IF isGapClassToBeGenerated(group, "Rich" + userTask.for.name)»(Rich«userTask.for.name») «ENDIF»this);
+	    	    }
+	    	}
+	    	«ENDLET»
+	    «ENDIF»
+		
+		firePropertyChange("«resolveReferenceName().toFirstLower()»", oldValue, this.«resolveReferenceName().toFirstLower()»Holder.get());
+	}
+«ENDDEFINE»
+
+«DEFINE richObjectViewDataProperty FOR EnumViewProperty»
+	private «reference.to.getDomainPackage()».«reference.to.name» «name»;
+	public «reference.to.getDomainPackage()».«reference.to.name» get«name.toFirstUpper()»() {
+		return «name»;
+	}
+	public void set«name.toFirstUpper()»(«reference.to.getDomainPackage()».«reference.to.name» «name») {
+	    Object oldValue = this.«name»;
+		this.«name» = «name»;
+		firePropertyChange("«name»", oldValue, «name»);
+	}
+	public java.util.List<«reference.to.getDomainPackage()».«reference.to.name»> get«name.toFirstUpper()»Options() {
+        return java.util.Arrays.asList(«reference.to.getDomainPackage()».«reference.to.name».values());
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectDefinedFlag FOR ViewDataProperty»
+    private boolean «name»Defined;
+    
+    public boolean is«name.toFirstUpper()»Defined() {
+        return «name»Defined;
+    }
+    
+    public void set«name.toFirstUpper()»Defined(boolean «name»Defined) {
+        Object oldValue = this.«name»Defined;
+        this.«name»Defined = «name»Defined;
+        firePropertyChange("«name»Defined", oldValue, «name»Defined);
+        if (!«name»Defined && («name» != null)) {
+            set«name.toFirstUpper()»(null);
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectPropertyField FOR ViewDataProperty»
+	private «getTypeName()» «name»;
+«ENDDEFINE»
+
+«DEFINE richObjectPropertyGetter FOR ViewDataProperty»
+    «formatJavaDoc()»
+    public «getTypeName()» get«name.toFirstUpper()»() {
+        return «name»;
+    };
+
+«ENDDEFINE»
+
+«DEFINE richObjectPropertySetter FOR ViewDataProperty»
+    «formatJavaDoc()»
+    public void set«name.toFirstUpper()»(«getTypeName()» «name») {
+        Object oldValue = this.«name»;
+        this.«name» = «name»;
+        firePropertyChange("«name»", oldValue, «name»);
+        «IF isDateOrDateTime() && isNullable() -»
+        set«name.toFirstUpper()»Defined(this.«name» != null);
+        «ENDIF-»
+    };
+«ENDDEFINE»
+
+«DEFINE richObjectAssociationLoader FOR UserTaskGroup»
+    private «fw("richclient.data.AssociationLoader")»<«for.getDomainPackage()».«for.name»> associationLoader;
+    
+    private «fw("richclient.data.AssociationLoader")»<«for.getDomainPackage()».«for.name»> getAssociationLoader() {
+        return associationLoader;
+    }
+
+    /**
+     * Dependency injection
+     */
+    @javax.annotation.Resource(name="rich«for.name»Repository")
+    @org.springframework.beans.factory.annotation.Required
+    public void setAssociationLoader(«fw("richclient.data.AssociationLoader")»<«for.getDomainPackage()».«for.name»> associationLoader) {
+        this.associationLoader = associationLoader;
+    }
+
+«ENDDEFINE»
+
+«DEFINE richObjectUuidKey FOR DomainObject»
+    private String uuidKey;
+    
+    public synchronized Object getKey() {
+        if (uuidKey != null) {
+            return uuidKey;
+        } else if (isNew()) {
+            uuidKey = java.util.UUID.randomUUID().toString();
+            return uuidKey;
+        } else {
+            return «EXPAND originalKey»;
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE originalKey FOR DomainObject»
+original.getKey()
+«ENDDEFINE»
+
+«DEFINE originalKey FOR DataTransferObject»
+original.getId()
+«ENDDEFINE»
+
+«DEFINE richObjectConstructor FOR UserTaskGroup»
+    /**
+     * Instances are to be created with the 
+     * {@link «module.getRichClientPackage()».data.Rich«for.name»«gapSubclassSuffix(this, "Rich" + for.name)».Factory factory}
+     */
+    protected Rich«for.name»«gapSubclassSuffix(this, "Rich" + for.name)»() {
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectUpdate FOR UserTaskGroup»
+    public synchronized void update(«fw("richclient.data.RichObject")» other) {
+        updateFrom((Rich«for.name»«gapSubclassSuffix(this, "Rich" + for.name)») other);
+    }
+    
+    private void updateFrom(Rich«for.name»«gapSubclassSuffix(this, "Rich" + for.name)» other) {
+    «IF hasReferenceViewProperties()»
+        this.associationLoader = other.associationLoader;
+    «ENDIF»
+    «EXPAND richObjectUpdateSetGet FOREACH getAggregatedViewProperties()
+    	.reject(p | p.metaType == ReferenceViewProperty || p.metaType == DerivedReferenceViewProperty)
+    	.reject(p | p.isSystemAttribute()) »
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectUpdateSetGet FOR ViewDataProperty»
+    set«name.toFirstUpper()»(other.get«name.toFirstUpper()»());
+«ENDDEFINE»
+
+«DEFINE richObjectFromDomainObject FOR UserTaskGroup»
+	public synchronized void fromDomainObject(«for.getDomainPackage()».«for.name» domainObject) {
+		original = domainObject;
+		«IF hasReferenceViewProperties()»
+		populated = null;
+		«ENDIF»
+	
+		«EXPAND richObjectFromDomainObjectProperty FOREACH getAggregatedViewProperties().reject(p | p.isSystemAttribute())»
+        
+        clearModifications();
+	}
+«ENDDEFINE»
+
+«DEFINE richObjectFromDomainObjectProperty FOR ViewDataProperty»
+«ENDDEFINE»
+
+«DEFINE richObjectFromDomainObjectProperty FOR AttributeViewProperty»
+    set«name.toFirstUpper()»(domainObject.«attribute.getGetAccessor()»());
+«ENDDEFINE»
+
+«DEFINE richObjectFromDomainObjectProperty FOR BasicTypeViewProperty»
+    set«name.toFirstUpper()»(domainObject.get«reference.name.toFirstUpper()»() == null ? null : domainObject.get«reference.name.toFirstUpper()»().«attribute.getGetAccessor()»());
+«ENDDEFINE»
+
+«DEFINE richObjectFromDomainObjectProperty FOR EnumViewProperty»
+    set«name.toFirstUpper()»(domainObject.get«reference.name.toFirstUpper()»());
+«ENDDEFINE»
+
+«DEFINE richObjectFromDomainObjectProperty FOR BasicTypeEnumViewProperty»
+    set«name.toFirstUpper()»(domainObject.get«basicTypeReference.name.toFirstUpper()»().get«reference.name.toFirstUpper()»());
+«ENDDEFINE»
+
+«DEFINE richObjectFromDomainObjectProperty FOR ReferenceViewProperty»
+	«IF !base-»
+    // will be lazy loaded by getter
+    «resolveReferenceName().toFirstLower()»«IF !isMany()»Holder«ENDIF» = null;
+    «IF isMany()»observable«resolveReferenceName()» = null;«ENDIF»
+    «ENDIF-»
+«ENDDEFINE»
+
+«DEFINE richObjectToDomainObject FOR UserTaskGroup»
+    public synchronized «for.getDomainPackage()».«for.name» toDomainObject(boolean includeAssociations) {
+        if (isNew()) {
+			«for.getDomainPackage()».«for.name» domainObject = new «for.getDomainPackage()».«for.name»(«FOREACH for.getConstructorParameters() AS p SEPARATOR ","»
+				«IF (p.metaType == Reference) && (((Reference) p).to.metaType != Enum)»
+				create«p.name.toFirstUpper()»() 
+				«ELSE»
+				get«p.name.toFirstUpper()»()
+				«ENDIF»
+			«ENDFOREACH»);
+            original =  toDomainObject(domainObject, includeAssociations);
+            return original;
+        } else if (!isModified()) {
+            return original;
+        } else {
+            «IF hasReferenceViewProperties()»        
+            populate();
+            «for.getDomainPackage()».«for.name» domainObject = (populated == null ? original : populated);
+            	«IF !for.getAllAttributes().select(e|e.name == "version").isEmpty -»
+            		domainObject.setVersion(original.getVersion());
+            	«ENDIF -»
+            original = toDomainObject(domainObject, includeAssociations);
+            
+            «ELSE»
+            original = toDomainObject(original, includeAssociations);
+            «ENDIF»
+            return original;
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectToCloneDomainObject FOR UserTaskGroup»
+    synchronized «for.getDomainPackage()».«for.name» toCloneDomainObject() {
+        return toDomainObject((«for.getDomainPackage()».«for.name») original.clone(), false);
+    }
+«ENDDEFINE»
+
+«DEFINE richObjectToDomainObjectImpl FOR UserTaskGroup»
+    protected «for.getDomainPackage()».«for.name» toDomainObject(«for.getDomainPackage()».«for.name» domainObject, boolean includeAssociations) {
+	«EXPAND richObjectToDomainObjectProperty FOREACH 
+		getAggregatedViewProperties().reject(p | p.isSystemAttribute())»
+	
+	«EXPAND richObjectToDomainObjectBasicTypeProperty(this) FOREACH 
+		getAggregatedViewProperties().typeSelect(BasicTypeViewProperty).collect(e|e.reference).toSet()»
+	
+	«IF hasReferenceViewProperties()»
+	if (includeAssociations) {
+		«EXPAND richObjectToDomainObjectReferenceProperty(this) 
+			FOREACH getAggregatedViewProperties().typeSelect(ReferenceViewProperty).collect(e|e.reference).toSet()»
+	}
+	«ENDIF»
+	
+	return domainObject;
+}
+«ENDDEFINE»
+
+«DEFINE richObjectToDomainObjectProperty FOR ViewDataProperty»
+«ENDDEFINE»
+
+«DEFINE richObjectToDomainObjectProperty FOR AttributeViewProperty»
+	«IF !userTask.for.getConstructorParameters().contains(attribute)-»
+	if (isModified("«attribute.name»")) {
+	    domainObject.set«attribute.name.toFirstUpper()»(get«name.toFirstUpper()»());
+	}
+	«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE richObjectToDomainObjectProperty FOR EnumViewProperty»
+	«IF !userTask.for.getConstructorParameters().contains(reference)-»
+	if (isModified("«reference.name»")) {
+	    domainObject.set«reference.name.toFirstUpper()»(get«name.toFirstUpper()»());
+	}
+	«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE richObjectToDomainObjectProperty FOR BasicTypeEnumViewProperty»
+«REM»TODO ?«ENDREM»
+«ENDDEFINE»
+
+«DEFINE richObjectToDomainObjectReferenceProperty(UserTaskGroup group) FOR Reference»
+	«IF !group.for.getConstructorParameters().contains(this)-»
+		«IF isMany()»
+			«EXPAND richObjectToDomainObjectManyReferenceProperty(group)»
+		«ELSE »
+			«EXPAND richObjectToDomainObjectOneReferenceProperty(group)»
+		«ENDIF»
+	«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE richObjectToDomainObjectManyReferenceProperty(UserTaskGroup group) FOR Reference»
+    toDomainObject«name.toFirstUpper()»(domainObject);
+«ENDDEFINE»
+
+«DEFINE richObjectToDomainObjectManyReferenceMethod(UserTaskGroup group) FOR Reference»
+	«IF !group.for.getConstructorParameters().contains(this)»
+	«LET group.getAggregatedViewProperties().typeSelect(ReferenceViewProperty).select(e|e.reference == this).reject(e|e.base) AS referenceProperties»
+    protected void toDomainObject«name.toFirstUpper()»(«group.for.getDomainPackage()».«group.for.name» domainObject) {
+		if («FOREACH referenceProperties AS prop SEPARATOR " && "»!isModified("«prop.resolveReferenceName().toFirstLower()»")«ENDFOREACH») {
+		    return;
+		}
+		«IF opposite == null -»
+		    domainObject.get«name.toFirstUpper()»().clear();
+		    «FOREACH referenceProperties AS prop»
+		    for («prop.relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«prop.relatedTransitions.first().to.for.name» each : get«prop.resolveReferenceName()»()) {
+		        domainObject.get«name.toFirstUpper()»().add(each.toDomainObject(«hasUpdatingSubtask(group)»));
+		    }
+		    «ENDFOREACH»
+		«ELSE»
+		java.util.Set<«to.getDomainPackage()».«to.name»> current = new java.util.HashSet<«to.getDomainPackage()».«to.name»>();
+		java.util.Set<«to.getDomainPackage()».«to.name»> modified = new java.util.HashSet<«to.getDomainPackage()».«to.name»>();
+		«FOREACH referenceProperties AS prop»
+		for («prop.relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«prop.relatedTransitions.first().to.for.name» each : get«prop.resolveReferenceName()»()) {
+	        «to.getDomainPackage()».«to.name» currentElement = each.toDomainObject(«hasUpdatingSubtask(group)»); 
+	        current.add(currentElement);
+	        if (each.isModified()) {
+                modified.add(currentElement);
+            }
+	    }
+	    «ENDFOREACH»
+		
+		// replace modified
+		for («to.getDomainPackage()».«to.name» each : modified) {
+		    try {
+			    domainObject.remove«name.toFirstUpper().singular()»(each);
+			    domainObject.add«name.toFirstUpper().singular()»(each);
+			} catch (RuntimeException e) {
+			    // might be LazyInitializationException, try this best effort...
+			    domainObject.get«name.toFirstUpper()»().remove(each);
+			    domainObject.get«name.toFirstUpper()»().add(each);
+			}
+        }
+		
+		// find «to.name» that has been removed by user
+		java.util.Set<«to.getDomainPackage()».«to.name»> removed«name.singular().toFirstUpper()» = new java.util.HashSet<«to.getDomainPackage()».«to.name»>();
+		for («to.getDomainPackage()».«to.name» each : domainObject.get«name.toFirstUpper()»()) {
+			if (!current.contains(each)) {
+				removed«name.singular().toFirstUpper()».add(each);
+			}
+		}
+		// remove them from domainObject
+		for («to.getDomainPackage()».«to.name» each : removed«name.singular().toFirstUpper()») {
+		    try {
+			    domainObject.remove«name.toFirstUpper().singular()»(each);
+			} catch (RuntimeException e) {
+			    // might be LazyInitializationException, try this best effort...
+			    domainObject.get«name.toFirstUpper()»().remove(each);
+			}
+		}
+		
+		// add «to.name» to domainObject that has been added by user
+        for («to.getDomainPackage()».«to.name» each : current) {
+            if (!domainObject.get«name.toFirstUpper()»().contains(each)) {
+                try {
+				    domainObject.add«name.toFirstUpper().singular()»(each);
+				} catch (RuntimeException e) {
+			        // might be LazyInitializationException, try this best effort...
+				    domainObject.get«name.toFirstUpper()»().add(each);
+				}
+            }
+        }
+        «ENDIF»
+    }
+	«ENDLET»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE richObjectToDomainObjectOneReferenceProperty(UserTaskGroup group) FOR Reference»
+        if (isModified("«name»")) {
+            domainObject.set«name.toFirstUpper()»(create«name.toFirstUpper()»());
+        }
+«ENDDEFINE»
+
+«DEFINE richObjectToDomainObjectBasicTypeProperty(UserTaskGroup group) FOR Reference»
+	«IF !group.for.getConstructorParameters().contains(this)-»
+	«LET group.getAggregatedViewProperties().typeSelect(BasicTypeViewProperty).select(e|e.reference == this) AS basicTypeProperties»
+	
+	if («FOREACH basicTypeProperties AS prop SEPARATOR " || "»isModified("«name»«prop.attribute.name.toFirstUpper()»")«ENDFOREACH») {
+	    domainObject.set«name.toFirstUpper()»(create«name.toFirstUpper()»());
+	}
+	«ENDLET»
+	«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE richObjectCreateBasicType(UserTaskGroup group) FOR Reference»
+«LET group.getAggregatedViewProperties().typeSelect(BasicTypeViewProperty).select(e|e.reference == this)
+	.addAll(group.getAggregatedViewProperties().typeSelect(BasicTypeEnumViewProperty).select(e|e.basicTypeReference == this))
+	AS basicTypeProperties»
+	protected «to.getDomainPackage()».«to.name» create«name.toFirstUpper()»() {
+		«to.getDomainPackage()».«to.name» result =
+			new «to.getDomainPackage()».«to.name»(
+		«FOREACH to.getConstructorParameters() AS p SEPARATOR ", " »
+			get«basicTypeProperties.typeSelect(BasicTypeViewProperty).select(e|e.attribute == p)
+				.addAll(basicTypeProperties.typeSelect(BasicTypeEnumViewProperty).select(e|e.reference == p))
+				.selectFirst(e|true).name.toFirstUpper()»()
+		«ENDFOREACH»);
+		«FOREACH basicTypeProperties.typeSelect(BasicTypeViewProperty).reject(e|to.getConstructorParameters().contains(e.attribute)) 	AS prop-»
+		result.set«prop.attribute.name.toFirstUpper()»(get«prop.name.toFirstUpper()»());
+		«ENDFOREACH-»
+		«FOREACH basicTypeProperties.typeSelect(BasicTypeEnumViewProperty).reject(e|to.getConstructorParameters().contains(e.reference)) AS prop-»
+		result.set«prop.reference.name.toFirstUpper()»(get«prop.name.toFirstUpper()»());
+		«ENDFOREACH-»
+		return result;
+	}
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE richObjectCreateOneReference(UserTaskGroup group) FOR Reference»
+«LET group.getAggregatedViewProperties().typeSelect(ReferenceViewProperty).select(e|e.reference == this).reject(e|e.base) AS referenceProperties»
+	protected «to.getDomainPackage()».«to.name» create«name.toFirstUpper()»() {
+	«IF referenceProperties.first().metaType == DerivedReferenceViewProperty»
+	    if «FOREACH referenceProperties AS prop SEPARATOR "} else if "»(get«prop.resolveReferenceName()»() != null) {
+            return get«prop.resolveReferenceName()»().toDomainObject(«hasUpdatingSubtask(group)»);
+    	«ENDFOREACH»} else {
+            return null;
+    	}
+	«ELSE»
+	    if (get«referenceProperties.first().resolveReferenceName()»() == null) {
+	        return null;
+	    } else {
+	        return get«referenceProperties.first().resolveReferenceName()»().toDomainObject(«hasUpdatingSubtask(group)»);
+	    }
+	«ENDIF»
+	}
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE richObjectFactory FOR UserTaskGroup»
+    /**
+     * Rich«for.name» objects are created with Spring as 'prototype'
+     * scoped beans. This factory is used by Spring's factory method injection, as 
+     * described here:
+     * http://static.springframework.org/spring/docs/2.5.x/reference/beans.html#beans-factory-method-injection
+     */
+    public abstract static class Factory implements «fw("richclient.data.RichObjectFactory")»<Rich«for.name»> {
+        public abstract Rich«for.name» create();
+    }
+«ENDDEFINE»

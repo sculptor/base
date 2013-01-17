@@ -1,0 +1,184 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptormetamodel;
+
+extension extensions::helper;
+extension extensions::dbhelper;
+extension extensions::properties;
+
+context Service if getBooleanProperty("check.repositoryFromOtherModule")
+	ERROR "Not allowed to delegate to repository in another module, delegate to service instead.":
+    getDelegateRepositories().forAll(r | r.aggregateRoot.module == this.module);
+
+context Service if !getBooleanProperty("generate.spring")
+	ERROR "Injection of other dependencies not possible. Probably you forgot the @ token, inject @" + otherDependencies.first() :
+    otherDependencies.isEmpty;
+
+context Consumer if getBooleanProperty("check.repositoryFromOtherModule")
+	ERROR "Not allowed to delegate to repository in another module, delegate to service instead.":
+    repositoryDependencies.forAll(r | r.aggregateRoot.module == this.module);
+
+context Consumer if !getBooleanProperty("generate.spring")
+	ERROR "Injection of other dependencies not possible. Probably you forgot the @ token, inject @" + otherDependencies.first() :
+    otherDependencies.isEmpty;
+
+context ServiceOperation ERROR "Can't delegate to both repository and service.":
+    !(this.delegate != null && this.serviceDelegate != null);
+
+context Module if getBooleanProperty("check.cyclicDependencies")
+	ERROR "Cyclic depencencies detected for module " + name:
+    this.checkCyclicDependencies();
+
+context DomainObject
+	ERROR "Can't extend itself":
+    this.extends != this;
+
+context DomainObject
+	ERROR "Both extends and extendsName can't be defined at the same time. " + this.name + " extends " + this.extendsName:
+    this.extends == null || this.extendsName == null;
+
+context DomainObject if hasProjectNature("presentation-tier") && getBooleanProperty("check.presentationTier.extendedMustBeAbstract") && (extends != null)
+	ERROR "Limitation for presentation tier. Extended class must be abstract " + extends.name:
+    this.extends.abstract;
+
+context DomainObject if hasProjectNature("presentation-tier") && getBooleanProperty("check.presentationTier.oneLevelExtension") && (extends != null)
+	ERROR "Limitation for presentation tier. Only one level of extension is supported " + name + " extends " + extends.name + " extends " + extends.extends.name:
+    this.extends.extends == null;
+
+context DomainObject if getBooleanProperty("check.repositoryOnlyForAggregateRoot")
+	ERROR "Only root aggregates can have a repository.":
+    this.aggregateRoot || repository == null || !isPersistent();
+
+context Entity if getBooleanProperty("check.extendSameType")
+	ERROR "Entity must extend another Entity":
+    this.extends == null || (this.extends.metaType == Entity);
+
+context ValueObject if getBooleanProperty("check.extendSameType") && this.metaType == ValueObject
+	ERROR "ValueObject must extend another ValueObject":
+    this.extends == null || (this.extends.metaType == ValueObject);
+
+context DataTransferObject if getBooleanProperty("check.extendSameType")
+	ERROR "DataTransferObject must extend another DataTransferObject":
+    this.extends == null || (this.extends.metaType == DataTransferObject);
+
+context DomainEvent if getBooleanProperty("check.extendSameType")
+	ERROR "DomainEvent must extend another DomainEvent":
+    this.extends == null || (this.extends.metaType == DomainEvent);
+
+context CommandEvent if getBooleanProperty("check.extendSameType")
+	ERROR "CommandEvent must extend another CommandEvent":
+    this.extends == null || (this.extends.metaType == CommandEvent);
+
+context BasicType if getBooleanProperty("check.repositoryNotForBasicType")
+	ERROR "Repository not allowed for BasicType " + this.name :
+	(repository == null);
+
+context Reference if getBooleanProperty("check.basicTypeSingleValueReferences") && to.metaType == BasicType && from.isPersistent() && !isJpa2()
+	ERROR "BasicType can only be used in single value references: " + this.name :
+	!many;
+
+context Application if getBooleanProperty("check.aggregateReferences")
+	ERROR "The aggregate root is the only member of the aggregate that outside objects may hold references to":
+    this.checkAggregateReferences();
+
+context Reference if naturalKey && getBooleanProperty("check.keyNotManyReference")
+	ERROR "Natural key can't be a many refererence." :
+    !many;
+
+context Reference if naturalKey && getBooleanProperty("check.missingKeyInBasicType") && isBasicTypeReference()
+	ERROR "Missing natural keys in " + to.name :
+    !to.getAllNaturalKeys().isEmpty;
+
+context Reference
+	ERROR "referenceType must be specified":
+    this.to != null;
+
+context Reference if getBooleanProperty("check.bidirectionalValueObjectReferences")
+	ERROR "Bidirectional association between ValueObjects doesn't make sense, according to DDD.":
+    !(this.from.metaType == ValueObject && this.to.metaType == ValueObject && this.opposite != null);
+
+context Reference if getBooleanProperty("check.collectionType")
+	ERROR "Supported collectionType values: " + supportedCollectionTypes() :
+    this.collectionType == null || isCollection();
+
+context Reference if orderBy != null && getBooleanProperty("check.orderByOnlyForBagOrList")
+	ERROR "orderBy only relevant for 'bag' or 'list' collectionType":
+    this.getCollectionType() == "bag" || (isJpa2() && this.getCollectionType() == "list");
+
+context Reference if getCollectionType() == "list" && getBooleanProperty("check.manyToManyOrderedList") && from.isPersistent() && to.isPersistent()
+	ERROR "List collection type not possible for many-to-many, or unidirectional one-to-many without inverse":
+    !this.isManyToMany() || isJpa2();
+
+context DomainObjectTypedElement if collectionType == "Map"
+    ERROR "mapKeyType or mapKeyDomainObjectType must be specified for Map collections":
+    mapKeyType != null || mapKeyDomainObjectType != null;
+
+context DomainObject if isInheritanceTypeSingleTable() && getBooleanProperty("check.inheritanceSingleTableAllNullable")
+	ERROR "When using SINGLE_TABLE all attributes and references in subclasses must be nullable" :
+	let allSubclasses = getAllSubclasses() :
+	allSubclasses.attributes.notExists(e | !e.nullable) &&
+	allSubclasses.references.select(r | !r.many).notExists(e | !e.nullable);
+
+context Attribute if length != null && getBooleanProperty("check.lengthOnlyForStrings")
+	ERROR "length is only relevant for strings" :
+    isString();
+
+context Attribute if nullable && getBooleanProperty("check.primitivesNotNullable")
+	ERROR "nullable is not relevant for primitive types" :
+    !isPrimitive();
+
+context Attribute if getBooleanProperty("check.relevantTypeForValidate") && (validate.toLowerCase().contains("@ean") || validate.toLowerCase().contains("@creditcardnumber")  || validate.toLowerCase().contains("@email"))
+	ERROR "creditCardNumber and email are only relevant for strings" :
+    isString();
+
+context Attribute if getBooleanProperty("check.relevantTypeForValidate") && validate.toLowerCase().contains("@notEmpty")
+	ERROR "notEmpty is only relevant for strings or collection types" :
+    isString() || isCollection();
+
+context Attribute if getBooleanProperty("check.relevantTypeForValidate") && (validate.toLowerCase().contains("@past") || validate.toLowerCase().contains("@future"))
+	ERROR "past and future are only relevant for temporal types" :
+    isTemporal();
+
+context Attribute if getBooleanProperty("check.relevantTypeForValidate") && (validate.toLowerCase().contains("@min") || validate.toLowerCase().contains("@max") || validate.toLowerCase().contains("@range") || validate.toLowerCase().contains("@digits"))
+	ERROR "min, max, range and digits are only relevant for numeric types" :
+    isNumeric();
+
+context Attribute if getBooleanProperty("check.relevantTypeForValidate") && (validate.toLowerCase().contains("@asserttrue") || validate.toLowerCase().contains("@assertfalse"))
+	ERROR "assertTrue and assertFalse only relevant for boolean types" :
+    isBoolean();
+
+context Attribute if getBooleanProperty("check.relevantTypeForValidate") && (validate.toLowerCase().contains("@size"))
+	ERROR "size is only relevant for strings or collection types" :
+    isString() || isCollection();
+
+context Reference if getBooleanProperty("check.relevantTypeForValidate") && (validate.toLowerCase().contains("@size") || validate.toLowerCase().contains("@notempty"))
+	ERROR "size and notEmpty are only relevant for collection types" :
+    isCollection();
+
+context Reference if getBooleanProperty("check.relevantTypeForValidate") && validate.toLowerCase().contains("@notEmpty")
+	ERROR "notEmpty is only relevant for strings or collection types" :
+    isCollection();
+
+context Reference if getBooleanProperty("check.referencesBetweenPersistenceUnits") && from.isPersistent() && to.isPersistent()
+	ERROR "References between persistence units are not allowed" :
+    from.module.persistenceUnit == to.module.persistenceUnit;
+
+context DomainObject if getBooleanProperty("check.referencesBetweenPersistenceUnits") && isPersistent() && extends != null && extends.isPersistent()
+	ERROR "Inheritance between persistence units are not allowed" :
+    module.persistenceUnit == extends.module.persistenceUnit;
+

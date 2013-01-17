@@ -1,0 +1,90 @@
+«REM»
+ * Copyright 2010 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::helper»
+
+
+
+«DEFINE serviceJUnitSubclassMongoDb FOR Service»
+    «FILE javaFileName(getServiceapiPackage() + "." + name + "Test") TO_SRC_TEST»
+«javaHeader()»
+package «getServiceapiPackage()»;
+
+import static org.junit.Assert.fail;
+
+/**
+ * Spring based test with MongoDB.
+ */
+@org.junit.runner.RunWith(org.springframework.test.context.junit4.SpringJUnit4ClassRunner.class)
+@org.springframework.test.context.ContextConfiguration(locations = { "classpath:applicationContext-test.xml" })
+public class «name»Test extends org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests implements «name»TestBase {
+
+
+	«EXPAND dependencyInjection»
+	«EXPAND initTestData»
+	«EXPAND initDbManagerThreadInstance»
+	«EXPAND dropDatabase»
+	«EXPAND countRows»
+	
+    «EXPAND templates::service::ServiceTest::testMethod FOREACH
+      operations.select(op | op.isPublicVisibility()).collect(op| op.name).toSet()»
+}
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE dependencyInjection FOR Service»
+	@org.springframework.beans.factory.annotation.Autowired
+	private «fw("accessimpl.mongodb.DbManager")» dbManager;
+	
+	@org.springframework.beans.factory.annotation.Autowired
+    private «getServiceapiPackage()».«name» «name.toFirstLower()»;
+«ENDDEFINE »
+
+«DEFINE initTestData FOR Service»
+    @org.junit.Before
+    public void initTestData() {
+    }
+«ENDDEFINE » 
+
+«DEFINE initDbManagerThreadInstance FOR Service»
+	@org.junit.Before
+    public void initDbManagerThreadInstance() throws Exception {
+        // to be able to do lazy loading of associations inside test class
+        «fw("accessimpl.mongodb.DbManager")».setThreadInstance(dbManager);
+    }
+«ENDDEFINE »
+
+«DEFINE dropDatabase FOR Service»
+    @org.junit.After
+    public void dropDatabase() {
+    	java.util.Set<String> names = dbManager.getDB().getCollectionNames();
+        for (String each : names) {
+            if (!each.startsWith("system")) {
+                dbManager.getDB().getCollection(each).drop();
+            }
+        }
+        // dbManager.getDB().dropDatabase();
+    }
+«ENDDEFINE »
+
+«DEFINE countRows FOR Service»
+    private int countRowsInDBCollection(String name) {
+        return (int) dbManager.getDBCollection(name).getCount();
+    }
+«ENDDEFINE »

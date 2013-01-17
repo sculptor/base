@@ -1,0 +1,776 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::dbhelper»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::guihelper»
+
+«DEFINE flowJava FOR GuiApplication»
+	«REM»«EXPAND flowJavaPropertyEditorBase FOREACH groupByTarget()»«ENDREM»
+	«EXPAND createFlowJava FOREACH this.modules.userTasks.typeSelect(CreateTask)»
+	«EXPAND updateFlowJava FOREACH this.modules.userTasks.typeSelect(UpdateTask)»
+	«EXPAND viewFlowJava FOREACH this.modules.userTasks.typeSelect(ViewTask)»
+	«EXPAND deleteFlowJava FOREACH this.modules.userTasks.typeSelect(DeleteTask)»
+	«EXPAND listFlowJava FOREACH this.modules.userTasks.typeSelect(ListTask)»
+«ENDDEFINE »
+
+«DEFINE flowJava FOR UserTask»
+«ENDDEFINE»
+
+
+
+«DEFINE createFlowJava FOR CreateTask»
+	«EXPAND JSFCrudGuiJavaForm::flowJavaForm»
+	«EXPAND createFlowJavaActionBase»
+	«IF gapClass»
+		«EXPAND flowJavaActionImpl»
+	«ENDIF»
+
+	«REM»«EXPAND flowJavaPropertyEditorRegistrar»«ENDREM»
+«ENDDEFINE»
+
+
+«DEFINE createFlowJavaActionBase FOR CreateTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "Action" + (gapClass ? "Base" : "")) -»
+«javaHeader()»
+package «this.module.getWebPackage()»;
+«IF !gapClass»
+@org.springframework.stereotype.Component
+«ENDIF»
+public «IF gapClass»abstract «ENDIF»class «name.toFirstUpper()»Action«IF gapClass»Base«ENDIF» {
+
+	«EXPAND createFormMethod»
+	«EXPAND repositoryProperty FOR this.for»
+
+	«EXPAND loadFormMethod»
+    «EXPAND getReferenceItems FOREACH getReferencesPropertiesChildrenToSelect()»
+
+    «EXPAND saveMethod»
+	«EXPAND confirmMethod»
+	
+	«EXPAND subflowStartMethod FOREACH this.subTaskTransitions.reject(e|e.to.metaType == AddTask) -»
+	«EXPAND subflowReturnMethod FOREACH this.subTaskTransitions.select(e|e.to.metaType == CreateTask || e.to.metaType == UpdateTask) -»
+	«EXPAND removeChildMethodAction FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p|p.base) -»
+	«REM»TODO - howto represent a setting of an existing instance?«ENDREM»
+	«EXPAND addExistingChildMethodAction FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p|p.base) -»
+	«EXPAND findExistingReference FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p|p.base) -»
+	«EXPAND putModelInFlashScope FOR for-»
+	«EXPAND putModelInFlowScope FOR for-»
+	«EXPAND formObjectMethod»
+
+	«EXPAND serviceProperty FOREACH this.getUsedServices()»
+	
+	«EXPAND actionHook»
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+
+«DEFINE updateFlowJava FOR UpdateTask»
+	«EXPAND JSFCrudGuiJavaForm::flowJavaForm»
+	«EXPAND updateFlowJavaActionBase»
+
+	«IF gapClass»
+		«EXPAND flowJavaActionImpl»
+
+	«ENDIF»
+
+	«REM»«EXPAND flowJavaPropertyEditorRegistrar»«ENDREM»
+«ENDDEFINE»
+
+
+«DEFINE updateFlowJavaActionBase FOR UpdateTask»
+	«FILE javaFileName(module.getWebPackage() + "." + name.toFirstUpper() + "Action" +
+		(gapClass ? "Base" : "")) -»
+«javaHeader()»
+package «module.getWebPackage()»;
+«IF !gapClass»
+@org.springframework.stereotype.Component
+«ENDIF»
+	public «IF gapClass»abstract «ENDIF»class «name.toFirstUpper()»Action«IF gapClass»Base«ENDIF» {
+
+	«EXPAND createFormMethod»
+	«EXPAND repositoryProperty»
+
+	«EXPAND loadFormMethod»
+    «REM»
+    «EXPAND getReferenceItems FOREACH getReferencesPropertiesToSelect().collect(prop | prop.reference)»
+    «ENDREM»
+    «EXPAND getReferenceItems FOREACH getReferencesPropertiesChildrenToSelect()»
+
+	«EXPAND cancelMethod»
+	«EXPAND saveMethod»
+	«EXPAND confirmMethod»
+	«EXPAND getId FOR for-»
+	«EXPAND subflowStartMethod FOREACH this.subTaskTransitions.reject(e|e.to.metaType == AddTask) -»
+	«EXPAND subflowReturnMethod FOREACH this.subTaskTransitions.select(e|e.to.metaType == CreateTask || e.to.metaType == UpdateTask) -»
+	«EXPAND removeChildMethodAction FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base) -»
+	«EXPAND addExistingChildMethodAction FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base) -»
+    «EXPAND findExistingReference FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p|p.base) -»
+	«EXPAND getModelFromScope FOR for-»
+	«EXPAND putModelInFlashScope FOR for-»
+	«EXPAND putModelInFlowScope FOR for-»
+	«EXPAND formObjectMethod»
+
+    «EXPAND serviceProperty FOREACH this.getUsedServices()»
+    
+    «EXPAND actionHook»
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+
+«DEFINE viewFlowJava FOR ViewTask»
+	«EXPAND JSFCrudGuiJavaForm::flowJavaForm»
+	«EXPAND viewFlowJavaActionBase»
+	«IF gapClass»
+		«EXPAND flowJavaActionImpl»
+	«ENDIF»
+
+	«REM»«EXPAND flowJavaPropertyEditorRegistrar»«ENDREM»
+«ENDDEFINE»
+
+«DEFINE viewFlowJavaActionBase FOR ViewTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "Action" +
+		(gapClass ? "Base" : "")) -»
+«javaHeader()»
+package «this.module.getWebPackage()»;
+«IF !gapClass»
+@org.springframework.stereotype.Component
+«ENDIF»
+
+	public «IF gapClass»abstract «ENDIF»class «name.toFirstUpper()»Action«IF gapClass»Base«ENDIF» {
+	«EXPAND createFormMethod»
+	«EXPAND repositoryProperty FOR for-»
+	«EXPAND getId FOR for-»
+	«EXPAND loadFormMethod»
+	«EXPAND subflowStartMethod FOREACH this.subTaskTransitions -»
+	«EXPAND putModelInFlashScope FOR for-»
+	«EXPAND serviceProperty FOREACH this.getUsedServices()»
+	
+	«EXPAND actionHook»
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE deleteFlowJava FOR DeleteTask»
+	«IF this.deleteDOWith != null»
+	«EXPAND deleteFlowJavaActionBase»
+	«IF gapClass»
+		«EXPAND flowJavaActionImpl»
+	«ENDIF»
+	«REM»«EXPAND flowJavaPropertyEditorRegistrar»«ENDREM»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE deleteFlowJavaActionBase FOR DeleteTask»
+	«FILE javaFileName(module.getWebPackage() + "." + name.toFirstUpper() + "Action" +
+		(gapClass ? "Base" : "")) -»
+«javaHeader()»
+package «module.getWebPackage()»;
+«IF !gapClass»
+@org.springframework.stereotype.Component
+«ENDIF»
+
+	public «IF gapClass»abstract «ENDIF»class «name.toFirstUpper()»Action«IF gapClass»Base«ENDIF» {
+	«EXPAND repositoryProperty»
+	«EXPAND getModelFromScope FOR for-»
+	«EXPAND putModelInFlashScope -»
+	«EXPAND getId FOR for-»
+	«REM»«EXPAND deleteFlowCreateFormObjectWithFindById FOR for »«ENDREM»
+	«EXPAND deleteFlowFindById »
+
+	«IF this.deleteDOWith != null»
+	public String delete(org.springframework.webflow.execution.RequestContext ctx) «
+			EXPAND templates::common::Exception::throws FOR deleteDOWith» {
+		«for.getIdAttributeType()» id = getId(ctx);
+		«for.getDomainPackage()».«for.name» entity = 
+		«IF for.isPersistent()»
+		getRepository().get(«for.getDomainPackage()».«for.name».class, id);
+		«ELSEIF findDOWith != null»
+        «findDOWith.service.name.toFirstLower()».«findDOWith.name»(«IF isServiceContextToBeGenerated()»«serviceContextStoreClass()».get(), «ENDIF»id);
+		«ELSE»
+		   «REM»TODO what if the object isn't persistent and doesn't have findById?«ENDREM»
+		      null;
+		«ENDIF»
+		«deleteDOWith.service.name.toFirstLower()».«deleteDOWith.name»(«IF isServiceContextToBeGenerated()»«serviceContextStoreClass()».get(), «ENDIF»entity);
+		putModelInFlashScope(ctx, "«for.name»", entity);
+		return "success";
+	}
+
+	«ENDIF»
+
+	«EXPAND serviceProperty FOREACH this.getUsedServices()»
+	
+	«EXPAND actionHook»
+}
+	«ENDFILE»
+«ENDDEFINE»
+«REM»
+«DEFINE deleteFlowCreateFormObjectWithFindById FOR DomainObject »
+		protected Object createFormObject(org.springframework.webflow.execution.RequestContext ctx) {
+			try {
+				findById(ctx);
+				return getFormObjectAccessor(ctx).getCurrentFormObject();
+			} catch (Exception e) {
+				// Create an empty, fake, to be able to bind errors, findById will be invoked again
+	        	return new «fakeObjectInstantiatorClass()»<«getDomainPackage()».«name»>(«getDomainPackage()».«name».class).createFakeObject();
+	        }
+    	}
+«ENDDEFINE»
+«ENDREM»
+«DEFINE deleteFlowFindById FOR DeleteTask »
+		public String findById(org.springframework.webflow.execution.RequestContext ctx) «
+				IF findDOWith != null »«EXPAND templates::common::Exception::throws FOR findDOWith»«ENDIF» {
+			«for.getDomainPackage()».«for.name» entity = null;
+			«for.getIdAttributeType()» id = getId(ctx);
+			if (id != null) {
+				«IF findDOWith != null-»
+				entity = «IF for.extends != null» («for.getDomainPackage()».«for.name») «ENDIF»«findDOWith.service.name.toFirstLower()».«findDOWith.name»(«IF isServiceContextToBeGenerated()»«serviceContextStoreClass()».get(), «ENDIF»id);
+				«IF !findDOWith.hasNotFoundException()-»
+					if (entity == null) {
+						throw new IllegalArgumentException("Didn't find «for.name» with id: " + id);
+					}
+				«ENDIF-»
+				«ELSEIF for.isPersistent()-»
+				entity = repository.get(«for.getDomainPackage()».«for.name».class, id);
+				«ENDIF-»
+			} else {
+				entity = («for.getDomainPackage()».«for.name») ctx.getFlowScope().get("«for.name»");
+				if (entity == null) {
+					throw new IllegalArgumentException("Both id and flowScope '«for.name»' is null");
+				}
+			}
+			ctx.getFlowScope().put("«for.name.toFirstLower()»", entity);
+			return "success";
+		}
+«ENDDEFINE»
+
+«DEFINE listFlowJava FOR ListTask»
+	«IF this.searchDOWith != null»
+		«EXPAND JSFCrudGuiJavaForm::flowJavaForm»
+		
+		«EXPAND listFlowJavaActionBase»
+		«IF gapClass»
+			«EXPAND flowJavaActionImpl»
+		«ENDIF»
+		«REM»«EXPAND flowJavaPropertyEditorRegistrar»«ENDREM»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE listFlowJavaActionBase FOR ListTask»
+	«FILE javaFileName(module.getWebPackage() + "." + name.toFirstUpper() + "Action" +
+		(gapClass ? "Base" : "")) -»
+«javaHeader()»
+package «module.getWebPackage()»;
+«IF !gapClass»
+@org.springframework.stereotype.Component
+«ENDIF»
+public «IF gapClass»abstract «ENDIF»class «name.toFirstUpper()»Action«IF gapClass»Base«ENDIF» {
+	«EXPAND createFormMethod»
+	«EXPAND repositoryProperty FOR for»
+	«EXPAND getModelFromScope FOR for-»
+	«EXPAND putModelInFlashScope FOR for-»
+
+	«IF this.searchDOWith != null»
+		«IF searchDOWith.isPagedResult()»
+			«EXPAND listFlowJavaActionPagedFindAll»
+		«ELSE»
+			«EXPAND listFlowJavaActionFindAll»
+		«ENDIF»
+	«ENDIF»
+
+	«EXPAND serviceProperty FOREACH this.getUsedServices()»
+
+	«EXPAND formObjectMethod FOR this»
+	
+	«EXPAND actionHook»
+
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE listFlowJavaActionFindAll FOR ListTask»
+	public String findAll(org.springframework.webflow.execution.RequestContext ctx) «
+			EXPAND templates::common::Exception::throws FOR searchDOWith» {
+		«IF for.isPersistent()»
+		repository.clear();
+        «ENDIF»
+		«IF searchDOWith.domainObjectType == for»
+		java.util.List<«for.getDomainPackage()».«for.name»> all«for.name.plural()» = «searchDOWith.service.name.toFirstLower()».«searchDOWith.name»(«IF isServiceContextToBeGenerated()»«serviceContextStoreClass()».get()«ENDIF»);
+		«ELSE»
+		java.util.List<«for.getDomainPackage()».«for.extends.name»> all = «searchDOWith.service.name.toFirstLower()».«searchDOWith.name»(«IF isServiceContextToBeGenerated()»«serviceContextStoreClass()».get()«ENDIF»);
+		java.util.List<«for.getDomainPackage()».«for.name»> all«for.name.plural()» = new java.util.ArrayList<«for.getDomainPackage()».«for.name»>();
+		for («for.extends.getDomainPackage()».«for.extends.name» «for.extends.name.toFirstLower()» : all) {
+			if («for.extends.name.toFirstLower()» instanceof «for.getDomainPackage()».«for.name») {
+				all«for.name.plural()».add((«for.getDomainPackage()».«for.name») «for.extends.name.toFirstLower()»);
+			}
+		}
+		«ENDIF»
+		formObject(ctx).setAll«for.name.plural()»(all«for.name.plural()»);
+		return "success";
+	}
+«ENDDEFINE»
+
+«DEFINE listFlowJavaActionPagedFindAll FOR ListTask»
+	public String findAll(org.springframework.webflow.execution.RequestContext ctx) «
+			EXPAND templates::common::Exception::throws FOR searchDOWith» {
+		«IF for.isPersistent()»
+        repository.clear();
+		«ENDIF»
+		«name.toFirstUpper()»Form form = formObject(ctx);
+		boolean countTotalPages = form.getPagedResult() == null
+            || !form.getPagedResult().isTotalCounted();
+        «getJavaType("PagingParameter")» pagingParameter = «getJavaType("PagingParameter")».pageAccess(
+                «getJavaType("PagingParameter")».DEFAULT_PAGE_SIZE, form.getPageNumber(),
+                countTotalPages);
+        «searchDOWith.getTypeName()» pagedResult = «searchDOWith.service.name.toFirstLower()».«searchDOWith.name»(«IF isServiceContextToBeGenerated()»«serviceContextStoreClass()».get(), «ENDIF»pagingParameter);
+            
+		«IF searchDOWith.domainObjectType == for»
+		form.setPagedResult(pagedResult);
+		«ELSE»
+		java.util.List<«for.getDomainPackage()».«for.extends.name»> all = pagedResult.getValues();
+		java.util.List<«for.getDomainPackage()».«for.name»> all«for.name.plural()» = new java.util.ArrayList<«for.getDomainPackage()».«for.name»>();
+		for («for.extends.getDomainPackage()».«for.extends.name» «for.extends.name.toFirstLower()» : all) {
+			if («for.extends.name.toFirstLower()» instanceof «for.getDomainPackage()».«for.name») {
+				all«for.name.plural()».add((«for.getDomainPackage()».«for.name») «for.extends.name.toFirstLower()»);
+			}
+		}
+		«searchDOWith.getTypeName()» pagedResult«for.name.plural()» = new «searchDOWith.getTypeName()»(all«for.name.plural()», 
+			pagedResult.getStartRow(), pagedResult.getRowCount(), pagedResult.getPageSize(), 
+			pagedResult.getTotalRows(),	pagedResult.getAdditionalResultRows());
+		
+		form.setPagedResult(pagedResult«for.name.plural()»);
+		«ENDIF»
+		
+		return "success";
+	}
+«ENDDEFINE»
+
+
+«DEFINE subflowReturnMethod FOR SubTaskTransition»
+public String «resolveChildMethodName(this)»(org.springframework.webflow.execution.RequestContext ctx) {
+	«this.from.name.toFirstUpper()»Form form = formObject(ctx);
+    «this.to.for.getDomainPackage()».«this.to.for.name» flashScopeValue = («this.to.for.getDomainPackage()».«this.to.for.name») ctx.getFlashScope().get("«this.to.for.name»");
+	if (flashScopeValue != null) {
+		«IF isMany() -»
+		form.add«this.forReference.name.toFirstUpper().singular()»(flashScopeValue);
+		«ELSE -»
+		form.set«this.forReference.name.toFirstUpper().singular()»(flashScopeValue);
+		«ENDIF -»
+	}
+	return "success";
+}
+«ENDDEFINE»
+
+
+«DEFINE subflowStartMethod FOR SubTaskTransition»
+public String «resolvePrepareMethodName(this)»(org.springframework.webflow.execution.RequestContext ctx) {
+	«IF this.to.metaType != CreateTask»
+		«this.from.name.toFirstUpper()»Form form = formObject(ctx);
+		«IF isMany() -»
+			Integer index = ctx.getRequestParameters().getInteger("index", -1);
+			«this.to.for.getDomainPackage()».«this.to.for.name» flashScopeValue = «IF this.to.for.extends != null»(«this.to.for.getDomainPackage()».«this.to.for.name») «ENDIF»form.get«this.forReference.name.toFirstUpper()»().get(index);
+		«ELSE -»
+			«this.to.for.getDomainPackage()».«this.to.for.name» flashScopeValue = «IF this.to.for.extends != null»(«this.to.for.getDomainPackage()».«this.to.for.name») «ENDIF»form.get«this.forReference.name.toFirstUpper()»();
+		«ENDIF -»
+		putModelInFlashScope(ctx, "«this.to.for.name»", flashScopeValue);
+	«ENDIF»
+	return "success";
+}
+«ENDDEFINE»
+
+«DEFINE removeChildMethodAction FOR ReferenceViewProperty»
+public String «resolveRemoveChildMethodName(this)»(org.springframework.webflow.execution.RequestContext ctx) {
+	«IF isMany()»
+		Integer index = ctx.getRequestParameters().getInteger("index", -1);
+		formObject(ctx).remove«this.reference.name.toFirstUpper().singular()»(index);
+	«ELSE -»
+		formObject(ctx).remove«this.reference.name.toFirstUpper().singular()»();
+	«ENDIF -»
+	return "success";
+}
+«ENDDEFINE»
+
+
+«DEFINE addExistingChildMethodAction FOR ReferenceViewProperty»
+«IF isAddSubTaskAvailable() »
+public String «resolveAddExistingChildMethodName(this)»(org.springframework.webflow.execution.RequestContext ctx) {
+	«this.userTask.name.toFirstUpper()»Form form = formObject(ctx);
+	«reference.to.getIdAttributeType()» id = form.get«resolveSelectedExistingChildIdAttributeName(this).toFirstUpper()»();
+	if (id == null) {
+		// nothing selected
+		return "success";
+	}
+    «this.target.getDomainPackage()».«this.target.name» existing = «resolveReferenceName("findExisting", this, "")»(ctx, id);
+	«IF isMany() -»
+	form.add«this.reference.name.toFirstUpper().singular()»(existing);
+	«ELSE -»
+	form.set«this.reference.name.toFirstUpper().singular()»(existing);
+	«ENDIF -»
+	return "success";
+}
+«ENDIF»
+«ENDDEFINE»
+«DEFINE findExistingReference FOR ReferenceViewProperty»
+protected «this.target.getDomainPackage()».«this.target.name» «resolveReferenceName("findExisting", this, "")»(org.springframework.webflow.execution.RequestContext ctx, «reference.to.getIdAttributeType()» id) {
+    «IF reference.to.isPersistent()»
+        return getRepository().get(«this.target.getDomainPackage()».«this.target.name».class, id);
+    «ELSEIF reference.to.getFindByIdMethod() != null»
+        return «reference.to.getFindByIdMethod().service.name.toFirstLower()».«reference.to.getFindByIdMethod().name»(«IF isServiceContextToBeGenerated()»«serviceContextStoreClass()».get(), «ENDIF»id);        
+    «ELSE»
+        «REM»TODO what to do if reference isn't persistent and hasn't a findById service?«ENDREM»
+        throw new RuntimeException("Can't find reference to object, either by repository or service. Manual code needed, override me [«resolveReferenceName("findExisting", this, "")»(...)]in subclass.");
+    «ENDIF»
+}
+«ENDDEFINE»
+
+«DEFINE repositoryProperty FOR Object»
+    private «conversationDomainObjectRepositoryInterface()» repository;
+
+    protected «conversationDomainObjectRepositoryInterface()» getRepository() {
+    	return repository;
+    }
+
+    /**
+     * Dependency injection
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setRepository(«conversationDomainObjectRepositoryInterface()» repository) {
+        this.repository = repository;
+    }
+
+«ENDDEFINE»
+
+«DEFINE getModelFromScope FOR DomainObject »
+protected «getDomainPackage()».«name» getModelFromScope(org.springframework.webflow.execution.RequestContext ctx) {
+    «getDomainPackage()».«name» model = («getDomainPackage()».«name») ctx.getFlashScope().get("«name»");
+    if (model == null) {
+    	model = («getDomainPackage()».«name») ctx.getFlowScope().get("«name»");
+    }
+    if (model == null) {
+    	throw new IllegalArgumentException("No model named '«name»' in scope ");
+    }
+	return model;
+}
+«ENDDEFINE»
+«DEFINE putModelInFlashScope FOR Object »
+protected void putModelInFlashScope(org.springframework.webflow.execution.RequestContext ctx, String key, Object model) {
+	ctx.getFlashScope().put(key, model);
+}
+«ENDDEFINE»
+«DEFINE putModelInFlowScope FOR Object »
+protected void putModelInFlowScope(org.springframework.webflow.execution.RequestContext ctx, String key, Object model) {
+	ctx.getFlowScope().put(key, model);
+}
+«ENDDEFINE»
+
+«DEFINE getId FOR DomainObject »
+	protected «getIdAttributeType()» getId(org.springframework.webflow.execution.RequestContext ctx) {
+	   Object id = ctx.getFlowScope().get("id");
+	   return (id != null ? new «getIdAttributeType()»(id.toString()) : null);
+    }
+«ENDDEFINE»
+
+
+
+«DEFINE serviceProperty FOR Service »
+	private «this.getServiceapiPackage()».«this.name» «this.name.toFirstLower()»;
+	protected «this.getServiceapiPackage()».«this.name» get«this.name»() {
+		return «this.name.toFirstLower()»;
+	}
+	/**
+	 * Dependency injection
+	 */
+	«IF !isEar()»
+    @org.springframework.beans.factory.annotation.Autowired
+	«ELSE»
+	@javax.annotation.Resource(name="«name.toFirstLower()»Proxy")
+	«ENDIF»
+	public void set«this.name»(«this.getServiceapiPackage()».«this.name» service) {
+		this.«this.name.toFirstLower()» = service;
+	}
+«ENDDEFINE»
+
+«REM»
+«DEFINE requiredReferencesConditions FOR DomainObject »
+	«FOREACH getRequiredReferences() AS requiredReference -»
+	if (is«requiredReference.name.toFirstUpper()»ReferenceRequired(ctx)) {
+		«IF requiredReference.isMany()»
+	    requiredList.add("«resolveRequiredIdAttributeName(requiredReference)»");
+		«ELSE»
+	    requiredList.add("«resolveRequiredIdAttributeName(requiredReference)»");
+		«ENDIF»
+	}
+	«ENDFOREACH-»
+«ENDDEFINE»
+«ENDREM»
+
+«DEFINE flowJavaActionImpl FOR UserTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "Action") TO_SRC-»
+«javaHeader()»
+package «this.module.getWebPackage()»;
+
+@org.springframework.stereotype.Component
+public class «name.toFirstUpper()»Action extends «name.toFirstUpper()»ActionBase {
+	«EXPAND actionHook»
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE flowJavaValidatorImpl FOR UserTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "Validator") TO_SRC-»
+«javaHeader()»
+package «module.getWebPackage()»;
+@org.springframework.stereotype.Component
+public class «name.toFirstUpper()»FormValidator {
+	public void validateInput(«module.getWebPackage()».«name.toFirstUpper()»Form form, org.springframework.binding.validation.ValidationContext) {
+		// TODO implement
+	}
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE validateRequiredField(String fieldName) FOR Attribute»
+   «IF !this.nullable && !isSystemAttribute() && !isPrimitive()»
+   «IF getTypeName() == "String"»
+   if (org.apache.commons.lang.StringUtils.isEmpty(form.get«fieldName.toFirstUpper()»())) {
+   «ELSE»
+   if (form.get«fieldName.toFirstUpper()»() == null) {
+   «ENDIF»
+       errors.rejectValue("«fieldName»", "required");
+   }
+   «ENDIF»
+«ENDDEFINE»
+«DEFINE validateField(String fieldName) FOR Attribute»
+   «IF getTypeName() == "String" && !isSystemAttribute()»
+    if(form.get«fieldName.toFirstUpper()»() != null && form.get«fieldName.toFirstUpper()»().length() > «getDatabaseLength()») {
+		errors.rejectValue("«fieldName»", "error.value.too.long",new Object[]{"«getDatabaseLength()»"},"Max length is {0}");
+    }
+   «ENDIF»
+«ENDDEFINE»
+
+«DEFINE cancelMethod FOR UserTask»
+    public String cancel(org.springframework.webflow.execution.RequestContext ctx) {
+	        «for.getDomainPackage()».«for.name» model = formObject(ctx).getOriginalModel();
+        if (model == null) {
+        	// loadForm failed, nothing to revert
+            return "success";
+        }
+        «IF for.isPersistent()»
+        if (model.getId() != null) {
+            getRepository().revert(model);
+        }
+        «ENDIF»
+        return "success";
+    }
+«ENDDEFINE»
+
+
+«DEFINE saveMethod FOR UserTask»
+«LET getPrimaryServiceOperation() AS saveOperation»
+public String save(org.springframework.webflow.execution.RequestContext ctx) «
+		IF saveOperation != null »«EXPAND templates::common::Exception::throws FOR saveOperation»«ENDIF» {
+	«name.toFirstUpper()»Form form = formObject(ctx);
+	«for.getDomainPackage()».«this.for.name» model = form.toModel();
+	«IF saveOperation != null »
+	putModelInFlashScope(ctx, "«for.name»", «saveOperation.service.name.toFirstLower()».«saveOperation.name»(«IF isServiceContextToBeGenerated()»«serviceContextStoreClass()».get(), «ENDIF»model));
+	«ELSE»
+	putModelInFlashScope(ctx, "«for.name»", model);
+	«ENDIF»
+	return "success";
+}
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE formObjectMethod FOR UserTask»
+protected «name.toFirstUpper()»Form formObject(org.springframework.webflow.execution.RequestContext ctx) {
+	return («name.toFirstUpper()»Form) ctx.getFlowScope().get("«name»Form");
+}
+«ENDDEFINE»
+
+«DEFINE confirmMethod FOR UserTask»
+public String confirm(org.springframework.webflow.execution.RequestContext ctx) {
+	«name.toFirstUpper()»Form form = formObject(ctx);
+
+
+	«for.getDomainPackage()».«for.name» model = form.toConfirmModel();
+
+	form.setConfirmDraft(model);
+	return "success";
+}
+«ENDDEFINE»
+
+«DEFINE loadFormMethod FOR ViewTask »
+public String loadForm(org.springframework.webflow.execution.RequestContext ctx) «
+		IF this.findDOWith != null »«EXPAND templates::common::Exception::throws FOR this.findDOWith»«ENDIF» {
+
+	«for.getDomainPackage()».«for.name» entity = null;
+	«for.getIdAttributeType()» id = getId(ctx);
+	if (id != null) {
+		«IF this.findDOWith != null-»
+		entity = «IF for.extends != null» («for.getDomainPackage()».«for.name») «ENDIF»«findDOWith.service.name.toFirstLower()».«this.findDOWith.name»(«IF isServiceContextToBeGenerated()»«serviceContextStoreClass()».get(), «ENDIF»id);
+			«IF !findDOWith.hasNotFoundException()-»
+				if (entity == null) {
+					throw new IllegalArgumentException("Didn't find «for.name» with id: " + id);
+				}
+			«ENDIF-»
+		«ELSEIF for.isPersistent()»
+		entity = repository.get(«for.getDomainPackage()».«for.name».class, id);
+		«ELSE»
+		entity = null;
+		throw new RuntimeException("Can't load domain object «for.name» since neither repository or service are available. Manual code needed");
+		«ENDIF»
+	} else {
+		entity = («for.getDomainPackage()».«for.name») ctx.getFlowScope().get("«for.name»");
+		if (entity == null) {
+			throw new IllegalArgumentException("Both id and flowScope '«for.name»' is null");
+		}
+	}
+
+	«name.toFirstUpper()»Form form = formObject(ctx);
+    form.fromModel(entity);
+
+	return "success";
+}
+
+private «name.toFirstUpper()»Form formObject(org.springframework.webflow.execution.RequestContext ctx) {
+	return («name.toFirstUpper()»Form) ctx.getFlowScope().get("«name»Form");
+}
+«ENDDEFINE»
+«DEFINE loadFormMethod FOR CreateTask »
+public String loadForm(org.springframework.webflow.execution.RequestContext ctx) {
+    «LET this.getReferencesPropertiesChildrenToSelect() AS itemsReferences»
+    «IF !itemsReferences.isEmpty»
+    «name.toFirstUpper()»Form form = formObject(ctx);
+    «FOREACH itemsReferences AS ref»
+    form.set«ref.target.name.toFirstUpper()»Items(get«ref.target.name.toFirstUpper()»Items());
+    «ENDFOREACH»
+    «ENDIF»
+    return "success";
+    «ENDLET»
+}
+«ENDDEFINE»
+«DEFINE loadFormMethod FOR UpdateTask »
+public String loadForm(org.springframework.webflow.execution.RequestContext ctx)
+	«IF this.findDOWith != null»«EXPAND templates::common::Exception::throws FOR findDOWith»«ENDIF» {
+    «IF this.findDOWith != null-»
+    «for.getIdAttributeType()» id = getId(ctx);
+    if (id == null) {
+    	throw new IllegalArgumentException("No 'id' in scope: " + ctx);
+    }
+	«for.getDomainPackage()».«for.name» model = «IF for.extends != null» («for.getDomainPackage()».«for.name») «ENDIF»«findDOWith.service.name.toFirstLower()».«this.findDOWith.name»(«IF isServiceContextToBeGenerated()»«serviceContextStoreClass()».get(), «ENDIF»id);
+	«IF !findDOWith.hasNotFoundException()-»
+		if (model == null) {
+			throw new IllegalArgumentException("Didn't find «for.name» with id: " + id);
+		}
+	«ENDIF-»
+	putModelInFlashScope(ctx, "«for.name»", model);
+    «ELSE»
+	«for.getDomainPackage()».«for.name» model = getModelFromScope(ctx);
+    «ENDIF»
+
+	        «name.toFirstUpper()»Form form = formObject(ctx);
+    form.fromModel(model);
+
+    «FOREACH this.getReferencesPropertiesChildrenToSelect() AS viewRef»
+    form.set«viewRef.target.name.toFirstUpper()»Items(get«viewRef.target.name.toFirstUpper()»Items());
+    «ENDFOREACH»
+
+    form.setNextEnabled(true);
+    return "success";
+
+}
+«ENDDEFINE»
+
+«DEFINE createFormMethod FOR UserTask»
+public String createForm(org.springframework.webflow.execution.RequestContext ctx) {
+	ctx.getFlowScope().put("«name»Form", new «name.toFirstUpper()»Form());
+    return "success";
+}
+«ENDDEFINE»
+
+
+«DEFINE getReferenceItems FOR ReferenceViewProperty»
+«LET getRelatedAddTask() AS addTask»
+	protected java.util.List<javax.faces.model.SelectItem> get«target.name.toFirstUpper()»Items() {
+        
+    «IF addTask.getPrimaryServiceOperation().isPagedResult()»
+    	«REM»This solution should probably be changed.«ENDREM»
+    	// fetch all pages
+    	java.util.List<«getExtendsClassNameIfExists(reference.to)»> all = new java.util.ArrayList<«getExtendsClassNameIfExists(reference.to)»>(); 
+        int pageSize = 500;
+        int maxPages = 20;
+        for (int i = 1; i <= maxPages; i++) {
+            boolean countTotalPages = (i == 1);
+            «getJavaType("PagingParameter")» pagingParameter = «getJavaType("PagingParameter")».pageAccess(pageSize, i, countTotalPages);
+            «getJavaType("PagedResult")»<? extends «getExtendsClassNameIfExists(reference.to)»> pagedResult = «addTask.getPrimaryService().name.toFirstLower()».«addTask.getPrimaryServiceOperation().name»(«IF isServiceContextToBeGenerated()»«serviceContextStoreClass()».get(), «ENDIF»pagingParameter);
+            if (pagedResult.isTotalCounted()) {
+                maxPages = pagedResult.getTotalPages();
+            }
+            all.addAll(pagedResult.getValues());
+        }
+    «ELSE»
+        java.util.Collection<? extends «getExtendsClassNameIfExists(reference.to)»> all = «addTask.getPrimaryService().name.toFirstLower()».«addTask.getPrimaryServiceOperation().name»(«IF isServiceContextToBeGenerated()»«serviceContextStoreClass()».get()«ENDIF»);
+    «ENDIF»
+        java.util.List<javax.faces.model.SelectItem> items = new java.util.ArrayList<javax.faces.model.SelectItem>();
+        for («getExtendsClassNameIfExists(reference.to)» each : all) {
+        	if (each instanceof «target.getDomainPackage()».«target.name») {
+        		«target.getDomainPackage()».«target.name» domainObject = («target.getDomainPackage()».«target.name») each;
+				String label = «EXPAND itemLabel("domainObject") FOR reference.to -»;
+				items.add(new javax.faces.model.SelectItem(domainObject.getId(),label));
+			}
+		}
+        return items;
+    }
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE itemLabel(String prefix) FOR DomainObject -»
+String.valueOf(«IF hasNaturalKey()-»
+	«FOREACH getAllNaturalKeys() AS key SEPARATOR ' + " | " + '-»
+		«IF key.isEnumReference() -»
+		«prefix».get«key.name.toFirstUpper()»()
+		«ELSEIF key.metaType == Reference -»
+			«EXPAND itemLabel(prefix + ".get" + key.name.toFirstUpper() + "()") FOR ((Reference) key).to»
+		«ELSE»
+		«prefix».get«key.name.toFirstUpper()»()
+		«ENDIF»
+	«ENDFOREACH-»
+«ELSEIF getConstructorParameters().select(p | p.metaType == Attribute || p.isEnumReference()).size > 0 -»
+	«LET this.getConstructorParameters().select(p | p.metaType == Attribute || p.isEnumReference()) AS params-»
+		«FOREACH params AS param SEPARATOR ' + " | " + '-»
+		«prefix».get«param.name.toFirstUpper()»()
+		«ENDFOREACH-»
+	«ENDLET-»
+«ELSE-»
+	«LET this.getAllNonSystemAttributes() AS atts-»
+		«FOREACH atts AS att SEPARATOR ' + " | " + '-»
+		«prefix».get«att.name.toFirstUpper()»()
+		«ENDFOREACH-»
+	«ENDLET-»
+«ENDIF-»)
+«ENDDEFINE»
+
+«REM»Extension point to generate more stuff in Action classes.
+Use AROUND templates::web::JSFCrudGuiJava::actionHook FOR UserTask
+in SpecialCases.xpt«ENDREM»
+«DEFINE actionHook FOR UserTask»
+«ENDDEFINE»

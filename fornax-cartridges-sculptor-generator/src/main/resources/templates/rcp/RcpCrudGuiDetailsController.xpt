@@ -1,0 +1,502 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+
+«EXTENSION extensions::helper»
+«EXTENSION extensions::guihelper»
+«EXTENSION extensions::rcphelper»
+«EXTENSION extensions::properties»
+
+«DEFINE detailsController FOR GuiApplication»
+	«EXPAND detailsController FOREACH modules»
+«ENDDEFINE»
+
+«DEFINE detailsController FOR GuiModule»
+	«EXPAND detailsPresentation FOREACH userTasks.typeSelect(UpdateTask)»
+	«EXPAND detailsController FOREACH userTasks.typeSelect(UpdateTask)»
+	«EXPAND gapDetailsController FOREACH userTasks.typeSelect(UpdateTask)
+		.select(e | isGapClassToBeGenerated(e, e.for.name + "DetailsController"))»
+«ENDDEFINE»
+
+«DEFINE gapDetailsController FOR UpdateTask»
+«LET for.name + "DetailsController" AS className»
+«FILE javaFileName(module.getRichClientPackage() + ".controller." + className) TO_SRC -»
+«javaHeader()»
+package «module.getRichClientPackage()».controller;
+
+«EXPAND detailsControllerSpringAnnotation»
+public class «className» extends «className»Base {
+    public «className»() {
+    }
+}
+«ENDFILE»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE detailsController FOR UpdateTask»
+«LET for.name + "DetailsController" + gapSubclassSuffix(this, for.name + "DetailsController") AS className»
+«FILE javaFileName(module.getRichClientPackage() + ".controller." + className) -»
+«javaHeader()»
+package «module.getRichClientPackage()».controller;
+
+«IF !className.endsWith("Base")»
+«EXPAND detailsControllerSpringAnnotation»
+«ENDIF»
+public «IF className.endsWith("Base")»abstract«ENDIF» class «className»
+    extends «fw("richclient.controller.AbstractDetailsController")»<«module.getRichClientPackage()».data.Rich«for.name»> {
+
+	«EXPAND detailsControllerRepository»
+
+    «EXPAND detailsControllerConstructor»
+
+    «EXPAND RcpCrudGuiMessageResources::messageSourceDependencyProperty»
+
+    «EXPAND detailsControllerSetFormInput»
+
+    «IF findDOWith != null -»
+    	«EXPAND detailsControllerRetrieveLatestFormInput»
+    «ENDIF»
+
+    «IF isPossibleSubtask()»
+    	«EXPAND detailsControllerSubtask»
+    «ENDIF»
+
+    «EXPAND detailsControllerDoSave»
+
+    «EXPAND detailsControllerMiscMethods»
+
+    «EXPAND RcpCrudGuiDataBinding::initDataBindings»
+
+    «EXPAND RcpCrudGuiDataBinding::getInput FOREACH viewProperties.typeSelect(EnumViewProperty)»
+    
+    «EXPAND RcpCrudGuiDataBinding::getInputValuesSingleSelectAddTask FOREACH viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base).select(e | e.isSingleSelectAddSubTask())»
+
+	«EXPAND RcpCrudGuiDataBinding::getInput FOREACH viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base).reject(e | e.isSingleSelectAddSubTask())»
+    «IF !viewProperties.typeSelect(ReferenceViewProperty).reject(e | e.isSingleSelectAddSubTask()).isEmpty»
+		«EXPAND detailsControllerSubtaskAttributes»
+		«EXPAND detailsControllerResetSubtask»
+	«ENDIF»
+
+    «EXPAND detailsControllerSubtasks FOREACH viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base).reject(e | e.isSingleSelectAddSubTask())»
+
+	«EXPAND controllerHook»
+	// TODO remove this when fw is updated
+    @Override
+    public void propertyChange(final java.beans.PropertyChangeEvent event) {
+        if (org.fornax.cartridges.sculptor.framework.util.EqualsHelper.equals(event.getOldValue(), event.getNewValue())) {
+            return;
+        }
+        if (org.eclipse.swt.widgets.Display.getCurrent() == null) {
+            org.eclipse.swt.widgets.Display.getDefault().syncExec(new Runnable() {
+                public void run() {
+                    «className».super.propertyChange(event);
+                }
+            });
+        } else {
+            super.propertyChange(event);
+        }
+    }
+    	
+}
+«ENDFILE»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE detailsControllerSpringAnnotation FOR UpdateTask»
+@org.springframework.stereotype.Controller("«for.name.toFirstLower()»DetailsController")
+@org.springframework.context.annotation.Scope("prototype")
+«ENDDEFINE»
+
+«DEFINE detailsControllerRepository FOR UpdateTask»
+    private «module.getRichClientPackage()».data.Rich«for.name»Repository repository;
+
+    /**
+     * Dependency injection
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setRepository(«module.getRichClientPackage()».data.Rich«for.name»Repository repository) {
+        if (this.repository != null) {
+            this.repository.deleteObserver(this);
+        }
+        this.repository = repository;
+        repository.addObserver(this);
+        setObjectFactory(repository);
+    }
+«ENDDEFINE»
+
+«DEFINE detailsControllerConstructor FOR UpdateTask»
+    public «for.name»DetailsController«gapSubclassSuffix(this, for.name + "DetailsController")»() {
+    }
+«ENDDEFINE»
+
+«DEFINE detailsControllerSetFormInput FOR UpdateTask»
+    @Override
+    public boolean setFormInput(«module.getRichClientPackage()».data.Rich«for.name» input) {
+        boolean result = super.setFormInput(input);
+        «IF !viewProperties.typeSelect(ReferenceViewProperty).reject(e | e.isSingleSelectAddSubTask()).isEmpty»
+        resetSubtask();
+        «ENDIF-»
+        «IF findDOWith != null -»
+        retrieveLatestFormInput();
+        «ENDIF-»
+        return result;
+    }
+«ENDDEFINE»
+
+«DEFINE detailsControllerRetrieveLatestFormInput FOR UpdateTask»
+    private java.util.concurrent.atomic.AtomicReference<java.util.concurrent.CountDownLatch> retrievingLatestFormInputLatch = new java.util.concurrent.atomic.AtomicReference<java.util.concurrent.CountDownLatch>();
+
+    protected void retrieveLatestFormInput() {
+        if (retrievingLatestFormInputLatch.get() != null) {
+            // already in progress
+            return;
+        }
+        retrievingLatestFormInputLatch.set(new java.util.concurrent.CountDownLatch(1));
+        org.eclipse.core.runtime.jobs.Job job =
+            new «fw("richclient.errorhandling.ExceptionAwareJob")»(
+                org.eclipse.osgi.util.NLS.bind(«getMessagesClass()».readJob, «getMessagesClass()».«for.getMessagesKey()»), messages) {
+                @Override
+                protected org.eclipse.core.runtime.IStatus doRun(org.eclipse.core.runtime.IProgressMonitor monitor) throws Exception {
+                    try {
+                        monitor.beginTask(getName(), org.eclipse.core.runtime.IProgressMonitor.UNKNOWN);
+                        repository.«findDOWith.name»(getModel().getId());
+                        monitor.done();
+                        return org.eclipse.core.runtime.Status.OK_STATUS;
+                    } finally {
+                        org.eclipse.swt.widgets.Display.getDefault().asyncExec(new Runnable() {
+                            public void run() {
+                                retrievingLatestFormInputLatch.get().countDown();
+                                retrievingLatestFormInputLatch.set(null);
+                            }
+                        });
+
+                    }
+                }
+            };
+        job.schedule();
+    }
+«ENDDEFINE»
+
+
+«DEFINE detailsControllerDoSave FOR UpdateTask»
+    @Override
+    public void doSave(final org.eclipse.core.runtime.IProgressMonitor monitor) {
+    «IF getPrimaryServiceOperation() != null»
+        org.eclipse.core.runtime.jobs.Job job = new «fw("richclient.errorhandling.ExceptionAwareJob")»(
+            org.eclipse.osgi.util.NLS.bind(«getMessagesClass()».updateJob, «getMessagesClass()».«for.getMessagesKey()»), messages) {
+            @Override
+            protected org.eclipse.core.runtime.IStatus doRun(org.eclipse.core.runtime.IProgressMonitor monitor2) {
+                monitor2.beginTask(getName(), org.eclipse.core.runtime.IProgressMonitor.UNKNOWN);
+                repository.«getPrimaryServiceOperation().name»(getModel());
+
+                org.eclipse.swt.widgets.Display.getDefault().asyncExec(new Runnable() {
+	                public void run() {
+	                    superDoSave(monitor);
+	                }
+	            });
+
+                monitor2.done();
+                return org.eclipse.core.runtime.Status.OK_STATUS;
+            }
+        };
+        job.setUser(true);
+        job.schedule();
+
+
+    «ENDIF»
+    }
+
+    private void superDoSave(org.eclipse.core.runtime.IProgressMonitor monitor) {
+
+        super.doSave(monitor);
+    }
+«ENDDEFINE»
+
+«DEFINE detailsControllerMiscMethods FOR UpdateTask»
+    @Override
+    public void dispose() {
+        if (repository != null) {
+            repository.deleteObserver(this);
+        }
+        super.dispose();
+    }
+
+    protected «for.name»DetailsPresentation get«for.name»DetailsPresentation() {
+        return («for.name»DetailsPresentation) getPresentation();
+    }
+«ENDDEFINE»
+
+«DEFINE detailsControllerSubtask FOR UpdateTask»
+    private «fw("richclient.controller.ParentOfSubtask")»<«module.getRichClientPackage()».data.Rich«for.name»> subtaskParent;
+
+    public «fw("richclient.controller.ParentOfSubtask")»<«module.getRichClientPackage()».data.Rich«for.name»> getSubtaskParent() {
+        return subtaskParent;
+    }
+
+    public void setSubtaskParent(«fw("richclient.controller.ParentOfSubtask")»<«module.getRichClientPackage()».data.Rich«for.name»> subtaskParent) {
+        this.subtaskParent = subtaskParent;
+    }
+
+    public void subtaskOk() {
+        subtaskParent.subtaskCompleted(getModel());
+    }
+
+    public void subtaskCancel() {
+        subtaskParent.subtaskCancelled();
+    }
+
+    public boolean isSubtask() {
+        return subtaskParent != null;
+    }
+«ENDDEFINE»
+
+«DEFINE detailsControllerSubtaskAttributes FOR UpdateTask»
+    private «fw("richclient.controller.SubtaskLife")»<? extends «fw("richclient.data.RichObject")»> currentSubtask;
+
+    protected «fw("richclient.controller.SubtaskLife")»<? extends «fw("richclient.data.RichObject")»> getCurrentSubtask() {
+        return currentSubtask;
+    }
+«ENDDEFINE»
+
+«DEFINE detailsControllerResetSubtask FOR UpdateTask»
+    private void resetSubtask() {
+        currentSubtask = null;
+        get«for.name»DetailsPresentation().showMainTask();
+    }
+«ENDDEFINE»
+
+«DEFINE detailsControllerSubtasks FOR ReferenceViewProperty»
+    «IF isCreateSubTaskAvailable() && isChangeable()»
+    public void new«resolveReferenceName()»Subtask() {
+        currentSubtask = new New«resolveReferenceName()»Strategy();
+        currentSubtask.start();
+    }
+    «ENDIF»
+
+    «IF isUpdateSubTaskAvailable()»
+    public void edit«resolveReferenceName()»Subtask() {
+        currentSubtask = new Edit«resolveReferenceName()»Strategy();
+        currentSubtask.start();
+    }
+    «ENDIF»
+
+    «IF isAddSubTaskAvailable() && isChangeable()»
+    public void add«resolveReferenceName()»Subtask() {
+        currentSubtask = new Add«resolveReferenceName()»Strategy();
+        currentSubtask.start();
+    }
+    «ENDIF»
+
+    «IF isChangeable()»
+    public void remove«resolveReferenceName()»Subtask() {
+        currentSubtask = new Remove«resolveReferenceName()»Strategy();
+        currentSubtask.start();
+    }
+    «ENDIF»
+
+    «IF isCreateSubTaskAvailable() && isChangeable()»
+    	«EXPAND detailsControllerCreateSubtaskStrategy»
+    «ENDIF»
+    «IF isUpdateSubTaskAvailable()»
+    	«EXPAND detailsControllerUpdateSubtaskStrategy»
+    «ENDIF»
+    «IF isAddSubTaskAvailable() && isChangeable()»
+    	«EXPAND detailsControllerAddSubtaskStrategy»
+    «ENDIF»
+    «IF isChangeable()»
+    	«EXPAND detailsControllerRemoveSubtaskStrategy»
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE detailsControllerCreateSubtaskStrategy FOR ReferenceViewProperty»
+    class New«resolveReferenceName()»Strategy implements «fw("richclient.controller.SubtaskLife")»<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»> {
+
+        public void start() {
+            get«userTask.for.name»DetailsPresentation().showNew«resolveReferenceName()»Subtask(this);
+        }
+
+        public Class<?> getParentType() {
+            return getModel().getClass();
+        }
+
+        public void subtaskCompleted(«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»... items) {
+            getModel().add«resolveReferenceName()»(items[0]);
+            get«userTask.for.name»DetailsPresentation().set«resolveReferenceName()»Selection(new org.eclipse.jface.viewers.StructuredSelection(items[0]));
+            setDirty(true); // TODO not necessary, we are listening on changes on model object
+            resetSubtask();
+        }
+
+        public void subtaskCancelled() {
+            resetSubtask();
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE detailsControllerUpdateSubtaskStrategy FOR ReferenceViewProperty»
+    class Edit«resolveReferenceName()»Strategy implements «fw("richclient.controller.SubtaskLife")»<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»> {
+
+        public void start() {
+            org.eclipse.jface.viewers.IStructuredSelection selection = (org.eclipse.jface.viewers.IStructuredSelection) get«userTask.for.name»DetailsPresentation().get«resolveReferenceName()»Selection();
+            if (selection.isEmpty()) {
+                resetSubtask();
+                return;
+            }
+            «relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name» item = («relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name») selection.getFirstElement();
+
+            get«userTask.for.name»DetailsPresentation().showEdit«resolveReferenceName()»Subtask(this, item);
+        }
+
+        public Class<?> getParentType() {
+            return getModel().getClass();
+        }
+
+        public void subtaskCompleted(«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»... items) {
+            getModel().add«resolveReferenceName()»(items[0]);
+            setDirty(true); // TODO not necessary, we are listening on changes on model object
+            resetSubtask();
+        }
+
+        public void subtaskCancelled() {
+            resetSubtask();
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE detailsControllerAddSubtaskStrategy FOR ReferenceViewProperty»
+    class Add«resolveReferenceName()»Strategy implements «fw("richclient.controller.SubtaskLife")»<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»> {
+
+        public void start() {
+            get«userTask.for.name»DetailsPresentation().showAdd«resolveReferenceName()»Subtask(this);
+        }
+
+        public Class<?> getParentType() {
+            return getModel().getClass();
+        }
+
+        public void subtaskCompleted(«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»... items) {
+            «IF isMany()»
+            for («relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name» each : items) {
+                getModel().add«resolveReferenceName().singular()»(each);
+            }
+            «ELSE»
+            if («resolveReferenceName().toFirstLower()»Input != null) {
+                «resolveReferenceName().toFirstLower()»Input.clear();
+            }
+            for («relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name» each : items) {
+                getModel().set«resolveReferenceName()»(each);
+                if («resolveReferenceName().toFirstLower()»Input != null) {
+                    «resolveReferenceName().toFirstLower()»Input.add(each);
+                }
+            }
+            «ENDIF»
+            get«userTask.for.name»DetailsPresentation().set«resolveReferenceName()»Selection(new org.eclipse.jface.viewers.StructuredSelection(items));
+            setDirty(true); // TODO not necessary, we are listening on changes on model object
+            resetSubtask();
+        }
+
+        public void subtaskCancelled() {
+            resetSubtask();
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE detailsControllerRemoveSubtaskStrategy FOR ReferenceViewProperty»
+    class Remove«resolveReferenceName()»Strategy implements «fw("richclient.controller.SubtaskLife")»<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»> {
+
+        public void start() {
+            org.eclipse.jface.viewers.IStructuredSelection selection = get«userTask.for.name»DetailsPresentation().get«resolveReferenceName()»Selection();
+            if (selection.isEmpty()) {
+                resetSubtask();
+                return;
+            }
+            «relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name» item = («relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name») selection.getFirstElement();
+            get«userTask.for.name»DetailsPresentation().showRemove«resolveReferenceName()»Subtask(this, item);
+        }
+
+        public Class<?> getParentType() {
+            return getModel().getClass();
+        }
+
+        public void subtaskCompleted(«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»... items) {
+            «IF isMany()-»
+            getModel().remove«resolveReferenceName().singular()»(items[0]);
+            «ELSE-»
+            getModel().set«resolveReferenceName()»(null);
+            if («resolveReferenceName().toFirstLower()»Input != null) {
+                «resolveReferenceName().toFirstLower()»Input.clear();
+            }
+            «ENDIF-»
+
+            setDirty(true); // TODO not necessary, we are listening on changes on model object
+            resetSubtask();
+        }
+
+        public void subtaskCancelled() {
+            resetSubtask();
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE detailsPresentation FOR UpdateTask»
+	«FILE javaFileName(module.getRichClientPackage() + ".controller." + for.name + "DetailsPresentation") -»
+«javaHeader()»
+package «module.getRichClientPackage()».controller;
+
+public interface «for.name»DetailsPresentation extends «fw("richclient.controller.DetailsPresentation")» {
+
+    «IF !viewProperties.typeSelect(ReferenceViewProperty).isEmpty»
+    void showMainTask();
+
+	«EXPAND detailsPresentationSubtasks FOREACH viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base)»
+	«ENDIF»
+
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE detailsPresentationSubtasks FOR ReferenceViewProperty»
+«LET relatedTransitions.first().to.module AS subtaskModule»
+    org.eclipse.jface.viewers.IStructuredSelection get«resolveReferenceName()»Selection();
+
+    void set«resolveReferenceName()»Selection(org.eclipse.jface.viewers.IStructuredSelection selection);
+
+	«IF isCreateSubTaskAvailable() && isChangeable()»
+    void showNew«resolveReferenceName()»Subtask(«fw("richclient.controller.ParentOfSubtask")»<«subtaskModule.getRichClientPackage()».data.Rich«target.name»> subtaskParent);
+    «ENDIF»
+
+    «IF isUpdateSubTaskAvailable()»
+    void showEdit«resolveReferenceName()»Subtask(«fw("richclient.controller.ParentOfSubtask")»<«subtaskModule.getRichClientPackage()».data.Rich«target.name»> subtaskParent, «subtaskModule.getRichClientPackage()».data.Rich«target.name» item);
+    «ENDIF»
+
+    «IF isAddSubTaskAvailable() && isChangeable()»
+    void showAdd«resolveReferenceName()»Subtask(«fw("richclient.controller.ParentOfSubtask")»<«subtaskModule.getRichClientPackage()».data.Rich«target.name»> subtaskParent);
+    «ENDIF»
+
+	«IF isChangeable()»
+	void showRemove«resolveReferenceName()»Subtask(«fw("richclient.controller.ParentOfSubtask")»<«subtaskModule.getRichClientPackage()».data.Rich«target.name»> subtaskParent, «subtaskModule.getRichClientPackage()».data.Rich«target.name» item);
+	«ENDIF»
+
+«ENDLET»
+«ENDDEFINE»
+
+«REM»Extension point to generate more stuff in Controller classes.
+Use AROUND templates::rcp::RcpCrudGuiDetailsController::controllerHook FOR UpdateTask
+in SpecialCases.xpt«ENDREM»
+«DEFINE controllerHook FOR UpdateTask»
+«ENDDEFINE»

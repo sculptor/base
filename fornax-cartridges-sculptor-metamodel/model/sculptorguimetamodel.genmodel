@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genmodel:GenModel xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+    xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel" modelDirectory="/fornax-cartridges-sculptor-metamodel/src/main/java"
+    modelPluginID="fornax_cartridges_sculptor_metamodel" modelName="Sculptorguimetamodel"
+    importerID="org.eclipse.emf.importer.ecore" usedGenPackages="sculptormetamodel.genmodel#//sculptormetamodel">
+  <foreignModel>sculptorguimetamodel.ecore</foreignModel>
+  <genPackages prefix="Sculptorguimetamodel" disposableProviderFactory="true" ecorePackage="sculptorguimetamodel.ecore#/">
+    <genClasses ecoreClass="sculptorguimetamodel.ecore#//GuiApplication">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//GuiApplication/guiFor"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//GuiApplication/modules"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sculptorguimetamodel.ecore#//GuiApplication/basePackage"/>
+    </genClasses>
+    <genClasses ecoreClass="sculptorguimetamodel.ecore#//GuiModule">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//GuiModule/flows"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sculptorguimetamodel.ecore#//GuiModule/basePackage"/>
+    </genClasses>
+    <genClasses ecoreClass="sculptorguimetamodel.ecore#//Flow">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//Flow/from"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//Flow/@eStructuralFeatures.1"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//Flow/service"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//Flow/for"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sculptorguimetamodel.ecore#//Flow/abstract"/>
+    </genClasses>
+    <genClasses ecoreClass="sculptorguimetamodel.ecore#//CreateFlow">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//CreateFlow/createDOWith"/>
+    </genClasses>
+    <genClasses ecoreClass="sculptorguimetamodel.ecore#//UpdateFlow">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//UpdateFlow/findDOWith"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//UpdateFlow/updateDOWith"/>
+    </genClasses>
+    <genClasses ecoreClass="sculptorguimetamodel.ecore#//ViewFlow">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//ViewFlow/findDOWith"/>
+    </genClasses>
+    <genClasses ecoreClass="sculptorguimetamodel.ecore#//ListFlow">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//ListFlow/searchDOWith"/>
+    </genClasses>
+    <genClasses ecoreClass="sculptorguimetamodel.ecore#//DeleteFlow">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//DeleteFlow/findDOWith"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//DeleteFlow/deleteDOWith"/>
+    </genClasses>
+    <genClasses ecoreClass="sculptorguimetamodel.ecore#//SubFlow">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//SubFlow/to"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//SubFlow/@eStructuralFeatures.1"/>
+    </genClasses>
+    <genClasses ecoreClass="sculptorguimetamodel.ecore#//ViewData">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//ViewData/properties"/>
+    </genClasses>
+    <genClasses ecoreClass="sculptorguimetamodel.ecore#//ViewDataProperty">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//ViewDataProperty/attributes"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sculptorguimetamodel.ecore#//ViewDataProperty/references"/>
+    </genClasses>
+  </genPackages>
+</genmodel:GenModel>

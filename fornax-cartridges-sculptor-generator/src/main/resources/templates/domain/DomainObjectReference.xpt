@@ -1,0 +1,533 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+
+«DEFINE oneReferenceAttribute FOR Reference»
+	«IF isUnownedReference()»
+		«EXPAND oneReferenceIdAttribute»
+		«IF mongoDb()»
+			«EXPAND oneReferenceLazyAttribute»
+		«ENDIF»
+	«ELSE»
+		«EXPAND oneReferenceAttribute(true)»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE oneReferenceAttribute(boolean annotations) FOR Reference»
+    «IF annotations»
+    	«EXPAND DomainObjectReferenceAnnotation::oneReferenceAttributeAnnotations»
+    «ENDIF»
+    private «IF transient»transient «ENDIF»«getTypeName()» «name»«EXPAND oneReferenceAttributeDefaultValue»;
+«ENDDEFINE»
+
+«REM»Possibility to overwrite and set custom default initialization for some attributes,
+	e.g. using hint. Note that you must include =.
+«ENDREM»
+«DEFINE oneReferenceAttributeDefaultValue FOR Reference-»
+«ENDDEFINE»
+
+«DEFINE oneReferenceIdAttribute FOR Reference»
+    «IF isJpaProviderAppEngine() && isJpaAnnotationOnFieldToBeGenerated()»
+		«EXPAND DomainObjectReferenceAnnotation::oneReferenceAppEngineKeyAnnotation»
+    «ENDIF»
+    private «getJavaType("IDTYPE")» «name»«unownedReferenceSuffix()»;
+«ENDDEFINE»
+
+«DEFINE oneReferenceLazyAttribute FOR Reference»
+	private boolean «name»IsLoaded = false;
+    private «getTypeName()» «name»;
+«ENDDEFINE»
+
+«DEFINE oneReferenceAccessors FOR Reference»
+	«IF isUnownedReference()»
+		«EXPAND oneReferenceIdGetter»
+		«IF mongoDb()»
+			«EXPAND oneReferenceMongoDbLazyGetter»
+		«ENDIF»
+		«IF changeable»
+			«EXPAND oneReferenceIdSetter»
+			«IF mongoDb()»
+				«EXPAND oneReferenceMongoDbLazySetter»
+			«ENDIF»
+		«ENDIF»
+	«ELSE»
+		«EXPAND oneReferenceGetter»
+	    «IF !changeable»
+	    	«EXPAND notChangeableOneReferenceSetter»
+	    «ELSE»
+	    	«EXPAND oneReferenceSetter»
+	    «ENDIF»
+	«ENDIF»
+
+«ENDDEFINE»
+
+«DEFINE oneReferenceGetter FOR Reference»
+	«EXPAND oneReferenceGetter(true)»
+«ENDDEFINE»
+
+«DEFINE oneReferenceGetter(boolean annotations) FOR Reference»
+    «formatJavaDoc()»
+    «IF annotations»
+    	«EXPAND DomainObjectReferenceAnnotation::oneReferenceGetterAnnotations»
+    «ENDIF»
+    «getVisibilityLitteralGetter()»«getTypeName()» get«name.toFirstUpper()»() {
+        return «name»;
+    };
+«ENDDEFINE»
+
+«DEFINE oneReferenceIdGetter FOR Reference»
+    «formatJavaDoc()»
+    «IF isJpaProviderAppEngine() && !isJpaAnnotationOnFieldToBeGenerated()»
+		«EXPAND DomainObjectReferenceAnnotation::oneReferenceAppEngineKeyAnnotation»
+    «ENDIF»
+    «getVisibilityLitteralGetter()»«getJavaType("IDTYPE")» get«name.toFirstUpper()»«unownedReferenceSuffix()»() {
+    	«IF mongoDb()»
+    	if (!«name»IsLoaded) {
+    		return «name»«unownedReferenceSuffix()»;
+    	} else {
+    		// associated instance has been loaded, or set, id was maybe not assigned when associated instance was set
+    		if («name» == null) {
+    			return null;
+    		} else if («name».getId() == null) {
+    			throw new IllegalStateException("Reference «from.name».«name» is unsaved instance. Cascade not supported. Save «to.name» before saving «from.name».");
+    		} else {
+    			return «name».getId();
+    		}
+    	}
+    	«ELSE»
+        return «name»«unownedReferenceSuffix()»;
+        «ENDIF»
+    };
+«ENDDEFINE»
+
+«DEFINE oneReferenceMongoDbLazyGetter FOR Reference»
+    «formatJavaDoc()»
+    «getVisibilityLitteralGetter()»«getTypeName()» get«name.toFirstUpper()»() {
+        if («name»IsLoaded) {
+        	return «name»;
+        }
+        if («name»«unownedReferenceSuffix()» == null) {
+        	«name»IsLoaded = true;
+            return null;
+        }
+        «fw("accessimpl.mongodb.DbManager")» dbManager = «fw("accessimpl.mongodb.DbManager")».getThreadInstance();
+        if (dbManager == null) {
+            throw new IllegalStateException("Lazy loading of «from.name».«name» failed due to missing DbManager.getThreadInstance()");
+        }
+        String dbCollectionName = «to.module.getMapperPackage()».«to.name»Mapper.getInstance().getDBCollectionName();
+        com.mongodb.DBRef dbRef = new com.mongodb.DBRef(dbManager.getDB(), dbCollectionName,
+            org.bson.types.ObjectId.massageToObjectId(«name»«unownedReferenceSuffix()»));
+        «name» = («getTypeName()»)«to.module.getMapperPackage()».«to.name»Mapper.getInstance().toDomain(dbRef.fetch());
+        «name»IsLoaded = true;
+        return «name»;
+    };
+
+    «getVisibilityLitteralGetter()» boolean is«name.toFirstUpper()»Loaded() {
+    	return «name»IsLoaded;
+    }
+«ENDDEFINE»
+
+«DEFINE oneReferenceIdSetter FOR Reference»
+	«IF isSetterNeeded()»
+    «formatJavaDoc()»
+    «getVisibilityLitteralSetter()»void set«name.toFirstUpper()»«unownedReferenceSuffix()»(«getJavaType("IDTYPE")» «name»«unownedReferenceSuffix()») {
+        this.«name»«unownedReferenceSuffix()» = «name»«unownedReferenceSuffix()»;
+        «IF mongoDb() -»
+        	«name»IsLoaded = false;
+        	«name» = null;
+        «ENDIF -»
+    };
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE oneReferenceMongoDbLazySetter FOR Reference»
+	«IF isSetterNeeded()»
+    «formatJavaDoc()»
+    «getVisibilityLitteralSetter()»void set«name.toFirstUpper()»(«getTypeName()» «name») {
+        this.«name» = «name»;
+        «name»IsLoaded = true;
+       	this.«name»«unownedReferenceSuffix()» = («name» == null ? null : «name».getId());
+    };
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE oneReferenceSetter FOR Reference»
+	«IF isSetterNeeded()»
+    «formatJavaDoc()»
+    «EXPAND DomainObjectReferenceAnnotation::oneReferenceSetterAnnotations»
+    «getVisibilityLitteralSetter()»void set«name.toFirstUpper()»(«getTypeName()» «name») {
+        «IF isFullyAuditable() && !transient-»
+        receiveInternalAuditHandler().recordChange(«getDomainObject().name»Properties.«name»(), this.«name», «name»);
+        «ENDIF-»
+        this.«name» = «name»;
+    };
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE notChangeableOneReferenceSetter FOR Reference»
+    «IF isSetterNeeded()-»
+    «IF notChangeableReferenceSetterVisibility() == "private"-»
+    @SuppressWarnings("unused")
+    «ELSE -»
+    /**
+     * This reference can't be changed. Use constructor to assign value.
+     * However, some tools need setter methods and sometimes the
+     * referred object is not available at construction time. Therefore
+     * this method is visible, but the actual reference can't be changed
+     * once it is assigned.
+     */
+    «ENDIF -»
+    «EXPAND DomainObjectReferenceAnnotation::oneReferenceSetterAnnotations»
+    «notChangeableReferenceSetterVisibility()» void set«name.toFirstUpper()»(«getTypeName()» «name») {
+        // it must be possible to set null when deleting objects
+        if ((«name» != null) && (this.«name» != null) && !this.«name».equals(«name»)) {
+            throw new IllegalArgumentException("Not allowed to change the «name» reference.");
+        }
+        this.«name» = «name»;
+    };
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE manyReferenceAttribute FOR Reference»
+	«IF isUnownedReference()»
+		«EXPAND manyReferenceIdsAttribute»
+		«IF mongoDb()»
+			«EXPAND manyReferenceLazyAttribute»
+		«ENDIF»
+	«ELSE»
+		«EXPAND manyReferenceAttribute(true)»		
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE manyReferenceAttribute(boolean annotations) FOR Reference»
+	«IF annotations»
+		«EXPAND DomainObjectReferenceAnnotation::manyReferenceAttributeAnnotations»
+	«ENDIF»
+	
+	private «IF transient»transient «ENDIF»«getCollectionInterfaceType()»<«getTypeName()»> «name» = new «getCollectionImplType()»<«getTypeName()»>();
+
+«ENDDEFINE»
+
+
+«DEFINE manyReferenceIdsAttribute FOR Reference»
+	«IF isJpaProviderAppEngine() && isJpaAnnotationOnFieldToBeGenerated()»
+	    «EXPAND DomainObjectReferenceAnnotation::manyReferenceAppEngineKeyAnnotation»
+	«ENDIF»
+    private «getCollectionInterfaceType()»<«getJavaType("IDTYPE")»> «name»«unownedReferenceSuffix()» = new «getCollectionImplType()»<«getJavaType("IDTYPE")»>();
+«ENDDEFINE»
+
+«DEFINE manyReferenceLazyAttribute FOR Reference»
+    private «getCollectionInterfaceType()»<«getTypeName()»> «name»;
+«ENDDEFINE»
+
+«DEFINE manyReferenceIdsGetter FOR Reference»
+    «formatJavaDoc()»
+	«IF isJpaProviderAppEngine() && !isJpaAnnotationOnFieldToBeGenerated()»
+		    «EXPAND DomainObjectReferenceAnnotation::manyReferenceAppEngineKeyAnnotation»
+	«ENDIF»
+    «getVisibilityLitteralGetter()»«getCollectionInterfaceType()»<«getJavaType("IDTYPE")»> get«name.toFirstUpper()»«unownedReferenceSuffix()»() {
+        // appengine sometimes stores the collection as null
+    	if («name»«unownedReferenceSuffix()» == null) {
+    	    «name»«unownedReferenceSuffix()» = new «getCollectionImplType()»<«getJavaType("IDTYPE")»>();
+    	}
+    	«IF mongoDb()»
+    		if («name» == null) {
+    			return «name»«unownedReferenceSuffix()»;
+    		} else {
+    			// associated instances have been loaded, and possibly changed
+    			«getCollectionInterfaceType()»<«getJavaType("IDTYPE")»> result = new «getCollectionImplType()»<«getJavaType("IDTYPE")»>();
+    			for («getTypeName()» each : «name») {
+    				if (each.getId() == null) {
+		        		throw new IllegalStateException("Reference «from.name».«name» contains unsaved instance. Cascade not supported. Save «to.name» before saving «from.name».");
+		        	}
+    				result.add(each.getId());
+    			}
+    			«name»«unownedReferenceSuffix()» = result;
+    			return java.util.Collections.unmodifiable«getCollectionType().toFirstUpper()»(result);
+    		}
+    	«ELSE»
+    		return «name»«unownedReferenceSuffix()»;
+    	«ENDIF»
+
+    };
+«ENDDEFINE»
+
+«DEFINE manyReferenceAccessors FOR Reference»
+	«IF isUnownedReference()»
+		«EXPAND manyReferenceIdsGetter»
+		«IF mongoDb()»
+			«EXPAND manyReferenceMongoDbLazyGetter»
+			«EXPAND additionalManyReferenceAccessors»
+		«ENDIF»
+	«ELSE»
+	    «EXPAND manyReferenceGetter(true)»
+	    «EXPAND manyReferenceSetter»
+	    «EXPAND additionalManyReferenceAccessors»
+    «ENDIF»
+«ENDDEFINE»
+
+
+«DEFINE additionalManyReferenceAccessors FOR Reference»
+	«IF opposite != null && !opposite.many && (opposite.changeable || (notChangeableReferenceSetterVisibility() != "private"))»«EXPAND bidirectionalReferenceAccessors»«ENDIF -»
+	«IF opposite != null && opposite.many »«EXPAND many2manyBidirectionalReferenceAccessors»«ENDIF -»
+	«IF opposite == null»«EXPAND unidirectionalReferenceAccessors»«ENDIF»
+«ENDDEFINE»
+
+«DEFINE manyReferenceGetter FOR Reference»
+	«EXPAND manyReferenceGetter(true)»
+«ENDDEFINE»
+
+«DEFINE manyReferenceGetter(boolean annotations) FOR Reference»
+    «formatJavaDoc()»
+    «IF annotations»
+		«EXPAND DomainObjectReferenceAnnotation::manyReferenceGetterAnnotations»
+    «ENDIF»
+    «getVisibilityLitteralGetter()»«getCollectionInterfaceType()»<«getTypeName()»> get«name.toFirstUpper()»() {
+        return «name»;
+    };
+«ENDDEFINE»
+
+«DEFINE manyReferenceSetter FOR Reference»
+	«IF !isJpaAnnotationToBeGenerated()»
+    @SuppressWarnings("unused")
+    private void set«name.toFirstUpper()»(«getCollectionInterfaceType()»<«getTypeName()»> «name») {
+        this.«name» = «name»;
+    }
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE manyReferenceMongoDbLazyGetter FOR Reference»
+    «formatJavaDoc()»
+    «getVisibilityLitteralGetter()»«getCollectionInterfaceType()»<«getTypeName()»> get«name.toFirstUpper()»() {
+        if («name» != null) {
+        	return «name»;
+        }
+        «getCollectionInterfaceType()»<«getTypeName()»> result = new «getCollectionImplType()»<«getTypeName()»>();
+        java.util.List<org.bson.types.ObjectId> ids = new java.util.ArrayList<org.bson.types.ObjectId>();
+        for («getJavaType("IDTYPE")» each : «name»«unownedReferenceSuffix()») {
+        	ids.add(org.bson.types.ObjectId.massageToObjectId(each));
+        }
+        String dbCollectionName = «to.module.getMapperPackage()».«to.name»Mapper.getInstance().getDBCollectionName();
+        «fw("accessimpl.mongodb.DbManager")» dbManager = «fw("accessimpl.mongodb.DbManager")».getThreadInstance();
+        if (dbManager == null) {
+            throw new IllegalStateException("Lazy loading of «from.name».«name» failed due to missing DbManager.getThreadInstance()");
+        }
+        com.mongodb.DBCollection dbCollection = dbManager.getDBCollection(dbCollectionName);
+        com.mongodb.DBCursor cur = dbCollection.find(new com.mongodb.BasicDBObject("_id", new com.mongodb.BasicDBObject("$in", ids)));
+        while (cur.hasNext()) {
+        	com.mongodb.DBObject each = cur.next();
+        	result.add(«to.module.getMapperPackage()».«to.name»Mapper.getInstance().toDomain(each));
+        }
+
+        «name» = result;
+        return result;
+    };
+
+    «getVisibilityLitteralGetter()» boolean is«name.toFirstUpper()»Loaded() {
+    	return «name» != null;
+    }
+«ENDDEFINE»
+
+«DEFINE bidirectionalReferenceAccessors FOR Reference»
+    «EXPAND bidirectionalReferenceAdd»
+    «EXPAND bidirectionalReferenceRemove»
+	«EXPAND bidirectionalReferenceRemoveAll»
+«ENDDEFINE»
+
+«DEFINE bidirectionalReferenceAdd FOR Reference»
+	«IF !isSetterPrivate()»
+    /**
+     * Adds an object to the bidirectional many-to-one
+     * association in both ends.
+     * It is added the collection {@link #get«name.toFirstUpper()»}
+     * at this side and the association
+     * {@link «getTypeName()»#set«opposite.name.toFirstUpper()»}
+     * at the opposite side is set.
+     */
+    «getVisibilityLitteralSetter()»void add«name.toFirstUpper().singular()»(«getTypeName()» «name.singular()»Element) {
+        get«name.toFirstUpper()»().add(«name.singular()»Element);
+        «name.singular()»Element.set«opposite.name.toFirstUpper()»((«opposite.getTypeName()») this);
+    };
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE bidirectionalReferenceRemove FOR Reference»
+	«IF !isSetterPrivate()»
+	«REM»
+	EclipseLink/DataNucleus are trying to update the related entities.
+	This fails on non nullable references
+	«ENDREM»
+	«LET (opposite.nullable || !(isJpaProviderOpenJpa() || isJpaProviderEclipseLink() || isJpaProviderDataNucleus()))
+		AS clearOpposite»
+    /**
+     * Removes an object from the bidirectional many-to-one
+     * association«IF clearOpposite» in both ends.
+     * It is removed from the collection {@link #get«name.toFirstUpper()»}
+     * at this side and the association
+     * {@link «getTypeName()»#set«opposite.name.toFirstUpper()»}
+     * at the opposite side is cleared (nulled).«ENDIF»
+     */
+    «getVisibilityLitteralSetter()»void remove«name.toFirstUpper().singular()»(«getTypeName()» «name.singular()»Element) {
+        get«name.toFirstUpper()»().remove(«name.singular()»Element);
+
+        «IF clearOpposite»
+        «name.singular()»Element.set«opposite.name.toFirstUpper()»(null);
+		«ENDIF»
+    };
+    «ENDLET»
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE bidirectionalReferenceRemoveAll FOR Reference»
+	«IF !isSetterPrivate()»
+	«REM»
+	EclipseLink/DataNucleus are trying to update the related entities.
+	This fails on non nullable references
+	«ENDREM»
+	«LET (opposite.nullable || !(isJpaProviderOpenJpa() || isJpaProviderEclipseLink() || isJpaProviderDataNucleus()))
+		AS clearOpposite»
+    /**
+     * Removes all object from the bidirectional
+     * many-to-one association«IF clearOpposite» in both ends.
+     * All elements are removed from the collection {@link #get«name.toFirstUpper()»}
+     * at this side and the association
+     * {@link «getTypeName()»#set«opposite.name.toFirstUpper()»}
+     * at the opposite side is cleared (nulled).«ENDIF»
+     */
+    «getVisibilityLitteralSetter()»void removeAll«name.toFirstUpper()»() {
+        «IF clearOpposite»
+        for («getTypeName()» d : get«name.toFirstUpper()»()) {
+            d.set«opposite.name.toFirstUpper()»(null);
+        }
+		«ENDIF»
+        get«name.toFirstUpper()»().clear();
+
+    };
+    «ENDLET»
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE unidirectionalReferenceAccessors FOR Reference»
+    «EXPAND unidirectionalReferenceAdd»
+    «EXPAND unidirectionalReferenceRemove»
+	«EXPAND unidirectionalReferenceRemoveAll»
+«ENDDEFINE»
+
+«DEFINE unidirectionalReferenceAdd FOR Reference»
+	«IF !isSetterPrivate()»
+    /**
+     * Adds an object to the unidirectional to-many
+     * association.
+     * It is added the collection {@link #get«name.toFirstUpper()»}.
+     */
+    «getVisibilityLitteralSetter()»void add«name.toFirstUpper().singular()»(«getTypeName()» «name.singular()»Element) {
+        get«name.toFirstUpper()»().add(«name.singular()»Element);
+    };
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE unidirectionalReferenceRemove FOR Reference»
+	«IF !isSetterPrivate()»
+    /**
+     * Removes an object from the unidirectional to-many
+     * association.
+     * It is removed from the collection {@link #get«name.toFirstUpper()»}.
+     */
+    «getVisibilityLitteralSetter()»void remove«name.toFirstUpper().singular()»(«getTypeName()» «name.singular()»Element) {
+        get«name.toFirstUpper()»().remove(«name.singular()»Element);
+    };
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE unidirectionalReferenceRemoveAll FOR Reference»
+	«IF !isSetterPrivate()»
+    /**
+     * Removes all object from the unidirectional
+     * to-many association.
+     * All elements are removed from the collection {@link #get«name.toFirstUpper()»}.
+     */
+    «getVisibilityLitteralSetter()»void removeAll«name.toFirstUpper()»() {
+        get«name.toFirstUpper()»().clear();
+    };
+    «ENDIF»
+«ENDDEFINE»
+
+
+«DEFINE many2manyBidirectionalReferenceAccessors FOR Reference»
+    «EXPAND many2manyBidirectionalReferenceAdd»
+    «EXPAND many2manyBidirectionalReferenceRemove»
+    «EXPAND many2manyBidirectionalReferenceRemoveAll»
+«ENDDEFINE»
+
+«DEFINE many2manyBidirectionalReferenceAdd FOR Reference»
+	«IF !isSetterPrivate()»
+    /**
+     * Adds an object to the bidirectional many-to-many
+     * association in both ends.
+     * It is added the collection {@link #get«name.toFirstUpper()»}
+     * at this side and to the collection
+     * {@link «getTypeName()»#get«opposite.name.toFirstUpper()»}
+     * at the opposite side.
+     */
+    «getVisibilityLitteralSetter()»void add«name.toFirstUpper().singular()»(«getTypeName()» «name.singular()»Element) {
+        get«name.toFirstUpper()»().add(«name.singular()»Element);
+        «name.singular()»Element.get«opposite.name.toFirstUpper()»().add((«opposite.getTypeName()») this);
+    };
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE many2manyBidirectionalReferenceRemove FOR Reference»
+	«IF !isSetterPrivate()»
+    /**
+     * Removes an object from the bidirectional many-to-many
+     * association in both ends.
+     * It is removed from the collection {@link #get«name.toFirstUpper()»}
+     * at this side and from the collection
+     * {@link «getTypeName()»#get«opposite.name.toFirstUpper()»}
+     * at the opposite side.
+     */
+    «getVisibilityLitteralSetter()»void remove«name.toFirstUpper().singular()»(«getTypeName()» «name.singular()»Element) {
+        get«name.toFirstUpper()»().remove(«name.singular()»Element);
+        «name.singular()»Element.get«opposite.name.toFirstUpper()»().remove((«opposite.getTypeName()») this);
+    };
+    «ENDIF»
+«ENDDEFINE»
+
+«DEFINE many2manyBidirectionalReferenceRemoveAll FOR Reference»
+	«IF !isSetterPrivate()»
+    /**
+     * Removes all object from the bidirectional
+     * many-to-many association in both ends.
+     * All elements are removed from the collection {@link #get«name.toFirstUpper()»}
+     * at this side and from the collection
+     * {@link «getTypeName()»#get«opposite.name.toFirstUpper()»}
+     * at the opposite side.
+     */
+    «getVisibilityLitteralSetter()»void removeAll«name.toFirstUpper()»() {
+        for («getTypeName()» d : get«name.toFirstUpper()»()) {
+            d.get«opposite.name.toFirstUpper()»().remove((«opposite.getTypeName()») this);
+        }
+        get«name.toFirstUpper()»().clear();
+
+    };
+    «ENDIF»
+«ENDDEFINE»
+
+

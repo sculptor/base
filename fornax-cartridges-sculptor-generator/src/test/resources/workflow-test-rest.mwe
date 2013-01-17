@@ -1,0 +1,8 @@
+<workflow>
+
+	<cartridge file="sculptorworkflowtest.mwe">
+		<modelFile value="classpath:/rest.btdesign"/>
+		<appProject value="fornax-cartridges-sculptor-generator"/>
+	</cartridge>
+	
+</workflow>

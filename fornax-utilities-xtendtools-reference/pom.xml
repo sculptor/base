@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<parent>
+		<groupId>org.fornax.utilities</groupId>
+		<artifactId>fornax-utilities-xtendtools-parent</artifactId>
+		<version>1.0.1</version>
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.fornax.utilities</groupId>
+	<artifactId>fornax-utilities-xtendtools-reference</artifactId>
+	<name>Fornax Xtend-Tools (Reference)</name>
+	<description>
+		Reference project to validate the Fornax
+		Xtend-Tools
+	</description>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.3.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.fornax.utilities</groupId>
+			<artifactId>
+				fornax-utilities-xtendtools
+			</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.codehaus.gmaven.runtime</groupId>
+			<artifactId>gmaven-runtime-1.7</artifactId>
+			<scope>test</scope>
+			<version>1.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.feltes</groupId>
+			<artifactId>emfbuilder</artifactId>
+			<version>0.9.0</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<repositories>
+		<repository>
+			<id>emfbuilder.sf.net</id>
+			<name>emfbuilder Release Repository</name>
+			<url>http://emfbuilder.sf.net/m2/release</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<build>
+		<plugins>
+
+			<plugin>
+				<groupId>org.fornax.toolsupport</groupId>
+				<artifactId>fornax-oaw-m2-plugin</artifactId>
+				<version>${version.fornax-oaw-m2-plugin}</version>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-site-plugin</artifactId>
+				<configuration>
+					<generateReports>false</generateReports>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.5</source>
+					<target>1.5</target>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.gmaven</groupId>
+				<artifactId>gmaven-plugin</artifactId>
+				<version>1.2</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>generateStubs</goal>
+							<goal>compile</goal>
+							<goal>generateTestStubs</goal>
+							<goal>testCompile</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+		</plugins>
+	</build>
+</project>

@@ -1,0 +1,6 @@
+#set( $artifactIdBaseLength = $artifactId.length() - 4) 
+#set( $artifactIdBase =$artifactId.substring(0, $artifactIdBaseLength) )
+import 'classpath:/model.btdesign' 
+gui MyWeb for MyApp {
+
+}

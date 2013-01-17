@@ -1,0 +1,338 @@
+ApplicationPart GuiPart {
+
+	Module gui {
+		basePackage=org.fornax.cartridges.sculptor.smartclient
+		hint="persistenceUnit=null"
+
+		Service ServiceRegistryService {
+			gap
+			List<org.fornax.cartridges.sculptor.smartclient.framework.ServiceDescription> getServices();
+			public void refresh();
+		}
+
+		Service GuiDataSourceService {
+			gap
+			inject @PropertyService
+
+			@GuiDataSource findById(Long id)=>GuiDataSourceRepository.findById;
+			List <@GuiDataSource> findAll();
+			save(@GuiDataSource entity) throws PropertyAccessDenied;
+			setServiceMapping(Map<String, String> serviceMapping) throws SmartclientGuiException;
+		}
+
+		Entity GuiDataSource {
+			String xxxID key;
+			String dataFormat;
+			String dataURL nullable;
+			String titleField nullable;
+			String baseClass nullable;
+			Boolean clientOnly nullable;
+			Boolean autoFetchData nullable;
+			Boolean isTree nullable;
+			Boolean isFileUpload nullable;
+			String jsonPostfix nullable length="200";
+			- List<@GuiField> fields inverse;
+
+			Repository GuiDataSourceRepository {
+				findById;
+				findAll;
+				save;
+				delete;
+			}
+		}
+
+		Entity GuiField {
+			String name;
+			String title nullable;
+			Boolean primaryKey nullable;
+			Boolean hidden nullable;
+			Boolean detail nullable;
+			Boolean canEdit nullable;
+			String canEditRoles nullable;
+			Boolean xxxrequired nullable;
+			Integer xxxlength nullable;
+			String xxxhint nullable;
+			String prompt nullable;
+			- @GuiAlignment textAlign nullable;
+
+			String filterEditorProperties nullable length="100";
+			Boolean propertiesOnly nullable;
+			String optionDataSource nullable;
+			String detailOptionDS nullable;
+			String width nullable;
+			Integer pickListWidth nullable;
+			String displayField nullable;
+			String valueField nullable;
+			String pickListFields nullable;
+			String foreignKey nullable;
+			Boolean multiple nullable;
+			String foreignDS nullable;
+			Boolean startRow nullable;
+			Boolean endRow nullable;
+			Integer colSpan nullable;
+			String displayFormat nullable;
+			String valueMap nullable;
+			String getFieldValue nullable;
+			String icon nullable;
+			String formatCellValue nullable;
+			String align nullable;
+			String changed nullable;
+			Boolean treeField nullable;
+			String jsonPostfix nullable length="200";
+			- @GuiEditorType editorType nullable;
+			- @GuiFieldType type;
+		}
+
+		Service ListSettingsService {
+			gap
+
+			List<@ListSettings> findUserSettings;
+			findById => ListSettingsRepository.findById;
+			findByKey => ListSettingsRepository.findByKey;
+			findAll => ListSettingsRepository.findAll;
+			save throws NotAuthorizedException => ListSettingsRepository.save;
+			delete => ListSettingsRepository.delete;
+		}
+
+		Entity ListSettings {
+			gap
+
+			String listID key;
+			String userName key;
+			String settings length="6144";
+
+			Repository ListSettingsRepository {
+				findById;
+				findAll;
+				findByKey;
+				findByCondition;
+				save;
+				delete;
+			}
+		}
+
+		Service PropertyService {
+			gap
+
+			findById    => PropertyRepository.findById;
+			findAll     => PropertyRepository.findAll;
+			findByQuery => PropertyRepository.findByQuery;
+			findByCondition => PropertyRepository.findByCondition;
+			String getPropertyValue(String ^path, String propName, String defaultValue);
+			void loadDefaultProperties();
+			String translate(String propName);
+			String translate(String ^path, String propName);
+			String makeLangProperty(String propName);
+
+			save => PropertyRepository.save;
+			delete => PropertyRepository.delete;
+		}
+
+		Entity Property {
+			!optimisticLocking
+			gap
+
+			String propName length="256";
+			Clob propValue nullable;
+
+			Repository PropertyRepository {
+				findAll;
+				findById;
+				findByQuery;
+				findByCondition;
+				save throws PropertyAccessDenied;
+				delete;
+			}
+		}
+
+		Service ClientCommandService {
+			gap
+
+			Set<@ClientCommand> getCommands();
+			sendCommand(@ClientCommand cmd);
+			sendCommands(@ClientCommand cmd1, @ClientCommand cmd2, @ClientCommand cmd3, @ClientCommand cmd4, @ClientCommand cmd5);
+			findById => ClientCommandRepository.findById;
+			findByCondition => ClientCommandRepository.findByCondition;
+			findAll => ClientCommandRepository.findAll;
+		}
+
+		Entity ClientCommand {
+			- @CommandType commandType;
+			String sendTo;
+			String customCommand nullable;
+			String parameter1 nullable;
+			String parameter2 nullable;
+			String parameter3 nullable;
+			String parameter4 nullable;
+			String parameter5 nullable;
+
+			Repository ClientCommandRepository {
+				findById;
+				findAll;
+				findByCondition;
+				save;
+				delete;
+			}
+		}
+
+		enum CommandType {
+			SHOW_MESSAGE, DISSABLE_SERVICE, DISSABLE_SERVICE_CATEGORY, CUSTOM_COMMAND
+		}
+
+		enum GuiEditorType {
+			SpinnerItem,
+			ComboBoxItem,
+			RadioGroupItem,
+			TextAreaItem,
+			MultiFileItem,
+			StaticTextItem
+		}
+
+		enum GuiFieldType {
+			IntegerType ("integer"),
+			FloatType ("float"),
+			BooleanType ("boolean"),
+			DateType ("date"),
+			DateTimeType ("datetime"),
+			TextType ("text"),
+			LinkType ("link"),
+			FileUpload ("binary"),
+			AssociationToManyPicklist ("AssociationToManyPicklist"),
+			AssociationToMany ("AssociationToMany"),
+			AggregationToMany ("AggregationToMany"),
+			AggregationToOne ("AggregationToOne")
+		}
+
+		enum GuiAlignment {
+			center,
+			left,
+			right
+ 		}
+
+		Entity FileUpload {
+			String localName key;
+			String originalFileName nullable;
+			String contentType nullable;
+			Long fileLength;
+			Repository FileUploadRepository {
+				findAll;
+				findById;
+				findByCondition;
+				save;
+				delete;
+			}
+		}
+
+		Service FileUploadService {
+			gap
+			inject @AuditLogService
+			inject @PropertyService
+
+			findAll => FileUploadRepository.findAll;
+			findById => FileUploadRepository.findById;
+			findByCondition => FileUploadRepository.findByCondition;
+
+			@FileUpload uploadFile (String fileName, String contentType, java.io.InputStream fileHandle);
+			java.io.InputStream downloadFile(@FileUpload inputFile);
+		}
+
+		Service AuditLogService {
+			findAll => AuditLogRepository.findAll;
+			findById => AuditLogRepository.findById;
+			save => AuditLogRepository.save;
+			findByCondition => AuditLogRepository.findByCondition;
+			delete => AuditLogRepository.delete;
+		}
+
+		Entity AuditLog {
+			- @AuditLevel level databaseColumn="lvl";
+			String service;
+			String action;
+			int msgNumber;
+			String param0 nullable;
+			String param1 nullable;
+			String param2 nullable;
+			String param3 nullable;
+			String param4 nullable;
+			String description length="255" nullable;
+
+			Repository AuditLogRepository {
+				findById;
+				findByCondition;
+				findAll;
+				save;
+				delete;
+			}
+		}
+
+		enum AuditLevel {
+			INFO,
+			WARNING,
+			ALERT
+		}
+
+		Service UsersService {
+				findById => UsersRepository.findById;
+				findAll => UsersRepository.findAll;
+				findByCondition => UsersRepository.findByCondition;
+				@Users findUser(String username);
+				save => UsersRepository.save;
+				changePasswd(String newPasswd);
+		}
+
+		Entity Users {
+			scaffold
+
+			String username length="50" key;
+			String password length="90";
+			boolean enabled;
+			Date expireAt nullable;
+			- @Language selectedLanguage;
+			- Set<@Roles> roles;
+
+			Repository UsersRepository {
+				findById;
+				findAll;
+				findByQuery;
+				findByCondition;
+				save;
+			}
+		}
+
+		Entity Roles {
+			hint="skipddl"
+			scaffold
+
+			String roleName length="50" key;
+		}
+
+		Entity GuiSetting {
+			- @Users user key;
+
+			Boolean advancedSearch nullable;
+			Boolean saveListSettings nullable;
+
+			Boolean fullScreen nullable;
+			- @Skin skin nullable;
+			- @Layout layout nullable;
+		}
+
+		enum Language {
+			Slovensky("sk"), English("en"), Deutch("de")
+		}
+
+		enum SmartclientErrorCode {
+			SystemError, AccOperationError, FilterError, CreateInstanceError, WrongDataSource,
+			FilterOperation, SaveError, PropertyAccessDenied
+		}
+
+		enum Skin {
+			Graphite, Enterprise, EnterpriseBlue, TreeFrog
+		}
+
+		enum Layout {
+			Tree, Tabbed, Menu
+		}
+	}
+
+}

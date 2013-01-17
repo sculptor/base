@@ -1,0 +1,425 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+
+«EXTENSION extensions::helper»
+«EXTENSION extensions::guihelper»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::rcphelper»
+
+«DEFINE messageResources FOR GuiApplication»
+	«EXPAND commonResourcesProperties»
+	«EXPAND commonResourcesJava»
+	«EXPAND moduleResourcesProperties FOREACH modules»
+	«EXPAND moduleResourcesJava FOREACH modules»
+
+	«EXPAND pluginProperties»
+«ENDDEFINE»
+
+«DEFINE commonResourcesProperties FOR GuiApplication»
+«FILE "i18n/messages" + getResourceBundleLocaleSuffix() + ".properties" TO_GEN_RESOURCES-»
+breadCrumb_separator=\ >
+breadCrumb_update=Edit
+breadCrumb_add=Add
+newButton=New
+editButton=Edit
+removeButton=Remove
+remove_question=Remove {0} from {1}
+remove_question_title=Remove
+addButton_one=Select
+addButton_many=Add
+readJob=Retrieving {0}
+deleteJob=Deleting {0}
+updateJob=Saving {0}
+createJob=Saving {0}
+fetchChildrenJob=Fetching children of '{0}'
+errorNode=Not Available
+emptyDetailsPageInfo=This node has no information
+newWizardPage_initFromSelected=Init From Selected Element
+newWizardPage_title=New {0}
+newWizardPage_reference={0} ({1}) reference
+newWizardPage_reference_many={0} ({1}) references
+detailsPage_reference={0} ({1}) reference
+detailsPage_reference_many={0} ({1}) references
+booleanSelect_false=no
+booleanSelect_true=yes
+validation_required={0} is required
+validation_too_long={0} is too long. Max is {1}.
+validation_invalidFormat=Invalid format of {0}
+format_datePattern=yyyy-MM-dd
+format_dateTimePattern=yyyy-MM-dd HH:mm:ss
+delete_question=Delete {0} {1}?
+delete_title=Confirm Delete
+listView_filter_label=Find
+listView_clear_filter_tooltip=Clear Text Filter
+listView_columns_adjust=Adjust Column Widths
+listView_columns_choose=Choose Columns
+listView_columns_refresh=Refresh
+navigationMasterDetail_title=«name.toFirstUpper().toPresentation()»
+save_question=You have unsaved changes. Do you want to save your changes?
+save_question_title=Save
+generalPrefeferences_auto_login=Login automatically at startup
+initErrorTitle=Initialization Error
+initErrorMessage=Failed to initialize application or connect to server.\nMore information is available in error log.\nApplication will be closed.
+
+«systemExceptionClass().replaceAll("\\.", "_")»=System error
+org_fornax_cartridges_sculptor_framework_errorhandling_OptimisticLockingException=The information was updated by another user. Please redo your changes.
+org_fornax_cartridges_sculptor_framework_errorhandling_ValidationException=Validation error
+
+«EXPAND domainObjectsWithoutTaskProperties»
+«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE commonResourcesJava FOR GuiApplication»
+	«FILE javaFileName(getRichClientPackage() + ".Messages") -»
+«javaHeader()»
+package «getRichClientPackage()»;
+
+/**
+ * Common message resources.
+ */
+public class Messages extends org.eclipse.osgi.util.NLS {
+    private static final String BUNDLE_NAME = "i18n.messages"; //$NON-NLS-1$
+    public static String breadCrumb_separator;
+    public static String breadCrumb_update;
+    public static String breadCrumb_add;
+    public static String newButton;
+    public static String editButton;
+    public static String removeButton;
+    public static String remove_question;
+    public static String remove_question_title;
+    public static String addButton_one;
+    public static String addButton_many;
+    public static String readJob;
+    public static String deleteJob;
+    public static String updateJob;
+    public static String createJob;
+    public static String fetchChildrenJob;
+    public static String errorNode;
+    public static String emptyDetailsPageInfo;
+    public static String newWizardPage_initFromSelected;
+    public static String newWizardPage_title;
+    public static String newWizardPage_reference;
+    public static String newWizardPage_reference_many;
+    public static String detailsPage_reference;
+    public static String detailsPage_reference_many;
+    public static String booleanSelect_false;
+    public static String booleanSelect_true;
+    public static String validation_required;
+    public static String validation_too_long;
+    public static String validation_invalidFormat;
+    public static String format_datePattern;
+    public static String format_dateTimePattern;
+    public static String delete_question;
+    public static String delete_title;
+    public static String listView_filter_label;
+    public static String listView_clear_filter;
+    public static String listView_columns_adjust;
+    public static String listView_columns_choose;
+    public static String listView_columns_refresh;
+    public static String navigationMasterDetail_title;
+    public static String save_question;
+    public static String save_question_title;
+    public static String generalPrefeferences_auto_login;
+    public static String initErrorTitle;
+    public static String initErrorMessage;
+
+    «EXPAND domainObjectsWithoutTaskJava»
+
+    static {
+        // initialize resource bundle
+        org.eclipse.osgi.util.NLS.initializeMessages(BUNDLE_NAME, Messages.class);
+    }
+
+    protected Messages() {
+    }
+
+    public static String getString(String key) {
+        try {
+            java.lang.reflect.Field field = Messages.class.getField(key);
+            return (String) field.get(null);
+        } catch (Exception e) {
+            String value = "NLS missing message: " + key + " in: " + BUNDLE_NAME; //$NON-NLS-1$ //$NON-NLS-2$
+            // TODO log
+            return value;
+        }
+    }
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE domainObjectsWithoutTaskProperties FOR GuiApplication»
+«LET modules.userTasks.for.toSet() AS domainObjectsWithTask -»
+«LET modules.userTasks.viewProperties AS allViewProperties -»
+«LET allViewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base).target.
+	addAll(allViewProperties.typeSelect(EnumViewProperty).reference.to).
+	addAll(allViewProperties.typeSelect(BasicTypeViewProperty).reference.to).toSet().
+	reject(e|domainObjectsWithTask.contains(e))
+	AS domainObjectsWithoutTask -»
+«IF !domainObjectsWithoutTask.isEmpty -»
+
+# Referenced Domain Objects without direct UserTask,
+# i.e. not belonging to a specific GuiModule
+«EXPAND resourcesProperties FOREACH domainObjectsWithoutTask.sortBy(e|e.name) »
+«ENDIF -»
+«ENDLET -»
+«ENDLET -»
+«ENDLET -»
+«ENDDEFINE»
+
+«DEFINE domainObjectsWithoutTaskJava FOR GuiApplication»
+«LET modules.userTasks.for.toSet() AS domainObjectsWithTask -»
+«LET modules.userTasks.viewProperties AS allViewProperties -»
+«LET allViewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base).target.
+	addAll(allViewProperties.typeSelect(EnumViewProperty).reference.to).
+	addAll(allViewProperties.typeSelect(BasicTypeViewProperty).reference.to).toSet().
+	reject(e|domainObjectsWithTask.contains(e))
+	AS domainObjectsWithoutTask -»
+«IF !domainObjectsWithoutTask.isEmpty -»
+
+    // Referenced Domain Objects without direct UserTask,
+    // i.e. not belonging to a specific GuiModule
+«EXPAND resourcesJava FOREACH domainObjectsWithoutTask.sortBy(e|e.name) »
+«ENDIF -»
+«ENDLET -»
+«ENDLET -»
+«ENDLET -»
+«ENDDEFINE»
+
+«DEFINE moduleResourcesProperties FOR GuiModule»
+«FILE "i18n/" + name + "Messages" + getResourceBundleLocaleSuffix() + ".properties" TO_GEN_RESOURCES-»
+
+«EXPAND resourcesProperties FOREACH
+	userTasks.for.addAll(userTasks.for.select(e|e.extends != null).collect(e|e.extends)).
+	toSet().sortBy(e|e.name) »
+
+«EXPAND newWizardProperties FOREACH userTasks.typeSelect(CreateTask)»
+
+«EXPAND moduleApplicationExceptionResources »
+
+«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE moduleResourcesJava FOR GuiModule»
+	«FILE javaFileName(getRichClientPackage() + "." + name.toFirstUpper() + "Messages") -»
+«javaHeader()»
+package «getRichClientPackage()»;
+
+/**
+ * Message resources for the «name» module.
+ */
+public class «name.toFirstUpper()»Messages extends «application.getRichClientPackage()».Messages {
+    private static final String BUNDLE_NAME = "i18n.«name»Messages"; //$NON-NLS-1$
+
+    «EXPAND resourcesJava FOREACH
+		userTasks.for.addAll(userTasks.for.select(e|e.extends != null).collect(e|e.extends)).
+		toSet().sortBy(e|e.name) »
+
+    «EXPAND newWizardJava FOREACH userTasks.typeSelect(CreateTask)»
+
+    static {
+        // initialize resource bundle
+        org.eclipse.osgi.util.NLS.initializeMessages(BUNDLE_NAME, «name.toFirstUpper()»Messages.class);
+    }
+
+    protected «name.toFirstUpper()»Messages() {
+    }
+
+    public static String getString(String key) {
+        try {
+            java.lang.reflect.Field field = «name.toFirstUpper()»Messages.class.getField(key);
+            return (String) field.get(null);
+        } catch (Exception e) {
+            String value = "NLS missing message: " + key + " in: " + BUNDLE_NAME; //$NON-NLS-1$ //$NON-NLS-2$
+            // TODO log
+            return value;
+        }
+    }
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE resourcesProperties FOR DomainObject »
+# «name»
+«getMessagesKey()»=«name.toPresentation()»
+«getMessagesKey()»_plural=«name.plural().toPresentation()»
+«EXPAND resourcesProperties(this) FOREACH getAllAttributes() -»
+«EXPAND basicTypeResourcesProperties(this) FOREACH getAllBasicTypeReferences() -»
+«EXPAND resourcesProperties(this) FOREACH getAllReferences().select(ref | ref.to.metaType != BasicType) -»
+«ENDDEFINE»
+
+«DEFINE resourcesJava FOR DomainObject »
+// «name»
+public static String «getMessagesKey()»;
+public static String «getMessagesKey()»_plural;
+«EXPAND resourcesJava(this) FOREACH getAllAttributes() -»
+«EXPAND basicTypeResourcesJava(this) FOREACH getAllBasicTypeReferences() -»
+«EXPAND resourcesJava(this) FOREACH getAllReferences().select(ref | ref.to.metaType != BasicType) -»
+«ENDDEFINE»
+
+«DEFINE resourcesProperties(DomainObject d) FOR Attribute -»
+«d.getMessagesKey()»_«name»=«name.toFirstUpper().toPresentation()»
+«ENDDEFINE»
+
+«DEFINE resourcesJava(DomainObject d) FOR Attribute -»
+public static String «d.getMessagesKey()»_«name»;
+«ENDDEFINE»
+
+«DEFINE basicTypeResourcesProperties(DomainObject d) FOR Reference -»
+	«FOREACH to.getAllNonSystemAttributes() AS att -»
+«d.getMessagesKey()»_«name»_«att.name»=«name.toFirstUpper().toPresentation()» «att.name.toPresentation()»
+	«ENDFOREACH -»
+	«FOREACH to.getAllEnumReferences() AS enumRef -»
+«d.getMessagesKey()»_«name»_«enumRef.name»=«name.toFirstUpper().toPresentation()» «enumRef.name.toPresentation()»
+	«ENDFOREACH -»
+«ENDDEFINE»
+
+«DEFINE basicTypeResourcesJava(DomainObject d) FOR Reference -»
+	«FOREACH to.getAllNonSystemAttributes() AS att -»
+public static String «d.getMessagesKey()»_«name»_«att.name»;
+	«ENDFOREACH -»
+	«FOREACH to.getAllEnumReferences() AS enumRef -»
+public static String «d.getMessagesKey()»_«name»_«enumRef.name»;
+	«ENDFOREACH -»
+«ENDDEFINE»
+
+«DEFINE resourcesProperties(DomainObject d) FOR Reference -»
+«IF to.metaType == Enum-»
+«d.getMessagesKey()»_«name»=«name.toFirstUpper().toPresentation()»
+«ELSE-»
+«d.getMessagesKey()»_«name»=«name.toFirstUpper().toPresentation()»
+«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE resourcesJava(DomainObject d) FOR Reference -»
+«IF to.metaType == Enum-»
+public static String «d.getMessagesKey()»_«name»;
+«ELSE-»
+public static String «d.getMessagesKey()»_«name»;
+«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE resourcesProperties FOR Enum »
+# «name»
+«getMessagesKey()»=«name.toPresentation()»
+«getMessagesKey()».plural=«name.plural().toPresentation()»
+«EXPAND resourcesProperties(this) FOREACH values -»
+«ENDDEFINE»
+
+«DEFINE resourcesJava FOR Enum »
+// «name»
+public static String «getMessagesKey()»_«name»;
+public static String «getMessagesKey()»_«name»_plural;
+«EXPAND resourcesJava(this) FOREACH values -»
+«ENDDEFINE»
+
+«DEFINE resourcesProperties(DomainObject d) FOR EnumValue -»
+«d.getMessagesKey()»_«name»=«name.toFirstUpper().toPresentation()»
+«ENDDEFINE»
+
+«DEFINE resourcesJava(DomainObject d) FOR EnumValue -»
+public static String «d.getMessagesKey()»_«name»;
+«ENDDEFINE»
+
+«DEFINE newWizardProperties FOR CreateTask»
+new«for.name»WizardPage_description=Create a new «for.name.toPresentation()»
+«ENDDEFINE»
+
+«DEFINE newWizardJava FOR CreateTask»
+    public static String new«for.name»WizardPage_description;
+«ENDDEFINE»
+
+«DEFINE moduleApplicationExceptionResources FOR GuiModule»
+# ApplicationException
+    «FOREACH getApplicationExceptions() AS exc -»
+#«exc.replaceAll("\\.", "_")»=«exc»
+    «ENDFOREACH -»
+«ENDDEFINE»
+
+«DEFINE messageSourceDependencyProperty FOR Object»
+    private org.springframework.context.MessageSource messages;
+
+    protected org.springframework.context.MessageSource getMessages() {
+        return messages;
+    }
+
+    /**
+     * Dependency injection
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setMessages(org.springframework.context.MessageSource messages) {
+        this.messages = messages;
+    }
+«ENDDEFINE»
+
+«DEFINE pluginProperties FOR GuiApplication»
+«FILE "plugin.properties" TO_GEN_ROOT-»
+«EXPAND pluginPropertiesContent»
+«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE pluginPropertiesContent FOR GuiApplication»
+productName=«name.toPresentation()» Product
+aboutText=«name.toPresentation()» \n\n\n\nSilk icons: http://www.famfamfam.com/lab/icons/silk/
+
+fileMenuLabel=File
+fileMenuMnemonic=F
+exitMenuItemLabel=Exit
+exitMenuItemMnemonic=x
+listMenuLabel=List
+openInNewMenuItemLabel=Open in New Window
+openInNewMenuItemMnemonic=N
+progressMenuItemLabel=Progress
+resetPerspectiveMenuItemLabel=Reset Perspective
+preferencesMenuItemLabel=Preferences
+preferencesGeneral=General
+aboutMenuItemLabel=About
+aboutMenuItemMnemonic=A
+newMenuItemLabel=New
+deleteMenuItemLabel=Delete
+
+collapseAllCommandName=Collapse All
+showprogressCommandName=Show Progress View
+selectInMainViewCommandName=Edit
+
+mainViewName=Main
+«EXPAND pluginPropertiesViewName FOREACH modules.userTasks.typeSelect(ListTask)»
+«EXPAND pluginPropertiesCommandName FOREACH modules.userTasks.select(e | e.getPrimaryServiceOperation() != null)»
+«EXPAND pluginPropertiesWizardName FOREACH modules.userTasks.typeSelect(CreateTask)»
+
+«ENDDEFINE»
+
+«DEFINE pluginPropertiesViewName FOR ListTask»
+list«for.name»ViewName=List «for.name.plural().toPresentation()»«
+ENDDEFINE»
+
+«DEFINE pluginPropertiesCommandName FOR UserTask»«
+ENDDEFINE»
+
+«DEFINE pluginPropertiesCommandName FOR CreateTask»
+new«for.name»CommandName=«for.name»«
+ENDDEFINE»
+
+«DEFINE pluginPropertiesCommandName FOR ListTask»
+showList«for.name»ViewCommandName=«for.name.plural().toPresentation()»«
+ENDDEFINE»
+
+«DEFINE pluginPropertiesWizardName FOR CreateTask»
+new«for.name»WizardName=New «for.name»«
+ENDDEFINE»

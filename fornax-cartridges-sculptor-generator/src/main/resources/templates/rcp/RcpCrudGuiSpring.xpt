@@ -1,0 +1,343 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+
+«EXTENSION extensions::helper»
+«EXTENSION extensions::guihelper»
+«EXTENSION extensions::properties»
+
+«DEFINE spring FOR GuiApplication»
+	«EXPAND applicationContext»
+	«EXPAND applicationContextStub»
+	«EXPAND more»
+	«EXPAND moreTest»
+	«EXPAND generatedSpringProperties»
+    «EXPAND springProperties»
+
+    «EXPAND richObjectAll»
+
+	«EXPAND serviceRemoteAll»
+	«EXPAND serviceStubAll»
+
+	«EXPAND richObjectModule FOREACH modules»
+
+«ENDDEFINE»
+
+«DEFINE header FOR Object -»
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+«ENDDEFINE »
+
+«DEFINE headerWithMoreNamespaces FOR Object -»
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+«ENDDEFINE »
+
+«DEFINE applicationContext FOR GuiApplication»
+    «FILE "applicationContext.xml" TO_GEN_RESOURCES-»
+«EXPAND headerWithMoreNamespaces»
+	<import resource="RichObject-all.xml"/>
+    <import resource="Service-remote-all.xml"/>
+
+	«EXPAND annotationScan»
+    «IF isServiceContextToBeGenerated()»
+    	«EXPAND serviceContextFactoryBean»
+    «ENDIF»
+
+    «EXPAND messageSourceBean»
+    «EXPAND springPropertyConfig»
+
+    <import resource="more.xml"/>
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE applicationContextStub FOR GuiApplication»
+    «FILE "applicationContext-stub.xml" TO_GEN_RESOURCES-»
+«EXPAND headerWithMoreNamespaces»
+	<import resource="RichObject-all.xml"/>
+
+	«EXPAND annotationScanStub»
+    «IF isServiceContextToBeGenerated()»
+    	«EXPAND serviceContextFactoryBean»
+    «ENDIF»
+
+    «EXPAND messageSourceBean»
+    «EXPAND springPropertyConfig»
+
+    <import resource="more.xml"/>
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE springPropertyConfig FOR GuiApplication»
+    <bean id="springPropertyConfig" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <property name="locations">
+    	<list>
+	      <value>classpath:generated-spring.properties</value>
+	      <value>classpath:spring.properties</value>
+      	</list>
+    </property>
+  </bean>
+«ENDDEFINE»
+
+«DEFINE springProperties FOR GuiApplication»
+    «FILE "spring.properties" TO_RESOURCES-»
+# Here you can overwrite properties defined in
+# generated-spring.properties.
+
+«IF getSpringRemotingType() == "rmi"»
+rmiUrl=rmi://localhost:1199
+«ELSEIF getSpringRemotingType() == "hessian"»
+hessianUrl=http://localhost:8888/remoting
+«ELSEIF getSpringRemotingType() == "burlap"»
+burlapUrl=http://localhost:8888/remoting
+«ELSEIF getSpringRemotingType() == "httpinvoker"»
+httpInvokerUrl=http://localhost:8888/remoting
+«ENDIF»
+
+
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE generatedSpringProperties FOR GuiApplication»
+    «FILE "generated-spring.properties" TO_GEN_RESOURCES-»
+rmiUrl=rmi://localhost:1199
+
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE messageSourceBean FOR GuiApplication »
+    <bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+      <property name="basenames">
+        <list>
+          <value>i18n/messages</value>
+          «FOREACH modules AS module -»
+          <value>i18n/«module.name»Messages</value>
+          «ENDFOREACH-»
+          <value>org/hibernate/validator/resources/DefaultValidatorMessages</value>
+        </list>
+      </property>
+    </bean>
+«ENDDEFINE»
+
+«DEFINE more FOR GuiApplication»
+    «FILE "more.xml" TO_RESOURCES-»
+«EXPAND header»
+    <!-- Import more custom beans
+    <import resource="moreBeans.xml"/>
+    -->
+
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE moreTest FOR GuiApplication»
+    «FILE "more-test.xml" TO_RESOURCES_TEST-»
+«EXPAND header»
+    <!-- Import more custom beans for test
+    <import resource="moreTestBeans.xml"/>
+    -->
+
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+
+
+«DEFINE richObjectAll FOR GuiApplication»
+    «FILE "RichObject-all.xml" TO_GEN_RESOURCES-»
+«EXPAND header»
+    «FOREACH modules AS m»<import resource="RichObject-«m.name».xml"/>«ENDFOREACH »
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE serviceContextFactoryBean FOR GuiApplication»
+	<bean id="serviceContextFactory"
+    		class="«fw("richclient.errorhandling.RichServiceContextFactoryImpl")»">
+    	<property name="applicationId" value="«name»"/>
+    </bean>
+«ENDDEFINE»
+
+«DEFINE serviceRemoteAll FOR GuiApplication»
+«LET groupByTarget().getUsedServices().toSet().typeSelect(Service) AS allUsedServices»
+«LET allUsedServices.module.toSet().typeSelect(Module) AS allUsedServiceModules»
+	«FOREACH allUsedServiceModules AS m»
+		«EXPAND serviceRemoteModule(allUsedServices.select(e | e.module == m)) FOR m»
+	«ENDFOREACH»
+
+    «FILE "Service-remote-all.xml" TO_GEN_RESOURCES-»
+«EXPAND headerWithMoreNamespaces»
+	«EXPAND contextClassLoaderBean»
+	«EXPAND contextClassLoaderAdviceBean»
+	«EXPAND aopConfig(allUsedServices)»
+
+    «FOREACH allUsedServiceModules AS m»<import resource="Service-remote-«m.name».xml"/>«ENDFOREACH »
+</beans>
+    «ENDFILE »
+
+«ENDLET»
+«ENDLET»
+«ENDDEFINE »
+
+«DEFINE contextClassLoaderBean FOR GuiApplication»
+    <bean id="contextClassLoader"
+		class="«getRichClientPackage()».ContextClassLoaderFactory"
+		factory-method="getClassLoader">
+	</bean>
+«ENDDEFINE»
+
+«DEFINE contextClassLoaderAdviceBean FOR GuiApplication»
+	<bean id="contextClassLoaderAdvice"
+		class="«fw("richclient.util.ContextClassLoaderAdvice")»">
+		<property name="classLoader">
+            <ref bean="contextClassLoader"/>
+        </property>
+	</bean>
+«ENDDEFINE»
+
+«DEFINE aopConfig(List[Service] allUsedServices) FOR GuiApplication»
+	<aop:config>
+		<aop:pointcut id="servicePointcut"
+			expression="«FOREACH allUsedServices AS service SEPARATOR ' || '»bean(«service.name.toFirstLower()»)«ENDFOREACH»" />
+
+		<aop:advisor advice-ref="contextClassLoaderAdvice" order="1"
+			pointcut-ref="servicePointcut" />
+
+	</aop:config>
+«ENDDEFINE»
+
+«DEFINE serviceStubAll FOR GuiApplication»
+«LET groupByTarget().getUsedServices().toSet().typeSelect(Service) AS allUsedServices»
+«LET allUsedServices.module.toSet().typeSelect(Module) AS allUsedServiceModules»
+	«FOREACH allUsedServiceModules AS m»
+		«EXPAND serviceStubModule(allUsedServices.select(e | e.module == m)) FOR m»
+	«ENDFOREACH»
+
+    «FILE "Service-stub-all.xml" TO_GEN_RESOURCES-»
+«EXPAND header»
+    «FOREACH allUsedServiceModules AS m»<import resource="Service-stub-«m.name».xml"/>«ENDFOREACH »
+</beans>
+    «ENDFILE »
+«ENDLET»
+«ENDLET»
+«ENDDEFINE »
+
+«DEFINE richObjectModule FOR GuiModule»
+    «FILE "RichObject-" + name + ".xml" TO_GEN_RESOURCES-»
+«EXPAND header»
+«FOREACH groupByTarget() AS group»
+	«EXPAND richObjectFactoryBean FOR group»
+«ENDFOREACH»
+
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+
+«DEFINE richObjectFactoryBean FOR UserTaskGroup»
+    <bean id="rich«for.name»Factory"
+			class="«module.getRichClientPackage()».data.Rich«for.name»«gapSubclassSuffix(this, "Rich" + for.name)»$Factory">
+		<lookup-method name="create" bean="rich«for.name»"/>
+    </bean>
+«ENDDEFINE»
+
+«DEFINE serviceRemoteModule(List[Service] usedServices) FOR Module»
+    «FILE "Service-remote-" + name + ".xml" TO_GEN_RESOURCES-»
+«EXPAND header»
+
+	«IF getSpringRemotingType() == "rmi"»
+		«EXPAND rmiProxyBean FOREACH usedServices»
+	«ELSEIF getSpringRemotingType() == "hessian"»
+		«EXPAND hessianProxyBean FOREACH usedServices »
+	«ELSEIF getSpringRemotingType() == "burlap"»
+		«EXPAND burlapProxyBean FOREACH usedServices »
+	«ELSEIF getSpringRemotingType() == "httpinvoker"»
+		«EXPAND httpInvokerProxyBean FOREACH usedServices »
+	«ENDIF»
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE rmiProxyBean FOR Service»
+	<bean id="«name.toFirstLower()»" class="org.springframework.remoting.rmi.RmiProxyFactoryBean">
+		<property name="serviceUrl" value="${rmiUrl}/«module.application.name»/«name.toFirstLower()»" />
+		<property name="serviceInterface" value="«getServiceapiPackage()».«name»" />
+	</bean>
+«ENDDEFINE»
+
+«DEFINE hessianProxyBean FOR Service»
+	<bean id="«name.toFirstLower()»" class="org.springframework.remoting.caucho.HessianProxyFactoryBean">
+		<property name="serviceUrl" value="${hessianUrl}/«name»" />
+		<property name="serviceInterface" value="«getServiceapiPackage()».«name»" />
+	</bean>
+«ENDDEFINE»
+
+«DEFINE burlapProxyBean FOR Service»
+	<bean id="«name.toFirstLower()»" class="org.springframework.remoting.caucho.BurlapProxyFactoryBean">
+		<property name="serviceUrl" value="${burlapUrl}/«name»" />
+		<property name="serviceInterface" value="«getServiceapiPackage()».«name»" />
+	</bean>
+«ENDDEFINE»
+
+«DEFINE httpInvokerProxyBean FOR Service»
+	<bean id="«name.toFirstLower()»" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+		<property name="serviceUrl" value="${httpInvokerUrl}/«name»" />
+		<property name="serviceInterface" value="«getServiceapiPackage()».«name»" />
+	</bean>
+«ENDDEFINE»
+
+«DEFINE serviceStubModule(List[Service] services) FOR Module»
+    «FILE "Service-stub-" + name + ".xml" TO_GEN_RESOURCES-»
+«EXPAND header»
+«FOREACH services AS s»
+	«EXPAND serviceStubBean FOR s»
+«ENDFOREACH»
+</beans>
+    «ENDFILE »
+«ENDDEFINE »
+
+«DEFINE serviceStubBean FOR Service»
+	    <bean id="«name.toFirstLower()»" class="«module.getServicestubPackage()».«name»Stub">
+	    </bean>
+«ENDDEFINE»
+
+«DEFINE annotationScan FOR GuiApplication»
+	<!-- activates annotation-based bean configuration -->
+	<context:annotation-config />
+	<!-- scans for @Components, @Repositories, @Services, ... -->
+	<context:component-scan base-package="«this.guiForApplication.basePackage»" >
+		<context:exclude-filter type="regex" expression=".*ServiceStub"/>
+	</context:component-scan>
+«ENDDEFINE»
+
+«DEFINE annotationScanStub FOR GuiApplication»
+	<!-- activates annotation-based bean configuration -->
+	<context:annotation-config />
+	<!-- scans for @Components, @Repositories, @Services, ... -->
+	<context:component-scan base-package="«this.guiForApplication.basePackage»" />
+«ENDDEFINE»

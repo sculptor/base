@@ -1,0 +1,54 @@
+package CompanyPolicy
+
+/* ################################################################################
+   # Declaration
+   ################################################################################ */
+import javax.servlet.http.HttpServletRequest
+import java.util.Set
+
+import org.fornax.cartridges.sculptor.smartclient.server.RequestDescription
+import org.fornax.cartridges.sculptor.smartclient.domain.ClientCommand
+import org.fornax.cartridges.sculptor.smartclient.serviceapi.ClientCommandService
+import org.fornax.cartridges.sculptor.smartclient.domain.CommandType
+import org.fornax.cartridges.sculptor.smartclient.server.ScServlet
+import org.fornax.cartridges.sculptor.smartclient.framework.ServiceDescription
+import org.fornax.cartridges.sculptor.framework.domain.AuditHandler
+import org.fornax.cartridges.sculptor.framework.domain.FullAuditLog
+import org.fornax.cartridges.sculptor.framework.errorhandling.ServiceContext
+import org.fornax.cartridges.sculptor.framework.errorhandling.ApplicationException
+
+global ServiceContext serviceContext;
+global ScServlet servlet;
+global ClientCommandService commandService;
+
+/* ################################################################################
+   # Support functions
+   ################################################################################ */
+function void sendMessage(ClientCommandService commandService, ServiceContext serviceContext, String sendTo, String message) {
+	ClientCommand cmd=new ClientCommand();
+	cmd.setSendTo(sendTo);
+	cmd.setParameter1(message);
+	cmd.setCommandType(CommandType.SHOW_MESSAGE);
+	commandService.sendCommand(serviceContext, cmd);
+}
+
+function Object findService(ScServlet servlet, String serviceName) {
+	ServiceDescription serviceHolder = servlet.findService(serviceName);
+	return serviceHolder != null ? serviceHolder.getInstance() : null;
+}
+
+/* ################################################################################
+   # Auditing rules
+   ################################################################################ */
+RULE "Show request"
+	unique-group "Log"
+	priority -100
+WHEN
+	Exist request
+THEN
+	Log "########################################"
+	Log "    serviceName: "+$req.getServiceName()
+	Log "    operationType: "+$req.getOperationType()
+	Log "    methodName: "+$req.getMethodName()
+	Log "########################################"
+END

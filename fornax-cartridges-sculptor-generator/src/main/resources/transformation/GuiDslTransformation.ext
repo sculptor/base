@@ -1,0 +1,276 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+ 
+import sculptorguidsl;
+import sculptordsl;
+import sculptormetamodel;
+import sculptorguimetamodel;
+
+extension org::fornax::cartridges::sculptor::dsl::ModelLoadExtensions;
+ 
+extension transformation::DslTransformation;
+extension transformation::Transformation;
+extension transformation::DefaultGuiDslTransformation;
+extension transformation::GuiTransformation;
+
+extension extensions::helper;
+extension extensions::guihelper;
+extension extensions::properties;
+
+create sculptorguimetamodel::GuiApplication this transform(DslGuiApplication gui) :
+	let startTime = currentTimeMillis() :
+    setDoc(gui.doc) ->
+    setName(gui.name) ->
+	// initiate transformation of the business tier part from here in order to exploit the cache of create extensions
+
+	setGuiForApplication(((DslModel)gui.guiForApplication.eRootContainer).transform().modify()) ->
+
+    setBasePackage(guiForApplication.basePackage) ->
+
+	if isGuiDefaultsToBeCreated() then {
+		gui.addDefault(guiForApplication)
+	} ->
+	
+	modules.addAll(gui.modules.transformModule()) ->
+	
+	modules.userTasks.checkIdAttribute() ->
+	
+	// AddTask must be added afterwards, when all modules are populated
+	transformAddTask() ->
+	// we need to process subtaskTransitions twice, since it adds missing  
+	modules.userTasks.prepareTransformSubtaskTransitions() ->
+	modules.userTasks.transformSubtaskTransitions() -> 
+	modules.userTasks.transformRelatedTransitions();
+
+checkIdAttribute(UserTask task) :
+	if (task.for.getIdAttribute() == null) then 
+		error("You must define id attribute for " + task.for.name);
+	
+create sculptorguimetamodel::GuiModule this transformModule(DslGuiModule module) :
+	setApplication(((DslGuiApplication) module.eContainer).transform()) ->
+	setName(module.for.name) ->
+	setFor(module.for.transform()) ->
+	setHint(module.hint) ->
+	userTasks.addAll(module.userTasks.transformTask(module.for.transform()));
+	
+create sculptorguimetamodel::UserTask this transformTask(DslUserTask task, Module module) :
+	error("Unexpected call to transform(DslUserTask): " + task);
+	
+create sculptorguimetamodel::ViewTask this transformTask(DslViewTask task, Module module) :
+	let domainObject = module.domainObjects.select(e | e.name == task.for.name).first() :
+	setModule(((DslGuiModule) task.eContainer).transformModule()) ->
+	setName("view" + task.for.name) ->
+	setHint(task.hint) ->
+	setTaskType("view") ->
+	setFor(domainObject) ->
+	setConversationRoot(false) ->
+	setGapClass(isGapClassToBeGenerated(task.gapClass, task.noGapClass)) ->
+	(
+	if (task.findWith.operation == null) then 
+		setFindDOWith(domainObject.getFindByIdMethod())
+	else
+		setFindDOWith(task.findWith.operation.transform())
+	) ->
+	viewProperties.addAll(task.viewProperties.transformDslGuiProperty(this)) ->
+	viewProperties.typeSelect(ReferenceViewProperty).addReferencePreviewProperties(this, task);
+
+
+create sculptorguimetamodel::CreateTask this transformTask(DslCreateTask task, Module module) :
+	let domainObject = module.domainObjects.select(e | e.name == task.for.name).first() :
+	setModule(((DslGuiModule) task.eContainer).transformModule()) ->
+	setName("create" + task.for.name) ->
+	setHint(task.hint) ->
+	setTaskType("create") ->
+	setFor(domainObject) ->
+	setConversationRoot(task.createWith.operation != null ? true : domainObject.isSaveMethodAvailable()) ->
+	setGapClass(isGapClassToBeGenerated(task.gapClass, task.noGapClass)) ->
+	(
+	if (task.createWith.operation == null) then 
+		setCreateDOWith(domainObject.getSaveMethod())
+	else
+		setCreateDOWith(task.createWith.operation.transform())
+	) ->
+	(
+	if (task.populateWith.operation == null) then 
+		setPopulateDOWith(domainObject.getPopulateAssociationsMethod())
+	else
+		setPopulateDOWith(task.populateWith.operation.transform())
+	) ->
+	viewProperties.addAll(task.viewProperties.transformDslGuiProperty(this)) ->
+	viewProperties.typeSelect(ReferenceViewProperty).addReferencePreviewProperties(this, task);
+
+create sculptorguimetamodel::UpdateTask this transformTask(DslUpdateTask task, Module module) :
+	let domainObject = module.domainObjects.select(e | e.name == task.for.name).first() :
+	setModule(((DslGuiModule) task.eContainer).transformModule()) ->
+	setName("update" + task.for.name) ->
+	setHint(task.hint) ->
+	setTaskType("update") ->
+	setFor(domainObject) ->
+	setConversationRoot(task.updateWith.operation != null ? true : domainObject.isSaveMethodAvailable()) ->
+	setGapClass(isGapClassToBeGenerated(task.gapClass, task.noGapClass)) ->
+	(
+	if (task.updateWith.operation == null) then 
+		setUpdateDOWith(domainObject.getSaveMethod())
+	else
+		setUpdateDOWith(task.updateWith.operation.transform())
+	) ->
+	(
+	if (task.findWith.operation == null) then 
+		setFindDOWith(domainObject.getFindByIdMethod())
+	else
+		setFindDOWith(task.findWith.operation.transform())
+	) ->
+	(
+	if (task.populateWith.operation == null) then 
+		setPopulateDOWith(domainObject.getPopulateAssociationsMethod())
+	else
+		setPopulateDOWith(task.populateWith.operation.transform())
+	) ->
+	viewProperties.addAll(task.viewProperties.transformDslGuiProperty(this)) ->
+	viewProperties.typeSelect(ReferenceViewProperty).addReferencePreviewProperties(this, task);
+
+create sculptorguimetamodel::DeleteTask this transformTask(DslDeleteTask task, Module module) :
+	let domainObject = module.domainObjects.select(e | e.name == task.for.name).first() :
+	setModule(((DslGuiModule) task.eContainer).transformModule()) ->
+	setName("delete" + task.for.name) ->
+	setHint(task.hint) ->
+	setTaskType("delete") ->
+	setFor(domainObject) ->
+	setConversationRoot(task.deleteWith.operation != null ? true : domainObject.isDeleteMethodAvailable()) ->
+	setGapClass(isGapClassToBeGenerated(task.gapClass, task.noGapClass)) ->
+	(
+	if (task.deleteWith.operation == null) then 
+		setDeleteDOWith(domainObject.getDeleteMethod())
+	else
+		setDeleteDOWith(task.deleteWith.operation.transform())
+	) ->
+	(
+	if (task.findWith.operation == null) then 
+		setFindDOWith(domainObject.getFindByIdMethod())
+	else
+		setFindDOWith(task.findWith.operation.transform())
+	) ->
+	viewProperties.addAll(task.viewProperties.transformDslGuiProperty(this)) ->
+	viewProperties.typeSelect(ReferenceViewProperty).addReferencePreviewProperties(this, task);
+
+create sculptorguimetamodel::ListTask this transformTask(DslListTask task, Module module) :
+	let domainObject = module.domainObjects.select(e | e.name == task.for.name).first() :
+	setModule(((DslGuiModule) task.eContainer).transformModule()) ->
+	setName("list" + task.for.name) ->
+	setHint(task.hint) ->
+	setTaskType("list") ->
+	setFor(domainObject) ->
+	setConversationRoot(task.searchWith.operation != null ? true : domainObject.isFindAllMethodAvailable()) ->
+	setGapClass(isGapClassToBeGenerated(task.gapClass, task.noGapClass)) ->
+	(
+	if (task.searchWith.operation == null) then 
+		setSearchDOWith(domainObject.getFindAllMethod())
+	else
+		setSearchDOWith(task.searchWith.operation.transform())
+	) ->
+	viewProperties.addAll(task.viewProperties.transformDslGuiProperty(this)) ->
+	viewProperties.typeSelect(ReferenceViewProperty).addReferencePreviewProperties(this, task);
+
+create sculptorguimetamodel::AddTask this transformTask(DslAddTask task, Module module) :
+	let domainObject = module.domainObjects.select(e | e.name == task.for.name).first() :
+	setModule(((DslGuiModule) task.eContainer).transformModule()) ->
+	setName("add" + task.for.name) ->
+	setHint(task.hint) ->
+	setTaskType("add") ->
+	setFor(domainObject) ->
+	setConversationRoot(task.findWith.operation != null ? true : domainObject.isFindAllMethodAvailable()) ->
+	setGapClass(isGapClassToBeGenerated(task.gapClass, task.noGapClass)) ->
+	(
+	if (task.findWith.operation == null) then 
+		setFindDOWith(domainObject.getFindAllMethod())
+	else
+		setFindDOWith(task.findWith.operation.transform())
+	) ->
+	viewProperties.addAll(task.viewProperties.transformDslGuiProperty(this)) ->
+	viewProperties.typeSelect(ReferenceViewProperty).addReferencePreviewProperties(this, task);
+
+
+List[ViewDataProperty] transformDslGuiProperty(DslGuiViewProperty prop, UserTask task) :
+	if (prop.basicTypeProperty == null) then
+		(let result = prop.for.transform().transformProperty(task, (DslGuiApplication) prop.eRootContainer) :
+		result.setHint(prop.hint) ->
+		result)
+	else 
+		(// BasicTypeProperty can be for a attribute or an enum
+		let result = transformDslGuiBasicTypeProperty(prop, task):
+		result.setHint(prop.hint) -> 
+		{result});
+
+ViewDataProperty transformDslGuiBasicTypeProperty(DslGuiViewProperty prop, UserTask task) :
+	((prop.basicTypeProperty == null) ? error("Unexpected call to transformDslGuiBasicTypeProperty with null basicTypeProperty " +
+		task.name + " " + prop.for.name) : null) ->
+	// BasicTypeProperty can be for a attribute or an enum
+	prop.basicTypeProperty.transformDslGuiBasicTypeProperty(prop, task);
+
+ViewDataProperty transformDslGuiBasicTypeProperty(DslAnyProperty prop, DslGuiViewProperty dslGuiProp, UserTask task) :
+	error("Unexpected call to transformDslGuiBasicTypeProperty(DslAnyProperty prop, DslGuiViewProperty dslGuiProp, UserTask task): " +
+		task.name + " " + dslGuiProp.for.name + " " + prop);
+	
+ViewDataProperty transformDslGuiBasicTypeProperty(DslAttribute prop, DslGuiViewProperty dslGuiProp, UserTask task) :
+	prop.transform().transformBasicTypeAttributeProperty((Reference) dslGuiProp.for.transform(), task);
+		
+ViewDataProperty transformDslGuiBasicTypeProperty(DslReference prop, DslGuiViewProperty dslGuiProp, UserTask task) :
+	prop.transform().transformBasicTypeEnumProperty((Reference) dslGuiProp.for.transform(), task);
+ 
+addReferencePreviewProperties(ReferenceViewProperty refProp, UserTask task, DslUserTask dslTask) :
+	let refTarget = createReferenceTarget(refProp.target, refProp.reference) :
+	let surrogatePreviewTask = createSurrogatePreviewTask(refTarget) :
+	let listSubtasks = dslTask.subtasks.typeSelect(DslGuiListSubtask) :
+	let matchingListSubtask = listSubtasks.select(e | e.reference.transform() == refProp.reference 
+		&& (e.forTarget == null || e.forTarget.target.transform() == refProp.target)) : 
+	refProp.previewProperties.addAll(
+	   // add all refs attributes as previews, except id, id is special, it can be a generated one or manually added, but it shouldn't be in the preview list
+	   matchingListSubtask.previewProperties.transformDslGuiPreviewProperty(surrogatePreviewTask).reject(p|p.name == "id")
+	);
+
+private create sculptorguimetamodel::ViewTask this createSurrogatePreviewTask(ReferenceTarget refTarget) :
+	setName("preview" + refTarget.target.name) ->
+	setTaskType("preview") ->
+	setFor(refTarget.target);
+ 
+
+// TODO a lot of duplication with above transformDslGuiProperty
+List[ViewDataProperty] transformDslGuiPreviewProperty(DslGuiPreviewProperty prop, UserTask previewTask) :
+	prop.basicTypeProperty == null ?
+		prop.for.transform().transformProperty(previewTask, (DslGuiApplication) prop.eRootContainer) :
+		// BasicTypeProperty can be for a attribute or an enum 
+		{transformDslGuiPreviewBasicTypeProperty(prop, previewTask)};
+
+// TODO a lot of duplication with above transformDslGuiBasicTypeProperty
+ViewDataProperty transformDslGuiPreviewBasicTypeProperty(DslGuiPreviewProperty prop, UserTask previewTask) :
+	((prop.basicTypeProperty == null) ? error("Unexpected call to transformDslGuiPreviewBasicTypeProperty with null basicTypeProperty " +
+		previewTask.name + " " + prop.for.name) : null) ->
+	// BasicTypeProperty can be for a attribute or an enum
+	prop.basicTypeProperty.transformDslGuiPreviewBasicTypeProperty(prop, previewTask);
+
+// TODO a lot of duplication with above transformDslGuiBasicTypeProperty
+ViewDataProperty transformDslGuiPreviewBasicTypeProperty(DslAnyProperty prop, DslGuiPreviewProperty dslGuiProp, UserTask previewTask) :
+	error("Unexpected call to transformDslGuiPreviewBasicTypeProperty(DslAnyProperty prop, DslGuiPreviewProperty dslGuiProp, UserTask previewTask): " +
+		previewTask.name + " " + dslGuiProp.for.name + " " + prop);
+	
+ViewDataProperty transformDslGuiPreviewBasicTypeProperty(DslAttribute prop, DslGuiPreviewProperty dslGuiProp, UserTask previewTask) :
+	prop.transform().transformBasicTypeAttributeProperty((Reference) dslGuiProp.for.transform(), previewTask);
+	
+ViewDataProperty transformDslGuiPreviewBasicTypeProperty(DslReference prop, DslGuiPreviewProperty dslGuiProp, UserTask previewTask) :
+	prop.transform().transformBasicTypeEnumProperty((Reference) dslGuiProp.for.transform(), previewTask);
+
+	

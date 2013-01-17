@@ -1,0 +1,14 @@
+import "classpath:/nested4.btdesign"
+import "classpath:/nested3.btdesign"
+
+ApplicationPart NestedPart2 {
+ 
+    Module nested2 {
+    	ValueObject B {
+    		String b
+    		- @C c
+    		- @D d
+    	}
+    }
+}
+

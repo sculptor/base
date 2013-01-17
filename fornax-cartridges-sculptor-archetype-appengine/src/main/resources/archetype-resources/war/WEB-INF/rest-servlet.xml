@@ -1,0 +1,67 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context" xmlns:oxm="http://www.springframework.org/schema/oxm" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd     http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd     http://www.springframework.org/schema/oxm http://www.springframework.org/schema/oxm/spring-oxm-3.0.xsd">  
+  <context:component-scan base-package="${package}" use-default-filters="false"> 
+    <context:include-filter expression="org.springframework.stereotype.Controller" type="annotation"/> 
+  </context:component-scan>  
+  <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver"> 
+    <property name="defaultContentType" value="text/html"/>  
+    <property name="ignoreAcceptHeader" value="true"/>  
+    <property name="mediaTypes"> 
+      <map> 
+        <entry key="html" value="text/html"/>  
+        <entry key="xml" value="application/xml"/>  
+        <entry key="json" value="application/json"/> 
+      </map> 
+    </property>  
+    <property name="viewResolvers"> 
+      <list> 
+        <bean class="org.springframework.web.servlet.view.BeanNameViewResolver"/>  
+        <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver"> 
+          <property name="prefix" value="/WEB-INF/jsp/"/>  
+          <property name="suffix" value=".jsp"/> 
+        </bean> 
+      </list> 
+    </property>  
+    <property name="defaultViews"> 
+      <list> 
+        <bean class="org.springframework.web.servlet.view.xml.MarshallingView"> 
+          <property name="marshaller" ref="xstreamMarshaller"/>  
+          <property name="modelKey" value="result"/> 
+        </bean>  
+        <bean class="org.springframework.web.servlet.view.json.MappingJacksonJsonView"/> 
+      </list> 
+    </property> 
+  </bean>  
+  <bean id="xstreamMarshaller" class="org.springframework.oxm.xstream.XStreamMarshaller"> 
+    <property name="autodetectAnnotations" value="true"/> 
+  </bean>  
+  <!-- Instead of xstreamMarshaller you can use the following jaxb2Marshaller -->  
+  <!-- 
+	<bean id="jaxb2Marshaller" class="org.springframework.oxm.jaxb.Jaxb2Marshaller">
+		<property name="classesToBeBound">
+			<list>
+				<value>org.test.mymodule.serviceapi.MyDto</value>
+			</list>
+		</property>
+	</bean>
+	-->  
+  <!-- These message converters are used for converting json or xml to java 
+		obj for @RequestBody parameters -->  
+  <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter"> 
+    <property name="messageConverters"> 
+      <list> 
+        <ref bean="jsonMarshallingHttpMessageConverter"/>  
+        <ref bean="xmlMarshallingHttpMessageConverter"/> 
+      </list> 
+    </property> 
+  </bean>  
+  <bean id="xmlMarshallingHttpMessageConverter" class="org.springframework.http.converter.xml.MarshallingHttpMessageConverter"> 
+    <property name="marshaller" ref="xstreamMarshaller"/>  
+    <property name="unmarshaller" ref="xstreamMarshaller"/> 
+  </bean>  
+  <bean id="jsonMarshallingHttpMessageConverter" class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter"/> 
+</beans>

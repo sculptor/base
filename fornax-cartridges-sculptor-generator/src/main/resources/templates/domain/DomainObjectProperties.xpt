@@ -1,0 +1,125 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::dbhelper»
+«EXTENSION extensions::properties»
+
+
+«DEFINE domainObjectProperties FOR Trait»
+«ENDDEFINE»
+
+«DEFINE domainObjectProperties FOR DomainObject»
+	«FILE javaFileName(getDomainPackage() + "." + name + "Properties")»
+«javaHeader()»
+package «getDomainPackage()»;
+
+/**
+ * This generated interface defines property names for all
+ * attributes and associatations in
+ * {@link «getDomainPackage()».«name»}.
+ * <p>
+ * These properties are useful when building
+ * criteria with {@link «fw("accessapi.ConditionalCriteriaBuilder")»},
+ * which can be used with findByCondition Repository operation.
+ */
+public class «name»Properties {
+	private «name»Properties() {
+	}
+
+	«REM»note that static methods are not generated in BasicType, since they can't be root of the criteria«ENDREM»
+	«IF metaType != BasicType»
+		«EXPAND sharedInstance»
+		«EXPAND staticLeafProperty(this) FOREACH getAllAttributes()»
+		«EXPAND staticLeafProperty(this) FOREACH getAllReferences().select(e|e.isEnumReference() || (nosql() && e.isUnownedReference()))»
+		«EXPAND staticReferenceProperty(this) FOREACH getAllReferences().reject(e|e.isEnumReference() || (nosql() && e.isUnownedReference()))»
+	«ENDIF»
+
+	«EXPAND domainObjectProperty»
+	«EXPAND domainObjectPropertiesImpl»
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE sharedInstance FOR DomainObject»
+        private static final «name»PropertiesImpl<«getDomainPackage()».«name»> sharedInstance = new «name»PropertiesImpl<«getDomainPackage()».«name»>(«getDomainPackage()».«name».class);
+«ENDDEFINE»
+
+«DEFINE staticLeafProperty(DomainObject rootType) FOR NamedElement»
+        public static «fw("domain.Property")»<«rootType.getDomainPackage()».«rootType.name»> «name»() {
+            return sharedInstance.«name»();
+        }
+«ENDDEFINE»
+
+«DEFINE staticReferenceProperty(DomainObject rootType) FOR Reference»
+        public static «to.getDomainPackage()».«to.name»Properties.«to.name»Property<«rootType.getDomainPackage()».«rootType.name»> «name»() {
+            return sharedInstance.«name»();
+        }
+«ENDDEFINE»
+
+«DEFINE domainObjectProperty FOR DomainObject»
+
+    /**
+     * This class is used for references to {@link «getDomainPackage()».«name»},
+     * i.e. nested property.
+     */
+    public static class «name»Property<T> extends «name»PropertiesImpl<T> implements «fw("domain.Property")»<T> {
+    	«EXPAND serialVersionUID»
+        public «name»Property(String parentPath, String additionalPath, Class<T> owningClass) {
+            super(parentPath, additionalPath, owningClass);
+        }
+    } 
+«ENDDEFINE»
+
+«DEFINE domainObjectPropertiesImpl FOR DomainObject»
+
+    protected static class «name»PropertiesImpl<T> extends «fw("domain.PropertiesCollection")» {
+    	«EXPAND serialVersionUID»
+        Class<T> owningClass;
+
+        «name»PropertiesImpl(Class<T> owningClass) {
+            super(null);
+            this.owningClass=owningClass;
+        }
+
+        «name»PropertiesImpl(String parentPath, String additionalPath, Class<T> owningClass) {
+            super(parentPath, additionalPath);
+            this.owningClass=owningClass;
+         }
+
+        «EXPAND leafProperty(isEmbeddable()) FOREACH getAllAttributes()»
+        «EXPAND leafProperty(isEmbeddable()) FOREACH getAllReferences().select(e|e.isEnumReference() || (nosql() && e.isUnownedReference()))»
+        «EXPAND referenceProperty FOREACH getAllReferences().reject(e|e.isEnumReference() || (nosql() && e.isUnownedReference()))»
+    } 
+«ENDDEFINE»
+
+«DEFINE leafProperty(boolean isEmbeddable) FOR NamedElement»
+        public «fw("domain.Property")»<T> «name»() {
+            return new «fw("domain.LeafProperty")»<T>(getParentPath(), "«nosql() ? getDatabaseName() : name»", «isEmbeddable», owningClass);
+        }
+«ENDDEFINE»
+
+«DEFINE referenceProperty FOR Reference»
+        public «to.getDomainPackage()».«to.name»Properties.«to.name»Property<T> «name»() {
+        	return new «to.getDomainPackage()».«to.name»Properties.«to.name»Property<T>(getParentPath(), "«nosql() ? getDatabaseName() : name»", owningClass);
+        }
+«ENDDEFINE»
+
+«DEFINE serialVersionUID FOR Object»
+    private static final long serialVersionUID = 1L;
+«ENDDEFINE»

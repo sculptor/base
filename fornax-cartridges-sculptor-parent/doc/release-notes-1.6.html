@@ -1,0 +1,192 @@
+<html>
+<head>
+<title>Release Notes - Fornax Cartridge Sculptor - Version 1.6.x</title>
+</head>
+<body>
+
+
+Release Notes - Fornax Cartridge Sculptor - Version 1.6.0
+    
+<h2>        Bug
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-206'>CSC-206</a>] -         Compile error 'incompatible types' on association to subtype
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-287'>CSC-287</a>] -         JSF: Show error message when session expired
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-289'>CSC-289</a>] -         RCP: memento is not working
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-299'>CSC-299</a>] -         IllegalArgumentException when creating engagement in library-web
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-300'>CSC-300</a>] -         JUnit is bundled in assembly
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-310'>CSC-310</a>] -         Trailing Comma in Generated DDL
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-327'>CSC-327</a>] -         Inheritance problems
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-332'>CSC-332</a>] -         Missing javaType for BigDecimal
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-345'>CSC-345</a>] -         Primitive types not included in toString
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-346'>CSC-346</a>] -         Don't generate service, repository for external modules
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-350'>CSC-350</a>] -         Remove setters for not changeable enum and basic type references
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-351'>CSC-351</a>] -         MySQL DDL: no foreign key when empty subclass
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-353'>CSC-353</a>] -         DDL: Wrong NOT NULL for nullable BasicType reference
+</li>
+</ul>
+    
+<h2>        Improvement
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-138'>CSC-138</a>] -         Remove private setters in DomainObjects
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-208'>CSC-208</a>] -         Remove generated files before regeneration
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-249'>CSC-249</a>] -         Add ability to define a composite key from a combination of attributes and references (BasicType or Enum)
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-259'>CSC-259</a>] -         Add ability to map inheritance using SINGLE_TABLE
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-269'>CSC-269</a>] -         Sculptor should use Joda Time's LocalDate instead of deprecated YearMonthDay class
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-272'>CSC-272</a>] -         Use Spring annotations instead of XML
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-274'>CSC-274</a>] -         Upgrade to spring webflow 2
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-285'>CSC-285</a>] -         RCP: Make it possible to define populateAssociations operation
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-288'>CSC-288</a>] -         RCP: Different save operations for CreateTask and UpdateTask
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-290'>CSC-290</a>] -         RCP: Better error message when connection not working at startup
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-291'>CSC-291</a>] -         RCP: Max field length validation
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-292'>CSC-292</a>] -         RCP: customizable fw class names
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-294'>CSC-294</a>] -         RCP: Login extension
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-295'>CSC-295</a>] -         RCP: Group spring service proxy beans by business tier module instead of client modules
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-298'>CSC-298</a>] -         Jetty and in memory db for library web client
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-309'>CSC-309</a>] -         Upgrade to Spring 2.5.6
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-313'>CSC-313</a>] -         Don't generate gap class by default
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-315'>CSC-315</a>] -         JSF: Date picker
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-318'>CSC-318</a>] -         Simplify definition of framework classes
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-319'>CSC-319</a>] -         Generate Spring and Hibernate include sections sorted by name: it's creating problems with source code control
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-320'>CSC-320</a>] -         Upgrade to dbunit 2.4.4 to fix (some) memory leak issues with earlier versions of that library
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-325'>CSC-325</a>] -         Support for JUnit 4 annotations
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-326'>CSC-326</a>] -         JSF client - when adding reference, validation on attributes shouldn't be performed
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-330'>CSC-330</a>] -         Possibility to skip generation of junit tests
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-331'>CSC-331</a>] -         Umlgraph looks ugly when model contains many enum and BasicType
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-333'>CSC-333</a>] -         Possibility to skip generation of name constants
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-340'>CSC-340</a>] -         Change file extension for model.design and model.guidesign
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-343'>CSC-343</a>] -         databaseColumn for BasicType attributes
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-347'>CSC-347</a>] -         Add methods to add, remove from unidirectional to-many association
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-348'>CSC-348</a>] -         Copy modifiers for immutable ValueObject
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-349'>CSC-349</a>] -         Constructor with limited number of parameters
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-352'>CSC-352</a>] -         Extract jms configuration to spring.properties
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-354'>CSC-354</a>] -         No application name in datasource and taglibs
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-355'>CSC-355</a>] -         Defining datasource as spring bean 
+</li>
+</ul>
+    
+<h2>        New Feature
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-80'>CSC-80</a>] -         Support for Hibernate validator
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-85'>CSC-85</a>] -         Support for JPA
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-296'>CSC-296</a>] -         Support for in memory database
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-297'>CSC-297</a>] -         Support for jetty
+</li>
+</ul>
+        
+<h2>        Task
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-328'>CSC-328</a>] -         Removal of the jsp client
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-329'>CSC-329</a>] -         Name change of the jsf implementation jsf -&gt; web
+</li>
+</ul>
+    
+<h2>        UserStory/UseCase
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-334'>CSC-334</a>] -         Manual test cases
+</li>
+</ul>
+    
+<h2>        Sub-task
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-123'>CSC-123</a>] -         generate jsp documents
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-301'>CSC-301</a>] -         Implement in generator project
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-302'>CSC-302</a>] -         Document in wiki
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-303'>CSC-303</a>] -         Implement in generator project
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-304'>CSC-304</a>] -         Document in wiki
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-305'>CSC-305</a>] -         Refactor library-web to use jetty and in-memory db
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-306'>CSC-306</a>] -         Refactor library-jsf to use jetty and in-memory db
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-307'>CSC-307</a>] -         Improve jsf generation to support web container
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-308'>CSC-308</a>] -         Wiki documentation
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-317'>CSC-317</a>] -         Jetty and hsqldb-inmemory default in archetypes
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-321'>CSC-321</a>] -         JPA and Hibernate annotations using SessionFactory
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-322'>CSC-322</a>] -         JPA and Hibernate annotations using Hibernate EntityManager
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-323'>CSC-323</a>] -         GUI integration using SessionFactory 
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-335'>CSC-335</a>] -         Smoke test: Library and Physical Media
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-336'>CSC-336</a>] -         Smoke test: Book and Movie
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-337'>CSC-337</a>] -         Smoke test: Person
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-338'>CSC-338</a>] -         Smoke test: Several users
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-339'>CSC-339</a>] -         Smoke test: Engagement, Media Character
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-341'>CSC-341</a>] -         Smoke test: change language
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-342'>CSC-342</a>] -         Smoke test: change theme
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-356'>CSC-356</a>] -         Create new project
+</li>
+</ul>
+
+	
+</body>	
+</html>

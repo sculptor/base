@@ -1,0 +1,239 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+
+«EXTENSION extensions::helper»
+«EXTENSION extensions::guihelper»
+«EXTENSION extensions::properties»
+
+«DEFINE serviceStub FOR GuiApplication»
+«LET groupByTarget().getUsedServices().toSet().typeSelect(Service) AS allUsedServices»
+	«EXPAND serviceStub FOREACH allUsedServices»
+	«EXPAND gapServiceStub FOREACH allUsedServices
+		.select(e | isGapClassToBeGenerated(e.module.name, e.name + "Stub"))»
+«ENDLET»
+«ENDDEFINE» 
+
+«DEFINE gapServiceStub FOR Service»
+«LET name + "Stub" AS className»
+	«FILE javaFileName(module.getServicestubPackage() + "." + className) TO_SRC»
+«javaHeader()»
+package «module.getServicestubPackage()»;
+
+«EXPAND serviceStubSpringAnnotation»
+public class «className» extends «className»Base {
+	public «className»() {
+    }
+}
+«ENDFILE»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE serviceStub FOR Service»
+«LET name + "Stub" + gapSubclassSuffix(module, name + "Stub") AS className»
+	«FILE javaFileName(module.getServicestubPackage() + "." + className) »
+«javaHeader()»
+package «module.getServicestubPackage()»;
+
+«IF !className.endsWith("Base")»
+«EXPAND serviceStubSpringAnnotation»
+«ENDIF»
+public «IF className.endsWith("Base")»abstract«ENDIF» class «className» implements «getServiceapiPackage()».«name» {
+
+	«EXPAND serviceStubConstructor»
+	«EXPAND serviceStubInitialize»
+	«EXPAND serviceStubMap»
+	
+	«EXPAND listStubOperation FOREACH operations.select(e|e.isListStubOperation())»
+	«EXPAND pagedStubOperation FOREACH operations.select(e|e.isPagedStubOperation())»
+	«EXPAND saveStubOperation FOREACH operations.select(e|e.isSaveStubOperation())»
+	«EXPAND deleteStubOperation FOREACH operations.select(e|e.isDeleteStubOperation())»
+	«EXPAND findByIdStubOperation FOREACH operations.select(e|e.isFindByIdStubOperation())»
+	«EXPAND populateStubOperation FOREACH operations.select(e|e.isPopulateStubOperation())»
+	«EXPAND notImplementedOperation FOREACH operations.select(op | op.isPublicVisibility()).
+		reject(op | op.isListStubOperation() || op.isPagedStubOperation() || op.isSaveStubOperation() || 
+			op.isDeleteStubOperation() || op.isFindByIdStubOperation() || op.isPopulateStubOperation()) »
+	
+	«EXPAND serviceStubGetId»
+	«EXPAND serviceStubSetId»
+
+}
+	«ENDFILE»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE serviceStubSpringAnnotation FOR Service»
+@org.springframework.stereotype.Service("«name.toFirstLower()»")
+«ENDDEFINE»
+
+
+«DEFINE serviceStubConstructor FOR Service»
+«LET name + "Stub" + gapSubclassSuffix(module, name + "Stub") AS className»
+    public «className»() {
+        initialize();
+    }
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE serviceStubMap FOR Service»
+    private java.util.Map<String, Object> all = new java.util.concurrent.ConcurrentHashMap<String, Object>();
+    protected java.util.Map<String, Object> getAllStubObjects() {
+        return all;
+    }
+«ENDDEFINE»
+
+«DEFINE serviceStubInitialize FOR Service»
+    protected void initialize() {
+        java.util.Set<«Object»> initial = new java.util.HashSet<«Object»>();
+        populateInitial(initial);
+        for (Object each : initial) {
+        	if (internalGetId(each) == null) {
+        		internalSetId(each, idSequence.incrementAndGet());
+        	}
+        	this.all.put(each.getClass().getSimpleName() + "#" + internalGetId(each), each);
+        }
+    }
+    
+    /**
+     * Override this in sub class and add initial objects to the parameter
+     */
+    protected void populateInitial(java.util.Set<Object> all) {
+    }
+«ENDDEFINE»
+
+«DEFINE listStubOperation FOR ServiceOperation»
+    @SuppressWarnings("unchecked")
+    public «getTypeName()» «name»(«EXPAND templates::service::Service::paramTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws» {
+        return new java.util.ArrayList(this.all.values());
+    }
+«ENDDEFINE»
+
+«DEFINE pagedStubOperation FOR ServiceOperation»
+    @SuppressWarnings("unchecked")
+    public «getTypeName()» «name»(«EXPAND templates::service::Service::paramTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws» {
+        return new «getTypeName()»(new java.util.ArrayList(this.all.values()), 0, 100, 100);
+    }
+«ENDDEFINE»
+
+«DEFINE saveStubOperation FOR ServiceOperation»
+    public «getTypeName()» «name»(«EXPAND templates::service::Service::paramTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws» {
+        if («stubOperationParameter().name».getId() == null) {
+            internalSetId(«stubOperationParameter().name», idSequence.incrementAndGet());
+        }
+        this.all.put("«stubOperationParameter().domainObjectType.name»#" + «stubOperationParameter().name».getId(), «stubOperationParameter().name»);
+        «IF domainObjectType != null »
+        	return «stubOperationParameter().name»;
+        «ENDIF»
+    }
+«ENDDEFINE»
+
+«DEFINE deleteStubOperation FOR ServiceOperation»
+    public «getTypeName()» «name»(«EXPAND templates::service::Service::paramTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws» {
+        this.all.remove("«stubOperationParameter().domainObjectType.name»#" + «stubOperationParameter().name».getId());
+    }
+«ENDDEFINE»
+
+«DEFINE findByIdStubOperation FOR ServiceOperation»
+    public «getTypeName()» «name»(«EXPAND templates::service::Service::paramTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws» {
+        «domainObjectType.getDomainPackage()».«domainObjectType.name» found = («domainObjectType.getDomainPackage()».«domainObjectType.name») this.all.get(
+            "«domainObjectType.name»#" + «stubOperationParameter().name»);
+        if (found == null) {
+        	«IF getExceptions().isEmpty»
+            throw new IllegalArgumentException("«domainObjectType.name» not found for id: " + «stubOperationParameter().name»);
+        	«ELSE»
+            throw new «getExceptions().toList().first()»("«domainObjectType.name» not found for id: " + «stubOperationParameter().name»);
+        	«ENDIF»
+        }
+        return found;
+    }
+«ENDDEFINE»
+
+«DEFINE populateStubOperation FOR ServiceOperation»
+«LET stubOperationParameter() AS entityParam»
+    public «getTypeName()» «name»(«EXPAND templates::service::Service::paramTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws» {
+        try {
+        «FOREACH domainObjectType.references AS ref»
+            «entityParam.name».get«ref.name.toFirstUpper()»();
+        «ENDFOREACH»
+        } catch (RuntimeException asExpected) {}
+        
+        «FOREACH domainObjectType.references AS ref»
+            «entityParam.name».get«ref.name.toFirstUpper()»();
+        «ENDFOREACH»
+        
+        return entity;
+    }
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE notImplementedOperation FOR ServiceOperation»
+    public «getTypeName()» «name»(«EXPAND templates::service::Service::paramTypeAndName FOREACH parameters SEPARATOR ","») «
+    EXPAND templates::common::Exception::throws» {
+        throw new UnsupportedOperationException("«name» not implemented in stub");
+    }
+«ENDDEFINE»
+
+«DEFINE serviceStubGetId FOR Service»
+    private java.io.Serializable internalGetId(Object domainObject) {
+        if (org.apache.commons.beanutils.PropertyUtils.isReadable(domainObject, "id")) {
+            try {
+                return (java.io.Serializable) org.apache.commons.beanutils.PropertyUtils.getProperty(domainObject, "id");
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Can't get id property of domainObject: " + domainObject);
+            } 
+        } else {
+            // no id property, don't know if it is new
+            throw new IllegalArgumentException("No id property in domainObject: " + domainObject);
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE serviceStubSetId FOR Service»
+    private java.util.concurrent.atomic.AtomicLong idSequence = new java.util.concurrent.atomic.AtomicLong(100L);
+
+    protected void internalSetId(Object domainObject, Long id) {
+        try {
+        	java.lang.reflect.Field field = findIdField(domainObject.getClass());
+        	field.setAccessible(true);
+        	field.set(domainObject, id);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                "Can't get id field of domainObject: " + domainObject);
+        }
+    }
+
+	private java.lang.reflect.Field findIdField(Class<?> clazz) throws NoSuchFieldException {
+		try {
+			return clazz.getDeclaredField("id");
+		} catch (NoSuchFieldException e) {
+			if (clazz.getSuperclass() == null) {
+				throw e;
+			} else {
+				return findIdField(clazz.getSuperclass());
+			}
+		}
+	}
+«ENDDEFINE»
+

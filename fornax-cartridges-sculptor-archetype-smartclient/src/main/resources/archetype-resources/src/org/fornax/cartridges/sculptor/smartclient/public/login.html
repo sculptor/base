@@ -1,0 +1,51 @@
+<!DOCTYPE HTML PUBLIC "-//W3C/DTD HTML 4.0 Transitional//EN">
+<html>
+<META HTTP-EQUIV = "Pragma" CONTENT="no-cache">
+<head>
+	<style type="text/css">
+		body {
+			font-family: sans-serif;
+			font-size: 11px;
+		}
+		div {
+			display: block;
+			width: 260px;
+		}
+		div table {
+			border: thin solid;
+			border-color: black;
+			background-color: lightblue;
+		}
+		div td {
+			padding: 3px;
+		}
+	</style>
+	<title>Smartclient Login</title>
+</head>
+<body>
+	<table style="padding: 30px 30px 0px 30px">
+	<tr>
+	<td style="width: 100%; padding: 0 30px 0 0">
+		<img src="images/logo.png"/><br>
+	</td>
+	<td>
+	<div>
+		<form method="post" action="j_security_check">
+			<table>
+				<tr><td colspan="2" align="center">Welcome to Smartclient. Please check your location in top bar if
+					your connectionis secure and enter username and password.<br><br>
+					</td></tr>
+				<tr><td colspan="2" align="center" style="color: red; font-size: 120%"><b>
+					<script type="text/javascript">if (location.search == '?accessDenied') document.write('Wrong username or password');</script>
+				</b></td></tr>
+				<tr><td align="right">Username:</td> <td><input type="text" name="j_username"></td></tr>
+				<tr><td align="right">Password:</td> <td><input type="password" name="j_password"></td></tr>
+				<tr><td colspan="2" align="right"><input type="submit" name="login" value="Login"></td></tr>
+			</table>
+		</form>
+	</div>
+	</td>
+	</tr>
+	</table>
+</body>
+</html>

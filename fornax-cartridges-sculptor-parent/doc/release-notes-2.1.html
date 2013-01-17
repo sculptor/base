@@ -1,0 +1,108 @@
+<html>
+<head>
+<title>Release Notes - Fornax Cartridge Sculptor - Version 2.1.x</title>
+</head>
+<body>
+
+<h1>
+Release Notes - Fornax Cartridge Sculptor - Version 2.1.0
+</h1>
+    
+<h2>        Bug
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-638'>CSC-638</a>] -         GUI: ListTask referenced property is broken
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-639'>CSC-639</a>] -         &quot;url&quot; is now keyword, used as attribute on a entity fails the generator 
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-640'>CSC-640</a>] -         @Pattern(regex=&quot;...&quot;) generated instead of @Pattern(regexp=&quot;...&quot;)
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-642'>CSC-642</a>] -         MongoDB: Missing toData in mapper for aggregate with several levels
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-645'>CSC-645</a>] -         PagedResult is not defined with fully qualified name
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-650'>CSC-650</a>] -         NPE from DependencyConstraints
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-651'>CSC-651</a>] -         Slow hybridlabs-beautifier when no logback configuration
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-652'>CSC-652</a>] -         Missing constraint for DTO property names
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-656'>CSC-656</a>] -         getSingleResult wrong when used without setSingleResult(true)
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-660'>CSC-660</a>] -         Generator property &quot;generate.optimisticLocking=false&quot; not recognized for ValueObjects
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-661'>CSC-661</a>] -         Trait interfaces are not generated for domain objects using inheritance
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-667'>CSC-667</a>] -         Using collection type of &quot;Collection&quot; creates RuntimeException
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-670'>CSC-670</a>] -         Support BasicType references with not nullable fields
+</li>
+</ul>
+    
+<h2>        Improvement
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-648'>CSC-648</a>] -         System.property for location of sculptor-generator.properties
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-649'>CSC-649</a>] -         Refactoring for easier customization of cacheable
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-653'>CSC-653</a>] -         Use mongo-java-driver 2.7.2
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-658'>CSC-658</a>] -         Foreign keys with index
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-662'>CSC-662</a>] -         Collections of enums in non-persistent ValueObject
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-666'>CSC-666</a>] -         Make domain object reference templates support no-annotations generation for many-references
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-668'>CSC-668</a>] -         Support domain object reference as key fro data type &quot;Map&quot;
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-671'>CSC-671</a>] -         Improved support for Enums, calculation of database column length
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-672'>CSC-672</a>] -         Remove generation of unnecessary private setters for hibernate
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-673'>CSC-673</a>] -         In GUI transformations, add ability to disable adding of default modules and tasks
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-674'>CSC-674</a>] -         Add generation of umlgraph diagram containing only persistent Entities and ValueObjects
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-675'>CSC-675</a>] -         logback 1.0.0
+</li>
+</ul>
+    
+<h2>        New Feature
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-484'>CSC-484</a>] -         Support for JPA 2.0
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-485'>CSC-485</a>] -         Support for OpenJPA
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-637'>CSC-637</a>] -         Support for bean validation api 1.0
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-654'>CSC-654</a>] -         Validation in DTO
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-663'>CSC-663</a>] -         Generate Builder classes for domain classes
+</li>
+</ul>
+        
+<h2>        Task
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-655'>CSC-655</a>] -         Update docs with info about the new m2e connector
+</li>
+</ul>
+        
+<h2>        Sub-task
+</h2>
+<ul>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-664'>CSC-664</a>] -         Persitently ordered lists
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-665'>CSC-665</a>] -         Complex BasicTypes (Embeddables)
+</li>
+<li>[<a href='http://www.fornax-platform.org/tracker/browse/CSC-669'>CSC-669</a>] -         Generation of finder methods in repositories
+</li>
+</ul>
+
+        
+        
+	
+</body>	
+</html>

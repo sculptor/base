@@ -1,0 +1,197 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+
+«EXTENSION extensions::helper»
+«EXTENSION extensions::guihelper»
+«EXTENSION extensions::rcphelper»
+«EXTENSION extensions::properties»
+
+«DEFINE commonData FOR GuiApplication»
+	«EXPAND domainObjectFolder»
+	«EXPAND errorNode»
+	«EXPAND moreNode»
+	«EXPAND moduleFolder»
+	«EXPAND rootNode»
+	«EXPAND treeFolder»
+«ENDDEFINE»
+
+«DEFINE domainObjectFolder FOR GuiApplication»
+	«FILE javaFileName(getRichClientPackage("common") + ".data.DomainObjectFolder") -»
+«javaHeader()»
+package «getRichClientPackage("common")».data;
+
+/**
+ * Tree node object for grouping DomainObjects.
+ */
+public enum DomainObjectFolder implements TreeFolder {
+
+	«EXPAND domainObjectFolderEnumItem FOREACH modules.userTasks.typeSelect(ListTask) SEPARATOR ",
+	"»;
+
+    private String name;
+    private ModuleFolder parent;
+
+    private DomainObjectFolder(String name, ModuleFolder parent) {
+        this.name = name;
+        this.parent = parent;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public ModuleFolder getParent() {
+        return parent;
+    }
+
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE domainObjectFolderEnumItem FOR ListTask»
+	«for.name.toUpperCase()»(«getMessagesClass()».«for.getMessagesKey()»_plural, ModuleFolder.«module.name.toUpperCase()»)
+«ENDDEFINE»
+
+«DEFINE errorNode FOR GuiApplication»
+	«FILE javaFileName(getRichClientPackage("common") + ".data.ErrorNode") -»
+«javaHeader()»
+package «getRichClientPackage("common")».data;
+
+/**
+ * Tree node object for displaying errors.
+ */
+public class ErrorNode {
+
+    private String message;
+    private DomainObjectFolder parent;
+
+    public ErrorNode(String message, DomainObjectFolder parent) {
+        this.message = message;
+        this.parent = parent;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public DomainObjectFolder getParent() {
+        return parent;
+    }
+
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE moreClass FOR ListTask»
+    class More«for.name» extends «fw("richclient.data.AbstractRichObject")» implements «fw("richclient.data.RichObject")» {
+        @Override
+        public String toString() {
+            return "...";
+        }
+        
+        public void update(«fw("richclient.data.RichObject")» other) {
+        }
+    };
+«ENDDEFINE»
+
+«DEFINE moreNode FOR GuiApplication»
+	«FILE javaFileName(getRichClientPackage("common") + ".data.MoreNode") -»
+«javaHeader()»
+package «getRichClientPackage("common")».data;
+
+/**
+ * Tree node object for that more elements are available.
+ */
+public class MoreNode extends «fw("richclient.data.AbstractRichObject")» implements «fw("richclient.data.RichObject")» {
+    @Override
+    public String toString() {
+        return "...";
+    }
+    
+    public void update(«fw("richclient.data.RichObject")» other) {
+    }
+};
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE moduleFolder FOR GuiApplication»
+	«FILE javaFileName(getRichClientPackage("common") + ".data.ModuleFolder") -»
+«javaHeader()»
+package «getRichClientPackage("common")».data;
+
+/**
+ * Tree node object for grouping of modules.
+ */
+public enum ModuleFolder implements TreeFolder {
+
+	«EXPAND moduleFolderEnumItem FOREACH modules.reject(m | m.userTasks.typeSelect(ListTask).isEmpty) SEPARATOR ",
+	"»;
+
+    private String name;
+
+    private ModuleFolder(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE moduleFolderEnumItem FOR GuiModule»
+	«name.toUpperCase()»("«name.toFirstUpper()» Module")
+«ENDDEFINE»
+
+«DEFINE rootNode FOR GuiApplication»
+	«FILE javaFileName(getRichClientPackage("common") + ".data.RootNode") -»
+«javaHeader()»
+package «getRichClientPackage("common")».data;
+
+/**
+ * Placeholder object servings as the root node in tree.
+ * 
+ */
+public final class RootNode {
+    public static final RootNode INSTANCE = new RootNode();
+
+    private RootNode() {
+    }
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE treeFolder FOR GuiApplication»
+	«FILE javaFileName(getRichClientPackage("common") + ".data.TreeFolder") -»
+«javaHeader()»
+package «getRichClientPackage("common")».data;
+
+/**
+ * Marker interface used to indicate that a type is a folder node in a tree.
+ * 
+ */
+public interface TreeFolder {
+
+}
+	«ENDFILE»
+«ENDDEFINE»
+

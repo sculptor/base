@@ -1,0 +1,243 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+
+«DEFINE command FOR RepositoryOperation»
+    «EXPAND commandInterface»
+    «EXPAND commandImpl»
+«ENDDEFINE»
+
+
+«DEFINE commandInterface FOR RepositoryOperation»
+    «FILE javaFileName(getAccessapiPackage(repository.aggregateRoot.module) + "." + getAccessObjectName())»
+«javaHeader()»
+package «getAccessapiPackage(repository.aggregateRoot.module)»;
+
+«IF formatJavaDoc() == "" -»
+/**
+ * <p>
+ * Access object for «repository.name».«name».
+ * </p>
+ * <p>
+ * Command design pattern. Set input parameters with the
+ * setter methods. {@link #execute Execute}
+ * the command«IF getTypeName() != "void"» and retrieve the {@link #getResult result}«ENDIF».
+ * </p>
+ *
+ */
+«ELSE -»
+«formatJavaDoc()»
+«ENDIF -»
+public interface «getAccessObjectName()» «IF getAccessObjectInterfaceExtends() != ''» extends «getAccessObjectInterfaceExtends()» «ENDIF»{
+
+    «EXPAND interfaceParameterSetter FOREACH parameters.reject(e|e.isPagingParameter())»
+
+    void execute() «EXPAND templates::common::Exception::throws»;
+
+    «IF getTypeName() != "void"»
+    /**
+     * The result of the command.
+     */
+    «getAccessObjectResultTypeName()» getResult();
+    «ENDIF»
+
+}
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE interfaceParameterSetter FOR Parameter»
+
+    void set«name.toFirstUpper()»(«getTypeName()» «name»);
+«ENDDEFINE»
+
+«DEFINE commandImpl FOR RepositoryOperation»
+    «EXPAND commandImplBase»
+    «EXPAND commandImplSubclass»
+«ENDDEFINE»
+
+«DEFINE commandImplBase FOR RepositoryOperation»
+    «FILE javaFileName(getAccessimplPackage(repository.aggregateRoot.module) + "." + getAccessObjectName() + "ImplBase")»
+«javaHeader()»
+package «getAccessimplPackage(repository.aggregateRoot.module)»;
+
+/**
+ * <p>
+ * Generated base class for implementation of Access object for «repository.name».«name».
+ * </p>
+ * <p>
+ * Command design pattern.
+ * </p>
+ *
+ */
+public abstract class «getAccessObjectName()»ImplBase extends «getAccessBase()»
+	implements «getAccessapiPackage(repository.aggregateRoot.module)».«getAccessObjectName()» {
+
+	«IF jpa()»
+		«IF isSpringToBeGenerated() »
+			«IF isJpaProviderHibernate()»
+				«EXPAND jpaHibernateTemplate»
+			«ENDIF»
+			«EXPAND jpaTemplate»
+		«ENDIF»
+	«ENDIF»
+	
+    «EXPAND parameterAttribute FOREACH parameters.reject(e|e.isPagingParameter())»
+
+    «IF getTypeName() != "void"»
+    private «getAccessObjectResultTypeName()» result;
+    «ENDIF»
+
+    «EXPAND parameterAccessors FOREACH parameters.reject(e|e.isPagingParameter())»
+
+	«IF hasPagingParameter()»
+		«EXPAND pageableProperties»
+	«ENDIF»
+
+    «IF !getExceptions().isEmpty»
+    public void execute() «EXPAND templates::common::Exception::throws» {
+    	try {
+    		super.execute();
+    	«FOREACH getExceptions() AS exc»
+    	} catch («exc» e) {
+    		throw e;
+    	«ENDFOREACH»
+    	} catch («applicationExceptionClass()» e) {
+    		// other ApplicationException not expected, wrap it in a RuntimeException
+    		throw new RuntimeException(e);
+    	}
+    }
+    «ENDIF»
+
+    «IF getTypeName() != "void"»
+    /**
+     * The result of the command.
+     */
+    public «getAccessObjectResultTypeName()» getResult() {
+        return this.result;
+    }
+
+    protected void setResult(«getAccessObjectResultTypeName()» result) {
+        this.result = result;
+    }
+    «ENDIF»
+
+}
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE pageableProperties FOR RepositoryOperation»
+    private int firstResult = -1;
+    private int maxResult = 0;
+
+    protected int getFirstResult() {
+        return firstResult;
+    }
+
+    public void setFirstResult(int firstResult) {
+        this.firstResult = firstResult;
+    }
+
+    protected int getMaxResult() {
+        return maxResult;
+    }
+
+    public void setMaxResult(int maxResult) {
+        this.maxResult = maxResult;
+    }
+«ENDDEFINE»
+
+«DEFINE jpaTemplate FOR RepositoryOperation»
+    private org.springframework.orm.jpa.JpaTemplate jpaTemplate;
+    
+    /**
+     * creates the JpaTemplate to be used in AccessObject for convenience
+     *
+     * @return Spring JpaTemplate
+     */
+    protected org.springframework.orm.jpa.JpaTemplate getJpaTemplate() {
+        if (jpaTemplate == null) {
+            jpaTemplate = new org.springframework.orm.jpa.JpaTemplate(getEntityManager());
+        }
+        return jpaTemplate;
+    }
+«ENDDEFINE»
+
+«DEFINE jpaHibernateTemplate FOR RepositoryOperation»
+    private org.springframework.orm.hibernate3.HibernateTemplate hibernateTemplate;
+    
+    /**
+     * creates the HibernateTemplate to be used in AccessObject for convenience
+     *
+     * @return Spring HibernateTemplate
+     */
+    protected org.springframework.orm.hibernate3.HibernateTemplate getHibernateTemplate() {
+        if (hibernateTemplate == null) {
+            hibernateTemplate = new org.springframework.orm.hibernate3.HibernateTemplate(
+                «fw("accessimpl.jpahibernate.HibernateSessionHelper")».getHibernateSession(getEntityManager()).getSessionFactory());
+        }
+        return hibernateTemplate;
+    }
+«ENDDEFINE»
+
+«DEFINE commandImplSubclass FOR RepositoryOperation»
+    «FILE javaFileName(getAccessimplPackage(repository.aggregateRoot.module) + "." + getAccessObjectName() + "Impl") TO_SRC »
+«javaHeader()»
+package «getAccessimplPackage(repository.aggregateRoot.module)»;
+
+/**
+ * Implementation of Access object for «repository.name».«name».
+ *
+ */
+public class «getAccessObjectName()»Impl extends «getAccessObjectName()»ImplBase {
+
+   	«EXPAND performExecute»
+
+}
+    «ENDFILE»
+«ENDDEFINE»
+
+«DEFINE performExecute FOR RepositoryOperation»
+	public void performExecute() «EXPAND templates::common::Exception::throws» {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("«getAccessObjectName()»Impl not implemented");
+    }
+«ENDDEFINE»
+
+«DEFINE parameterAttribute FOR Parameter»
+    private «getTypeName()» «name»;
+«ENDDEFINE»
+
+«DEFINE parameterAccessors FOR Parameter»
+    «EXPAND parameterGetter»
+    «EXPAND parameterSetter»
+«ENDDEFINE»
+
+«DEFINE parameterGetter FOR Parameter»
+    public «getTypeName()» get«name.toFirstUpper()»() {
+        return «name»;
+    };
+«ENDDEFINE»
+
+«DEFINE parameterSetter FOR Parameter»
+    public void set«name.toFirstUpper()»(«getTypeName()» «name») {
+        this.«name» = «name»;
+    };
+«ENDDEFINE»
+

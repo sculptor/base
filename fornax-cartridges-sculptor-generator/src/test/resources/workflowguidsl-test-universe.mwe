@@ -1,0 +1,7 @@
+<workflow>
+
+	<cartridge file="sculptorguidslworkflowtest.mwe">
+		<modelFile value="classpath:/universe.guidesign"/>
+		<appProject value="fornax-cartridges-sculptor-generator"/>
+	</cartridge>	
+</workflow>

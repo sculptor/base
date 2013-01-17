@@ -1,0 +1,784 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::dbhelper»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::guihelper»
+
+«DEFINE flowJavaForm FOR UserTask»«ENDDEFINE»
+
+«DEFINE flowJavaForm FOR CreateTask»
+	«EXPAND flowJavaFormBase»
+	«IF gapClass»
+		«EXPAND flowJavaFormImpl»
+	«ENDIF»
+«ENDDEFINE»
+«DEFINE flowJavaForm FOR UpdateTask»
+	«EXPAND flowJavaFormBase»
+	«IF gapClass»
+		«EXPAND flowJavaFormImpl»
+	«ENDIF»
+«ENDDEFINE»
+«DEFINE flowJavaForm FOR ViewTask»
+	«EXPAND flowJavaFormBase»
+	«IF gapClass»
+		«EXPAND flowJavaFormImpl»
+	«ENDIF»
+«ENDDEFINE»
+
+«DEFINE flowJavaForm FOR ListTask»
+	«IF searchDOWith.isPagedResult()»
+		«EXPAND flowJavaPagedFormBase»
+	«ELSE»
+		«EXPAND flowJavaFormBase»
+	«ENDIF»
+	«IF gapClass»
+		«EXPAND flowJavaFormImpl»
+	«ENDIF»
+«ENDDEFINE»
+
+
+
+«DEFINE flowJavaFormImpl FOR UserTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "Form") TO_SRC-»
+«javaHeader()»
+package «this.module.getWebPackage()»;
+
+public class «name.toFirstUpper()»Form extends «name.toFirstUpper()»FormBase {
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+
+«DEFINE flowJavaFormBase FOR CreateTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "Form" + (gapClass ? "Base" : "")) -»
+«javaHeader()»
+package «this.module.getWebPackage()»;
+
+public «IF gapClass»abstract «ENDIF»class «name.toFirstUpper()»Form«IF gapClass»Base«ENDIF» implements java.io.Serializable {
+	«EXPAND serialVersionUID»
+	«EXPAND viewDataProperty(false) FOREACH this.viewProperties.reject(p | p.isSystemAttribute()).reject(e|e.metaType == DerivedReferenceViewProperty)»
+	«EXPAND addSelectedProperty FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(e|e.base)»
+	«REM»add required property for required references «ENDREM»
+	«EXPAND addRequiredProperty FOREACH
+		this.viewProperties.typeSelect(ReferenceViewProperty).reject(e|e.metaType == DerivedReferenceViewProperty)»
+
+	«REM»
+	«EXPAND referenceItemsProperty FOREACH
+		getReferencesPropertiesToSelect().collect(prop | prop.reference)»
+	«ENDREM»
+	«EXPAND referenceItemsProperty FOREACH getReferencesPropertiesChildrenToSelect()»
+	«EXPAND confirmDraftProperty FOR for»
+	«EXPAND publicFormToModel»
+	«EXPAND privateFormToModel»
+	«EXPAND publicFormToConfirmModel»
+	«EXPAND privateFormToConfirmModel»
+	«EXPAND createModel»
+	«EXPAND formCreateBasicTypeModel(this) FOREACH this.viewProperties.typeSelect(BasicTypeViewProperty).collect(e|e.reference).toSet()»
+	«EXPAND removeChildMethodForm FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(e|e.metaType == DerivedReferenceViewProperty)»
+	«IF !viewProperties.typeSelect(ReferenceViewProperty).isEmpty»
+		«EXPAND shallowClone»
+	«ENDIF»
+	«EXPAND validateInputState»
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE flowJavaFormBase FOR UpdateTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "Form" + (gapClass ? "Base" : "")) -»
+«javaHeader()»
+package «this.module.getWebPackage()»;
+
+public «IF gapClass»abstract «ENDIF»class «name.toFirstUpper()»Form«IF gapClass»Base«ENDIF» implements java.io.Serializable {
+	«EXPAND serialVersionUID»
+	«EXPAND original FOR this.for»
+	«EXPAND viewDataProperty(false) FOREACH this.viewProperties.reject(p | p.isSystemAttribute()).reject(e|e.metaType == DerivedReferenceViewProperty)»
+	
+	«EXPAND addSelectedProperty FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(e|e.base)»
+	«REM»add required property for references that is required«ENDREM»
+	«EXPAND addRequiredProperty FOREACH
+		this.viewProperties.typeSelect(ReferenceViewProperty).reject(e|e.metaType == DerivedReferenceViewProperty)»
+
+	«EXPAND referenceItemsProperty FOREACH getReferencesPropertiesChildrenToSelect()»
+	«REM»
+	«EXPAND referenceItemsProperty FOREACH getReferencesPropertiesToSelect().collect(prop | prop.reference)»
+	«ENDREM»
+	«EXPAND confirmDraftProperty FOR for»
+	«EXPAND nextEnabledProperty FOR for»
+	«EXPAND formFromModel»
+	«EXPAND publicFormToModel»
+	«EXPAND privateFormToModel»
+	«EXPAND publicFormToConfirmModel»
+	«EXPAND privateFormToConfirmModel»
+	
+	«EXPAND formCreateBasicTypeModel(this) FOREACH this.viewProperties.typeSelect(BasicTypeViewProperty).collect(e|e.reference).toSet()»
+	«EXPAND removeChildMethodForm FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(e|e.metaType == DerivedReferenceViewProperty)»
+	«EXPAND shallowClone»
+	«EXPAND validateInputState»
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE flowJavaFormBase FOR ViewTask»
+	«FILE javaFileName(this.module.getWebPackage() + "." + name.toFirstUpper() + "Form" + (gapClass ? "Base" : "")) -»
+«javaHeader()»
+package «this.module.getWebPackage()»;
+
+public «IF gapClass»abstract «ENDIF»class «name.toFirstUpper()»Form«IF gapClass»Base«ENDIF» implements java.io.Serializable {
+	«EXPAND serialVersionUID»
+	«EXPAND domainObjectProperty FOR for»
+	«EXPAND viewDataProperty(true) FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.metaType == DerivedReferenceViewProperty)»
+    «REM»TODO - use gui meta model???«ENDREM»
+	«EXPAND viewFlowFormFromModel»
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+
+«DEFINE flowJavaFormBase FOR ListTask»
+	«FILE javaFileName(module.getWebPackage() + "." + name.toFirstUpper() + "Form" + (gapClass ? "Base" : "")) -»
+«javaHeader()»
+package «module.getWebPackage()»;
+
+public «IF gapClass»abstract «ENDIF»class «name.toFirstUpper()»Form«IF gapClass»Base«ENDIF» implements java.io.Serializable {
+	«EXPAND serialVersionUID»
+	private java.util.List<«for.getDomainPackage()».«for.name»> all«for.name.plural()»;
+
+	public java.util.List<«for.getDomainPackage()».«for.name»> getAll«for.name.plural()»() {
+        return all«for.name.plural()»;
+    }
+
+    public void setAll«for.name.plural()»(java.util.List<«for.getDomainPackage()».«for.name»> all«for.name.plural()») {
+        this.all«for.name.plural()» = all«for.name.plural()»;
+    }
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE flowJavaPagedFormBase FOR ListTask»
+	«FILE javaFileName(module.getWebPackage() + "." + name.toFirstUpper() + "Form" + (gapClass ? "Base" : "")) -»
+«javaHeader()»
+package «module.getWebPackage()»;
+
+public «IF gapClass»abstract «ENDIF»class «name.toFirstUpper()»Form«IF gapClass»Base«ENDIF» implements java.io.Serializable {
+	«EXPAND serialVersionUID»
+	
+    private «searchDOWith.getTypeName()» pagedResult;
+    private int pageNumber = 1;
+    private int totalPages = -1;
+
+    public java.util.List<«for.getDomainPackage()».«for.name»> getAll«for.name.plural()»() {
+        if (pagedResult == null) {
+            return new java.util.ArrayList<«for.getDomainPackage()».«for.name»>();
+        }
+        return pagedResult.getValues();
+    }
+
+    public «searchDOWith.getTypeName()» getPagedResult() {
+        return pagedResult;
+    }
+
+    public void setPagedResult(«searchDOWith.getTypeName()» pagedResult) {
+        this.pagedResult = pagedResult;
+        pageNumber = pagedResult.getPage();
+        if (pagedResult.isTotalCounted()) {
+            totalPages = pagedResult.getTotalPages();
+        }
+    }
+
+    public int getPageNumber() {
+        return pageNumber;
+    }
+
+    public void setPageNumber(int pageNumber) {
+    	if (pageNumber < 1) {
+    		pageNumber = 1;
+    	}
+        this.pageNumber = pageNumber;
+    }
+    
+    public boolean isTotalPagesCounted() {
+        return totalPages > -1;
+    }
+    
+    public int getTotalPages() {
+    	return totalPages;
+    }
+    
+    public boolean isEmptyResult() {
+    	if (isTotalPagesCounted()) {
+    	    return totalPages == 0;
+    	} else {
+    	    return getAll«for.name.plural()»().isEmpty();
+    	}
+    }
+	
+}
+	«ENDFILE»
+«ENDDEFINE»
+
+
+
+«DEFINE viewFlowFormFromModel FOR ViewTask»
+	public void fromModel(«this.for.getDomainPackage()».«this.for.name» model) {
+	this.domainObject = model;
+	«FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.metaType == DerivedReferenceViewProperty) AS prop-»
+		«IF prop.isMany() -»
+		this.«prop.name» = new java.util.ArrayList<«prop.reference.to.getDomainPackage()».«prop.reference.to.name»>(model.get«prop.name.toFirstUpper()»());
+		«ELSE-»
+		this.«prop.name» = model.get«prop.name.toFirstUpper()»();
+		«ENDIF -»
+	«ENDFOREACH-»
+	}
+«ENDDEFINE»
+
+«DEFINE formCreateBasicTypeModel(UserTask task) FOR Reference»
+«LET task.viewProperties.typeSelect(BasicTypeViewProperty).select(e|e.reference == this)
+	.addAll(task.viewProperties.typeSelect(BasicTypeEnumViewProperty).select(e|e.basicTypeReference == this))
+	AS basicTypeProperties»
+	protected «to.getDomainPackage()».«to.name» create«name.toFirstUpper()»() {
+		«to.getDomainPackage()».«to.name» result =
+			new «to.getDomainPackage()».«to.name»(
+		«FOREACH to.getConstructorParameters() AS p SEPARATOR ", " »
+			«LET basicTypeProperties.typeSelect(BasicTypeViewProperty).select(e|e.attribute == p)
+				.addAll(basicTypeProperties.typeSelect(BasicTypeEnumViewProperty).select(e|e.reference == p))
+				.selectFirst(e|true).name.toFirstUpper() AS name»
+				«IF name != null»
+				get«name»()
+				«ELSE»
+				null
+				«ENDIF»
+				
+			«ENDLET»
+			
+		«ENDFOREACH»);
+		«FOREACH basicTypeProperties.typeSelect(BasicTypeViewProperty).reject(e|to.getConstructorParameters().contains(e.attribute)) 	AS prop-»
+		result.set«prop.attribute.name.toFirstUpper()»(get«prop.name.toFirstUpper()»());
+		«ENDFOREACH-»
+		«FOREACH basicTypeProperties.typeSelect(BasicTypeEnumViewProperty).reject(e|to.getConstructorParameters().contains(e.reference)) AS prop-»
+		result.set«prop.reference.name.toFirstUpper()»(get«prop.name.toFirstUpper()»());
+		«ENDFOREACH-»
+		return result;
+	}
+«ENDLET»
+«ENDDEFINE»
+
+
+
+
+«DEFINE original FOR DomainObject»
+		private «getDomainPackage()».«name» original;
+		«getDomainPackage()».«name» getOriginalModel() {
+			return original;
+		}
+«ENDDEFINE»
+
+
+
+
+«DEFINE viewDataProperty(boolean readOnly) FOR ViewDataProperty»
+«ENDDEFINE»
+«DEFINE viewDataProperty(boolean readOnly) FOR AttributeViewProperty»
+	«EXPAND propertyField(this.name) FOR this.attribute»
+	«EXPAND propertyGetter(this.name) FOR this.attribute»
+	«EXPAND propertySetter(this.name) FOR this.attribute»
+«ENDDEFINE»
+«DEFINE viewDataProperty(boolean readOnly) FOR BasicTypeViewProperty»
+	«EXPAND propertyField(this.name) FOR this.attribute»
+	«EXPAND propertyGetter(this.name) FOR this.attribute»
+	«EXPAND propertySetter(this.name) FOR this.attribute»
+«ENDDEFINE»
+
+«DEFINE viewDataProperty(boolean readOnly) FOR ReferenceViewProperty»
+	«IF isMany() -»
+	private java.util.List<«getDomainPackage(this.reference.to)».«this.reference.to.name»> «this.name» = new java.util.ArrayList<«getDomainPackage(this.reference.to)».«this.reference.to.name»>();
+	public java.util.List<«getDomainPackage(this.reference.to)».«this.reference.to.name»> get«this.name.toFirstUpper()»() {
+		return this.«this.name»;
+	}
+	«ELSE»
+	private «getDomainPackage(this.reference.to)».«this.reference.to.name» «this.name»;
+	void set«this.name.toFirstUpper()»(«getDomainPackage(this.reference.to)».«this.reference.to.name» «this.name») {
+		this.«this.name» = «this.name»;
+		«IF !readOnly -»
+		if («this.name».getId() != null) {
+			this.«resolveRequiredIdAttributeName()» = this.«this.name».getId();
+		} else {
+			this.«resolveRequiredIdAttributeName()» = new «reference.to.getIdAttributeType()»("" + Long.MIN_VALUE);
+		}
+		«ENDIF»
+	}
+	public «getDomainPackage(this.reference.to)».«this.reference.to.name» get«this.name.toFirstUpper()»() {
+		return this.«this.name»;
+	}
+	«ENDIF -»
+	«IF isAddMethodApplicable()»
+	void add«this.name.toFirstUpper().singular()»(«getDomainPackage(this.reference.to)».«this.reference.to.name» «this.name.singular()») {
+		int i = this.«this.name».indexOf(«this.name.singular()»);
+        if (i == -1) {
+            this.«this.name».add(«this.name.singular()»);
+        } else {
+            this.«this.name».set(i, «this.name.singular()»);
+        }
+		«REM»if reference is required, adjust the size property to enable gui resolving required lists/sets«ENDREM»
+		«IF reference.required»
+        if (this.«this.name».size() > 0) {
+			this.«resolveRequiredIdAttributeName()» = new «reference.to.getIdAttributeType()»("" + this.«this.name».size());
+        } else {
+			this.«resolveRequiredIdAttributeName()» = null;
+        }
+        «ENDIF»
+
+	}
+	«ENDIF»
+
+«ENDDEFINE»
+«DEFINE viewDataProperty(boolean readOnly) FOR EnumViewProperty»
+	private «reference.to.getDomainPackage()».«reference.to.name» «name»;
+	public void set«name.toFirstUpper()»(«reference.to.getDomainPackage()».«reference.to.name» «name») {
+		this.«name» = «name»;
+	}
+	public «reference.to.getDomainPackage()».«reference.to.name» get«name.toFirstUpper()»() {
+		return this.«name»;
+	}
+    public java.util.List<javax.faces.model.SelectItem> get«name.toFirstUpper()»Items() {
+    	java.util.List<javax.faces.model.SelectItem> items = new java.util.ArrayList<javax.faces.model.SelectItem>();
+        for («reference.to.getDomainPackage()».«reference.to.name» «reference.to.name.toFirstLower()» : «reference.to.getDomainPackage()».«reference.to.name».values()) {
+            items.add(new javax.faces.model.SelectItem(«reference.to.name.toFirstLower()», "model.DomainObject.«reference.to.name»."+«reference.to.name.toFirstLower()».getName()));
+        }
+        return items;
+    }
+
+«ENDDEFINE»
+
+«DEFINE propertyField(String propertyName) FOR Attribute»
+	private «getTypeName(this)» «propertyName»;
+«ENDDEFINE»
+
+«DEFINE propertyGetter(String propertyName) FOR Attribute»
+    «formatJavaDoc()»
+    public «getTypeName(this)» get«propertyName.toFirstUpper()»() {
+        return «propertyName»;
+    };
+
+«ENDDEFINE»
+
+«DEFINE propertySetter(String propertyName) FOR Attribute»
+    «formatJavaDoc()»
+    public void set«propertyName.toFirstUpper()»(«getTypeName(this)» «propertyName») {
+        this.«propertyName» = «propertyName»;
+    };
+«ENDDEFINE»
+
+«DEFINE referenceItemsProperty FOR ReferenceViewProperty »
+	private java.util.List<javax.faces.model.SelectItem«REM»«optionClass()»«ENDREM»> «target.name.toFirstLower()»Items;
+	public java.util.List<javax.faces.model.SelectItem«REM»«optionClass()»«ENDREM»> get«target.name.toFirstUpper()»Items() {
+        return «target.name.toFirstLower()»Items;
+    }
+
+    void set«target.name.toFirstUpper()»Items(java.util.List<javax.faces.model.SelectItem«REM»«optionClass()»«ENDREM»> items) {
+        this.«target.name.toFirstLower()»Items = items;
+    }
+«ENDDEFINE»
+
+«DEFINE addSelectedProperty FOR ReferenceViewProperty »
+«IF isAddSubTaskAvailable()»
+	«LET resolveSelectedExistingChildIdAttributeName(this) AS selectedId»
+	private «this.reference.to.getIdAttributeType()» «selectedId»;
+	public void set«selectedId.toFirstUpper()»(«this.reference.to.getIdAttributeType()» id) {
+		this.«selectedId» = id;
+	}
+	public «this.reference.to.getIdAttributeType()» get«selectedId.toFirstUpper()»() {
+		return this.«selectedId»;
+	}
+	«ENDLET»
+«ENDIF»
+«ENDDEFINE»
+
+«DEFINE addRequiredProperty FOR ReferenceViewProperty »
+«LET resolveRequiredIdAttributeName() AS reqPropName»
+private «this.reference.to.getIdAttributeType()» «reqPropName»;
+public void set«reqPropName.toFirstUpper()»(«this.reference.to.getIdAttributeType()» idOrSize) {
+	this.«reqPropName» = idOrSize;
+}
+public «this.reference.to.getIdAttributeType()» get«reqPropName.toFirstUpper()»() {
+	return this.«reqPropName»;
+}
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE formFromModel FOR UserTask»
+	public void fromModel(«this.for.getDomainPackage()».«this.for.name» model) {
+	this.original = model;
+
+	«FOREACH this.viewProperties.typeSelect(AttributeViewProperty).reject(p | p.attribute.isSystemAttribute()) AS prop-»
+		this.set«prop.name.toFirstUpper()»(model.«prop.attribute.getGetAccessor()»());
+	«ENDFOREACH»
+	«FOREACH this.viewProperties.typeSelect(BasicTypeViewProperty) AS prop»
+		«IF prop.reference.isNullable()-»
+		    this.set«prop.name.toFirstUpper()»(model.get«prop.reference.name.toFirstUpper()»() == null ? null : model.get«prop.reference.name.toFirstUpper()»().«prop.attribute.getGetAccessor()»());
+		«ELSE-»
+		this.set«prop.name.toFirstUpper()»(model.get«prop.reference.name.toFirstUpper()»().«prop.attribute.getGetAccessor()»());
+		«ENDIF-»
+	«ENDFOREACH»
+	«FOREACH this.viewProperties.typeSelect(EnumViewProperty).reject(e|e.metaType == BasicTypeEnumViewProperty) AS prop»
+		this.set«prop.name.toFirstUpper()»(model.get«prop.name.toFirstUpper()»());
+	«ENDFOREACH»
+	«FOREACH this.viewProperties.typeSelect(BasicTypeEnumViewProperty) AS prop»
+		«IF prop.basicTypeReference.isNullable()-»
+			this.set«prop.name.toFirstUpper()»(model.get«prop.basicTypeReference.name.toFirstUpper()»() == null ? null : model.get«prop.basicTypeReference.name.toFirstUpper()»().get«prop.reference.name.toFirstUpper()»());
+		«ELSE-»
+			this.set«prop.name.toFirstUpper()»(model.get«prop.basicTypeReference.name.toFirstUpper()»().get«prop.reference.name.toFirstUpper()»());
+		«ENDIF-»
+	«ENDFOREACH»
+
+	«FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.metaType == DerivedReferenceViewProperty) AS prop»
+		«IF prop.isMany()»
+		this.«prop.name» = new java.util.ArrayList<«prop.reference.to.getDomainPackage()».«prop.reference.to.name»>(model.get«prop.name.toFirstUpper()»());
+			«REM»if the reference is required, adjust the size property «ENDREM»
+			«IF prop.reference.required»
+			if (this.«prop.name».size() > 0) {
+				this.«resolveRequiredIdAttributeName(prop)» = «for.getIdAttributeType()».valueOf("" + this.«prop.name».size());
+			} else {
+				this.«resolveRequiredIdAttributeName(prop)» = null;
+			}
+			«ENDIF»
+		«ELSE»
+		this.«prop.name» = model.get«prop.name.toFirstUpper()»();
+
+		if (model.get«prop.name.toFirstUpper()»() != null) {
+			this.«resolveRequiredIdAttributeName(prop)» = model.get«prop.name.toFirstUpper()»().getId();
+		}
+
+
+		«ENDIF»
+	«ENDFOREACH»
+	}
+«ENDDEFINE»
+
+«DEFINE publicFormToConfirmModel FOR CreateTask»
+public «for.getDomainPackage()».«for.name» toConfirmModel() {
+	return toConfirmModel(createModel());
+}
+«ENDDEFINE»
+
+«DEFINE privateFormToConfirmModel FOR CreateTask»
+public «for.getDomainPackage()».«for.name» toConfirmModel(«for.getDomainPackage()».«for.name» model) {
+	«EXPAND toModelNonReferences-»
+	«EXPAND toModelReferences(true)-»
+	return model;
+}
+«ENDDEFINE»
+
+«DEFINE publicFormToModel FOR CreateTask»
+public «for.getDomainPackage()».«for.name» toModel() {
+	return toModel(createModel());
+}
+«ENDDEFINE»
+«DEFINE privateFormToModel FOR CreateTask»
+private «for.getDomainPackage()».«for.name» toModel(«for.getDomainPackage()».«for.name» model) {
+	
+	«EXPAND toModelNonReferences»
+	«EXPAND toModelReferences(false)-»
+	return model;
+}
+«ENDDEFINE»
+
+
+
+«DEFINE publicFormToConfirmModel FOR UpdateTask»
+public «for.getDomainPackage()».«for.name» toConfirmModel() {
+	return toConfirmModel(shallowClone(original));
+}
+«ENDDEFINE»
+
+«DEFINE privateFormToConfirmModel FOR UpdateTask»
+public «for.getDomainPackage()».«for.name» toConfirmModel(«for.getDomainPackage()».«for.name» model) {
+	«EXPAND toModelNonReferences-»
+	«FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.metaType == DerivedReferenceViewProperty) AS prop-»
+		«LET prop.reference AS ref-»
+		
+			«IF ref.isOneToMany() || ref.isManyToMany() -»
+				«IF ref.opposite == null -»
+				model.get«ref.name.toFirstUpper()»().addAll(this.«ref.name»);
+				«ELSE-»
+				
+				// find «ref.to.name» that has been removed by user
+				java.util.Set<«ref.to.getDomainPackage()».«ref.to.name»> removed«ref.name.singular().toFirstUpper()» = new java.util.HashSet<«ref.to.getDomainPackage()».«ref.to.name»>();
+				for («ref.to.getDomainPackage()».«ref.to.name» «ref.name.singular()» : model.get«ref.name.toFirstUpper()»()) {
+					if (!this.«ref.name».contains(«ref.name.singular()»)) {
+						removed«ref.name.singular().toFirstUpper()».add(«ref.name.singular()»);
+					}
+				}
+				
+				// add all from original that hasn't been marked for removal
+				for («ref.to.getDomainPackage()».«ref.to.name» «ref.name.singular()» : original.get«ref.name.toFirstUpper()»()) {
+	                if (!removed«ref.name.singular().toFirstUpper()».contains(«ref.name.singular()»)) {
+						model.add«ref.name.toFirstUpper().singular()»(shallowClone(«ref.name.singular()»));
+	                }
+	            }
+				// add «ref.to.name» to model that has been added by user
+	            for («ref.to.getDomainPackage()».«ref.to.name» «ref.name.singular()» : this.«ref.name») {
+	                if (!model.get«ref.name.toFirstUpper()»().contains(«ref.name.singular()»)) {
+						model.add«ref.name.toFirstUpper().singular()»(shallowClone(«ref.name.singular()»));
+	                }
+	            }
+	            «ENDIF-»
+			«ELSEIF !for.getConstructorParameters().contains(ref)-»
+			model.set«ref.name.toFirstUpper()»(this.«ref.name»);
+			«ENDIF -»
+		«ENDLET-»
+	«ENDFOREACH-»
+	return model;
+}
+«ENDDEFINE»
+
+
+«DEFINE publicFormToModel FOR UpdateTask»
+public «for.getDomainPackage()».«for.name» toModel() {
+	return toModel(original);
+}
+«ENDDEFINE»
+
+«DEFINE privateFormToModel FOR UpdateTask»
+private «for.getDomainPackage()».«for.name» toModel(«for.getDomainPackage()».«for.name» model) {
+	«EXPAND toModelNonReferences-»
+	«FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.metaType == DerivedReferenceViewProperty) AS prop»
+		«LET prop.reference AS ref»
+		
+			«IF ref.isOneToMany() || ref.isManyToMany() -»
+				«IF ref.opposite == null -»
+				model.get«ref.name.toFirstUpper()»().clear();
+				model.get«ref.name.toFirstUpper()»().addAll(this.«ref.name»);
+				«ELSE»
+				// find «ref.to.name» that has been removed by user
+				java.util.Set<«ref.to.getDomainPackage()».«ref.to.name»> removed«ref.name.singular().toFirstUpper()» = new java.util.HashSet<«ref.to.getDomainPackage()».«ref.to.name»>();
+				for («ref.to.getDomainPackage()».«ref.to.name» «ref.name.singular()» : model.get«ref.name.toFirstUpper()»()) {
+					if (!this.«ref.name».contains(«ref.name.singular()»)) {
+						removed«ref.name.singular().toFirstUpper()».add(«ref.name.singular()»);
+					}
+				}
+				// remove them from model
+				for («ref.to.getDomainPackage()».«ref.to.name» «ref.name.singular()» : removed«ref.name.singular().toFirstUpper()») {
+					model.remove«ref.name.toFirstUpper().singular()»(«ref.name.singular()»);
+				}
+				// add «ref.to.name» to model that has been added by user
+				// copy original set to working copy to by pass persistent set implementation
+				java.util.Set<«ref.to.getDomainPackage()».«ref.to.name»> copyOf«ref.name.toFirstUpper()» = new java.util.HashSet<«ref.to.getDomainPackage()».«ref.to.name»>(model.get«ref.name.toFirstUpper()»());
+	            for («ref.to.getDomainPackage()».«ref.to.name» «ref.name.singular()» : this.«ref.name») {
+	                if (!copyOf«ref.name.toFirstUpper()».contains(«ref.name.singular()»)) {
+						model.add«ref.name.toFirstUpper().singular()»((«ref.to.getDomainPackage()».«ref.to.name») «ref.name.singular()»);
+	                }
+	            }
+	            «ENDIF»
+			«ELSEIF !for.getConstructorParameters().contains(ref)-»
+			model.set«ref.name.toFirstUpper()»(this.«ref.name»);
+			«ENDIF -»
+		«ENDLET»
+	«ENDFOREACH»
+	return model;
+}
+«ENDDEFINE»
+
+
+«DEFINE createModel FOR UserTask»
+protected «for.getDomainPackage()».«for.name» createModel() {
+	«for.getDomainPackage()».«for.name» model = new «for.getDomainPackage()».«for.name»(«FOREACH for.getConstructorParameters() AS p SEPARATOR ","»
+		«IF (p.metaType == Reference) && (((Reference) p).to.metaType == BasicType)»
+		create«p.name.toFirstUpper()»()
+		«ELSEIF p.metaType == Reference»
+		this.«p.name»
+		«ELSE»
+		this.get«p.name.toFirstUpper()»()
+		«ENDIF»
+	«ENDFOREACH»);
+	return model;
+}
+«ENDDEFINE»
+
+
+«DEFINE toModelNonReferences FOR UserTask»
+	«FOREACH this.viewProperties.typeSelect(AttributeViewProperty).reject(p | p.attribute.isSystemAttribute()) AS prop-»
+		«EXPAND toModelAttribute(for) FOR prop.attribute»
+	«ENDFOREACH-»
+	«FOREACH this.viewProperties.typeSelect(BasicTypeViewProperty) AS prop»
+		«EXPAND toModelBasicType(for) FOR prop.reference»
+	«ENDFOREACH-»
+	«FOREACH this.viewProperties.typeSelect(EnumViewProperty).reject(e|e.metaType == BasicTypeEnumViewProperty) AS prop»
+		«EXPAND toModelEnum(for) FOR prop.reference»
+	«ENDFOREACH-»	
+«ENDDEFINE»
+
+«DEFINE toModelReferences(boolean forConfirm) FOR CreateTask»
+	«FOREACH this.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.metaType == DerivedReferenceViewProperty) AS prop»
+		«LET prop.reference AS ref»
+			«IF ref.isOneToMany() || ref.isManyToMany() -»
+			for («ref.to.getDomainPackage()».«ref.to.name» «ref.name.singular()» : this.«ref.name») {
+				«IF ref.opposite == null -»
+				model.get«ref.name.toFirstUpper()»().add(«IF forConfirm»shallowClone(«ref.name.singular()»)«ELSE»«ref.name.singular()»«ENDIF»);
+				«ELSE»
+				model.add«ref.name.toFirstUpper().singular()»(«IF forConfirm»shallowClone(«ref.name.singular()»)«ELSE»(«ref.to.getDomainPackage()».«ref.to.name») «ref.name.singular()»«ENDIF»);
+				«ENDIF»
+				}
+			«ELSEIF !for.getConstructorParameters().contains(ref)-»
+			model.set«ref.name.toFirstUpper()»(«IF forConfirm»shallowClone(«ref.name.singular()»)«ELSE»this.«ref.name»«ENDIF»);
+			«ENDIF -»
+		«ENDLET»
+	«ENDFOREACH»
+«ENDDEFINE»
+
+
+«DEFINE toModelAttribute(DomainObject domainObject) FOR Attribute»
+	«IF !domainObject.getConstructorParameters().contains(this)-»
+	model.set«this.name.toFirstUpper()»(this.get«this.name.toFirstUpper()»());
+	«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE toModelBasicType(DomainObject domainObject) FOR Reference»
+	«IF !domainObject.getConstructorParameters().contains(this)-»
+	model.set«this.name.toFirstUpper()»(create«this.name.toFirstUpper()»());
+	«ENDIF-»
+«ENDDEFINE»
+
+«DEFINE toModelEnum(DomainObject domainObject) FOR Reference»
+	«IF !domainObject.getConstructorParameters().contains(this)-»
+	model.set«this.name.toFirstUpper()»(get«this.name.toFirstUpper()»());
+	«ENDIF-»
+«ENDDEFINE»
+
+	
+
+«DEFINE removeChildMethodForm FOR ReferenceViewProperty»
+«IF isMany() -»
+void remove«name.toFirstUpper().singular()»(Integer index) {
+	«reference.to.getDomainPackage()».«reference.to.name» «name.singular()» = this.«name».get(index);
+	this.«name».remove(«name.singular()»);
+	«REM»if reference is required, adjust the size property to enable gui resolving required lists/sets«ENDREM»
+	«IF reference.required»
+	if (this.«this.name».size() > 0) {
+		this.«resolveRequiredIdAttributeName()» = new «reference.to.getIdAttributeType()»("" + this.«this.name».size());
+    } else {
+		this.«resolveRequiredIdAttributeName()» = null;
+    }
+	«ENDIF»
+}
+«ELSE -»
+void remove«name.toFirstUpper().singular()»() {
+	this.«name.singular()» = null;
+	this.«resolveRequiredIdAttributeName(this)» = null;
+}
+«ENDIF -»
+«ENDDEFINE»
+
+«DEFINE nextEnabledProperty FOR DomainObject »
+    private boolean nextEnabled;
+
+    public boolean isNextEnabled() {
+        return nextEnabled;
+    }
+
+    public void setNextEnabled(boolean nextEnabled) {
+        this.nextEnabled = nextEnabled;
+    }
+«ENDDEFINE»
+
+«DEFINE confirmDraftProperty FOR DomainObject»
+	private «getDomainPackage()».«name» confirmDraft;
+	public «getDomainPackage()».«name» getConfirmDraft() {
+		return confirmDraft;
+	}
+	void setConfirmDraft(«getDomainPackage()».«name» draft) {
+		this.confirmDraft = draft;
+	}
+«ENDDEFINE»
+
+«DEFINE domainObjectProperty FOR DomainObject»
+	private «getDomainPackage()».«name» domainObject;
+	public «getDomainPackage()».«name» getDomainObject() {
+		return domainObject;
+	}
+	void setDomainObject(«getDomainPackage()».«name» domainObject) {
+		this.domainObject = domainObject;
+	}
+«ENDDEFINE»
+
+«DEFINE shallowClone FOR CreateTask»
+	«LET viewProperties.typeSelect(ReferenceViewProperty).reject(e|e.metaType == DerivedReferenceViewProperty).reference.to.getAllSubclasses().addAll(viewProperties.typeSelect(ReferenceViewProperty).reject(e|e.metaType == DerivedReferenceViewProperty).reference.to).toSet() AS domainObjects»
+		«EXPAND shallowClone FOREACH domainObjects»
+	«ENDLET»
+«ENDDEFINE»
+
+«DEFINE shallowClone FOR UpdateTask»
+	«LET viewProperties.typeSelect(ReferenceViewProperty).reject(e|e.metaType == DerivedReferenceViewProperty).reference.to.getAllSubclasses().addAll(viewProperties.typeSelect(ReferenceViewProperty).reject(e|e.metaType == DerivedReferenceViewProperty).reference.to).add(for).toSet() AS domainObjects»
+		«EXPAND shallowClone FOREACH domainObjects»
+	«ENDLET»
+«ENDDEFINE»
+
+«DEFINE shallowClone FOR DomainObject»
+private «getDomainPackage()».«name» shallowClone(«getDomainPackage()».«name» original) {
+	if (original != null) {
+	«IF getAllSubclasses().size > 0»
+		«FOREACH getAllSubclasses() AS sub»
+		if (original instanceof «sub.getDomainPackage()».«sub.name») {
+			return shallowClone((«sub.getDomainPackage()».«sub.name») original);
+		}
+		«ENDFOREACH»
+		throw new RuntimeException("Unsupported type");
+	«ELSE»
+		«getDomainPackage()».«name» shallowClone = new «getDomainPackage()».«name»(«FOREACH getConstructorParameters() AS p SEPARATOR ","»original.«p.getGetAccessor()»()«ENDFOREACH»);
+		«FOREACH getAllAttributes() AS att-»
+			«IF att.changeable && att.name != "uuid"-»
+			shallowClone.set«att.name.toFirstUpper()»(original.«att.getGetAccessor()»());
+			«ENDIF»
+		
+		«ENDFOREACH»
+		return shallowClone;
+	«ENDIF»
+	}
+	return null;
+}
+«ENDDEFINE»
+
+«DEFINE serialVersionUID FOR Object»
+    private static final long serialVersionUID = 1L;
+«ENDDEFINE»
+
+«DEFINE validateInputState FOR UserTask»
+«IF !this.for.getRequiredReferences().isEmpty»
+public void validateInput(org.springframework.binding.validation.ValidationContext context) {
+	org.springframework.binding.message.MessageContext messages = context.getMessageContext();
+	«FOREACH this.for.getRequiredReferences().reject(ref | !ref.to.isPersistent()) AS requiredReference -»
+	if («module.application.basePackage».util.«subPackage("web")».RequiredHelper.isReferenceRequired(new String[] 
+		«IF requiredReference.to.getSubclasses() == null || requiredReference.to.getSubclasses().size == 0 -»
+        	{"«requiredReference.to.name»"}
+		«ELSE -»
+        	{
+			«FOREACH requiredReference.to.getSubclasses() AS sub SEPARATOR ","-»
+			"«sub.name»"
+			«ENDFOREACH -»
+			}
+		«ENDIF -»)) {
+		if (required«requiredReference.name.toFirstUpper()» == null || required«requiredReference.name.toFirstUpper()».equals(new «for.getIdAttributeType()»(""+ 0))) { 
+    		messages.addMessage(new org.springframework.binding.message.MessageBuilder().error().code("required.reference").resolvableArg("model.DomainObject.«requiredReference.to.name»").defaultText("«requiredReference.to.name» is required").build());
+		}
+	}
+	«ENDFOREACH-»
+}
+«ENDIF»
+«ENDDEFINE»

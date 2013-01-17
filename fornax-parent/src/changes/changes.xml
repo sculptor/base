@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<document>
+	<properties>
+		<title>${project.name}: Changelog</title>
+		<author email="thorsten.kamann@googlemail.com">Thorsten Kamann</author>
+		<author email="karsten.thoms@itemis.de">Karsten Thoms</author>
+	</properties>
+	<body>
+		<release
+			version="3"
+			date="June 2008"
+			desc="Using Platform V3">
+			<action
+				dev="thorque"
+				type="update">
+				Set up Maven Archiva as release and snapshot repositories.
+			</action>
+		</release>
+		<release
+			version="3.1"
+			date="July 2008"
+			desc="oAW 4.3 Release">
+			<action
+				dev="kthoms"
+				type="update">
+				Upgraded to oAW 4.3 / Eclipse Ganymede.
+			</action>
+		</release>
+		<release
+			version="3.2"
+			date="August 2008"
+			desc="Maintainance Release">
+			<action
+				dev="kthoms"
+				type="add">
+				Included &lt;a href="http://maven.apache.org/plugins/maven-changes-plugin/"&gt;Maven Changes Plugin&lt;/a&gt;
+			</action>
+			<action
+				dev="kthoms"
+				type="update">
+				Changed construction of SVN URL.
+			</action>
+		</release>
+	</body>
+</document>

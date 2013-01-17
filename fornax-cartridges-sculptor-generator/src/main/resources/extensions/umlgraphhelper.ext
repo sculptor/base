@@ -1,0 +1,169 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptormetamodel;
+
+extension extensions::helper;
+extension extensions::properties;
+
+String referenceHeadLabel(Reference ref) :
+	(ref.many ? "0..n " : "") + ref.referenceLabelText();
+	
+String referenceTailLabel(Reference ref) :
+	ref.opposite == null ? 
+		"" :
+		((ref.opposite.many ? "0..n " : "") + ref.opposite.referenceLabelText());
+
+String referenceLabelText(Reference ref) :
+	ref.name.singular().toLowerCase() == ref.to.name.toLowerCase() ?
+		// almost same reference name as the to DomainObject, skip
+		"" :
+		ref.name;
+		
+boolean isAggregate(Reference ref) :
+	ref.isOneToMany() && ref.to.isEntityOrPersistentValueObject() && !ref.to.aggregateRoot;
+
+String dotFileName(Application app, Set[Module] focus, int detail, String subjectArea) :
+	let detailPart = detail == 0 ? "-" + subjectArea : (detail == 1 ? "" : (detail == 2 ? "-core-domain" : (detail == 3 ? "-overview" : "-dependencies"))) :
+	if (focus.size == app.visibleModules().size) then
+		"umlgraph" + detailPart + ".dot"
+	else 
+		"umlgraph-" + focus.collect(m|m.name).toList().sortBy(e|e).toSeparatedString("-") + detailPart + ".dot";
+
+Set[DomainObject] serviceOperationDependencies(Service from) :
+	{}.addAll(from.operations.parameters.select(e|e.domainObjectType != null).domainObjectType)
+	  .addAll(from.operations.select(e|e.domainObjectType != null).domainObjectType)
+	  .toSet();
+
+// Get all the subject areas used throughout the application
+Set[String] getSubjectAreas(Application application):
+	{"entity"}.addAll(application.visibleModules().domainObjects.getSubjectAreas())
+	.addAll(application.visibleModules().services.getSubjectAreas())
+	.reject(s|s == null).toSet();
+	
+cached getSubjectAreas(NamedElement elem) :
+	elem.hasHint("umlgraph.subject") ? elem.getHint("umlgraph.subject").replaceAll(" ", "").split("\\|") : {};
+
+Set[Module] moduleDependencies(Module from) :
+	{}.addAll(from.domainObjects.references.collect(e|e.to.module))
+	  .addAll(from.domainObjects.select(e|e.extends != null).collect(e|e.extends.module))
+	  .addAll(from.services.serviceDependencies.module)
+	  .addAll(from.services.serviceOperationDependencies().module)
+	  .addAll(from.consumers.serviceDependencies.module)
+	  .toSet().reject(e | e == from);
+		
+visibleModules(Application app) :
+	app.modules.select(e|e.visible());
+		
+visible(NamedElement elem) :
+	!elem.hide();
+
+hide(DomainObject elem) :
+	elem.hasHideHint() || elem.module.hide();
+	
+hide(Service elem) :
+	elem.hasHideHint() || elem.module.hide();
+
+hide(Consumer elem) :
+	elem.hasHideHint() || elem.module.hide();
+			
+hide(NamedElement elem) :
+	elem.hasHideHint();
+	
+private hasHideHint(NamedElement elem) :
+	elem.getHint("umlgraph") == "hide";
+
+isShownInView(DomainObject domainObject, Set[Module] focus, int detail, String subjectArea) :
+	detail < 4 && domainObject.visible() && focus.contains(domainObject.module) &&
+		(detail != 0 || domainObject.isInSubjectArea(subjectArea)) &&
+		((domainObject.metaType != Enum && domainObject.metaType != BasicType) 
+		|| (domainObject.metaType == Enum && getBooleanProperty("generate.umlgraph.enum"))
+		|| (domainObject.metaType == BasicType && getBooleanProperty("generate.umlgraph.basicType"))
+		|| (focus.size != domainObject.module.application.visibleModules().size));
+
+
+bgcolor(NamedElement for) :
+	for.hasHint("umlgraph.bgcolor") ?
+		for.getHint("umlgraph.bgcolor") :
+		bgcolorFromProperty(for);
+
+fontcolor(NamedElement for) :
+	for.hasHint("umlgraph.fontcolor") ?
+		for.getHint("umlgraph.fontcolor") :
+		fontcolorFromProperty(for);
+
+private bgcolorFromProperty(NamedElement for) :
+	let prop1 = "umlgraph.bgcolor." + (for.isCoreDomain() ? "core." : "") + for.getStereoTypeName() :
+	let prop2 = "umlgraph.bgcolor." + for.getStereoTypeName() :  
+	hasProperty(prop1) ? 
+		getProperty(prop1) : 
+		(hasProperty(prop2) ? getProperty(prop2) : "D0D0D0");
+
+private fontcolorFromProperty(NamedElement for) :
+	let prop1 = "umlgraph.fontcolor." + (for.isCoreDomain() ? "core." : "") + for.getStereoTypeName() :
+	let prop2 = "umlgraph.fontcolor." + for.getStereoTypeName() :  
+	hasProperty(prop1) ? 
+		getProperty(prop1) : 
+		(hasProperty(prop2) ? getProperty(prop2) : "black");
+
+String getStereoTypeName(NamedElement elem) :
+	elem.simpleMetaTypeName();
+
+existsCoreDomain(Application app) :
+	app.modules.exists(e|e.isCoreDomain()) ||
+	app.modules.domainObjects.exists(e|e.isCoreDomain()) ||
+	app.modules.services.exists(e|e.isCoreDomain()) ||
+	app.modules.consumers.exists(e|e.isCoreDomain());
+
+isCoreDomain(DomainObject elem) :
+	elem.hasCoreDomainHint() || elem.module.isCoreDomain();
+	
+isCoreDomain(Service elem) :
+	elem.hasCoreDomainHint() || elem.module.isCoreDomain();
+
+isCoreDomain(Consumer elem) :
+	elem.hasCoreDomainHint() || elem.module.isCoreDomain();
+
+boolean isCoreDomain(NamedElement elem) :
+	elem.hasCoreDomainHint();
+			
+private hasCoreDomainHint(NamedElement elem) :
+	elem.getHint("umlgraph") == "core";
+
+showCompartment(NamedElement elem, int detail) :
+	detail <= 1 || (detail == 2 && elem.isCoreDomain());
+	
+String labeldistance(Reference ref) :
+	getProperty("umlgraph.labeldistance");
+
+String labelangle(Reference ref) :
+	getProperty("umlgraph.labelangle");
+
+
+// Return true if the given element should be included in the diagram at the given level of detail and for the given subjectArea
+boolean includeInDiagram(NamedElement elem, int detail, String subjectArea) :
+	elem.visible() && (detail != 0 || elem.isInSubjectArea(subjectArea));
+	
+boolean isInSubjectArea(ValueObject v, String subjectArea) :
+	"entity" == subjectArea ? v.isPersistent() : v.getSubjectAreas().contains(subjectArea);
+
+boolean isInSubjectArea(Entity e, String subjectArea) :
+	"entity" == subjectArea ? e.isPersistent() : e.getSubjectAreas().contains(subjectArea);
+
+boolean isInSubjectArea(NamedElement elem, String subjectArea) :
+	elem.getSubjectAreas().contains(subjectArea);
+	

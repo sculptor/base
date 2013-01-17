@@ -1,0 +1,726 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptormetamodel;
+import sculptorguimetamodel;
+
+extension extensions::helper;
+extension extensions::properties;
+extension extensions::dbhelper;
+
+String getWebPackage(GuiModule guiModule) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.getWebPackage(sculptorguimetamodel.GuiModule);
+
+String getRichClientPackage(GuiApplication guiApp) :
+    guiApp.basePackage + "." + subPackage("richClient");
+
+String getRichClientPackage(GuiApplication guiApp, String subPackageName) :
+    guiApp.basePackage + "." + subPackage(subPackageName) + "." + subPackage("richClient");
+
+String getRichClientPackage(GuiModule guiModule) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.getRichClientPackage(sculptorguimetamodel.GuiModule);
+
+String getWebRoot(GuiApplication guiApplication) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.getWebRoot(sculptorguimetamodel.GuiApplication);
+
+boolean isSaveMethodAvailable(DomainObject domainObject) :
+	domainObject.getSaveMethod() != null;
+
+ServiceOperation getSaveMethod(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.getSaveMethod(sculptormetamodel.DomainObject);
+
+ServiceOperation getFindByIdMethod(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.getFindByIdMethod(sculptormetamodel.DomainObject);
+
+boolean isFindByIdMethodAvailable(DomainObject domainObject) :
+    domainObject.getFindByIdMethod() != null;
+
+boolean isFindAllMethodAvailable(DomainObject domainObject) :
+    domainObject.getFindAllMethod() != null;
+
+ServiceOperation getFindAllMethod(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.getFindAllMethod(sculptormetamodel.DomainObject);
+
+boolean isDeleteMethodAvailable(DomainObject domainObject) :
+	domainObject.getDeleteMethod() != null;
+
+ServiceOperation getDeleteMethod(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.getDeleteMethod(sculptormetamodel.DomainObject);
+
+boolean isPopulateAssociationsMethodAvailable(DomainObject domainObject) :
+	domainObject.getPopulateAssociationsMethod() != null;
+
+ServiceOperation getPopulateAssociationsMethod(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.getPopulateAssociationsMethod(sculptormetamodel.DomainObject);
+
+Service getService(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.getService(sculptormetamodel.DomainObject);
+
+Collection[Attribute] getAllNonSystemAttributes(DomainObject domainObject) :
+    domainObject.getAllAttributes().select(a | !a.isSystemAttribute());
+
+Collection[String] getRequiredFields(UserTask task) :
+	{};
+
+cached Collection[String] getRequiredFields(CreateTask task) :
+	getRequiredFieldsForCreate(task.for);
+
+cached Collection[String] getRequiredFields(UpdateTask task) :
+	getRequiredFieldsForUpdate(task.for);
+
+Collection[String] getRequiredFieldsForUpdate(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.getRequiredFieldsForUpdate(sculptormetamodel.DomainObject);
+
+Collection[String] getRequiredFieldsForCreate(DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.getRequiredFieldsForCreate(sculptormetamodel.DomainObject);
+
+
+boolean isCreateSubTaskAvailable(Reference ref) :
+	isCreateUpdateSubTaskAvailable(ref);
+
+boolean isUpdateSubTaskAvailable(Reference ref) :
+	isCreateUpdateSubTaskAvailable(ref);
+
+boolean isCreateUpdateSubTaskAvailable(Reference ref, String taskType) :
+	taskType.toLowerCase() == "create" ?
+		isCreateSubTaskAvailable(ref) :
+		isUpdateSubTaskAvailable(ref);
+
+private boolean isCreateUpdateSubTaskAvailable(Reference ref) :
+	(ref.to.metaType != BasicType) &&
+	(ref.to.metaType != Enum) &&
+	(ref.getCascade() != null) &&
+	(ref.getCascade().contains('all') || ref.getCascade().contains('save')) && // within same module, or cascade defined
+	!ref.to.isSaveMethodAvailable(); // not own save service
+
+boolean isRemoveAvailable(Reference ref) :
+	ref.isOneToMany() || ref.isManyToMany() || ref.changeable;
+
+boolean isAddSubTaskAvailable(ReferenceViewProperty ref) :
+    ref.target.isFindAllMethodAvailable();
+
+boolean isAddSubTaskAvailable(Reference ref) :
+    ref.to.isFindAllMethodAvailable();
+
+Collection[Reference] getReferencesForSubflows(DomainObject domainObject) :
+    domainObject.references.reject(ref | (ref.to.metaType == BasicType) || (ref.to.metaType == Enum));
+
+Collection[Reference] getAllReferencesForSubTasks(UserTask task) :
+	task.viewProperties.typeSelect(ReferenceViewProperty).select(e|e.metaType == ReferenceViewProperty).reference;
+
+Collection[Reference] getAllReferencesForSubTasks(DomainObject domainObject) :
+	(domainObject.extends == null) ?
+	getReferencesForSubflows(domainObject) :
+	getReferencesForSubflows(domainObject).addAll(getReferencesForSubflows(domainObject.extends));
+
+
+private String resolveReferenceName(String prefix, String middleKeyword, String forKeyword, String suffix, Reference ref, DomainObject forType) :
+	prefix + ref.name.toFirstUpper() + middleKeyword + (ref.to != forType ? forKeyword + forType.name : "") + suffix;
+
+
+String resolveChildMethodName(SubTaskTransition subTaskTransition) :
+	(subTaskTransition.to.metaType == CreateTask ? resolveTransitionName("add", subTaskTransition, "") : resolveTransitionName("update", subTaskTransition, ""));
+
+String resolveRemoveChildMethodName(ReferenceViewProperty prop) :
+	resolveReferenceName("remove", prop, "");
+
+
+String resolveAddExistingChildMethodName(ReferenceViewProperty prop) :
+	resolveReferenceName("addExisting", prop, "");
+
+String resolveAddExistingChildEventName(ReferenceViewProperty prop) :
+	resolveReferenceName("addExisting", prop, "");
+
+String resolveManyReferenceSizeIdAttributeName(ReferenceViewProperty prop) :
+	resolveReferenceName("size", prop, "");
+
+String resolveManyReferenceSizeIdAttributeName(Reference ref) :
+	resolveReferenceName("size", ref, "");
+
+String resolveRequiredIdAttributeName(ReferenceViewProperty prop) :
+	"required" + prop.name.toFirstUpper();
+
+String resolveRequiredIdAttributeName(Reference ref) :
+	"required" + ref.name.toFirstUpper();
+
+String resolveSelectedExistingChildIdAttributeName(ReferenceViewProperty prop) :
+	resolveReferenceName("selected", prop, "");
+
+String resolveSelectedExistingChildIdAttributeName(SubTaskTransition subTaskTransition) :
+	resolveTransitionName("selected", subTaskTransition, "");
+
+String resolveSelectedExistingChildIdAttributeName(Reference ref) :
+	resolveReferenceName("selected", ref, "");
+
+String resolveAddChildMethodName(SubTaskTransition subTaskTransition) :
+	resolveTransitionName("add", subTaskTransition, "");
+
+String resolveUpdateChildMethodName(SubTaskTransition subTaskTransition) :
+	resolveTransitionName("update", subTaskTransition, "");
+
+String resolvePrepareMethodName(SubTaskTransition subTaskTransition) :
+	resolveTransitionName("prepare" + subTaskTransition.to.taskType.toFirstUpper(), subTaskTransition, "Subflow");
+
+String resolveTransitionEventName(SubTaskTransition subTaskTransition) :
+	resolveTransitionName(subTaskTransition.to.taskType, subTaskTransition, "Event");
+
+String resolveViewTransitionEventName(ReferenceViewProperty prop) :
+	prop.getViewTransition().resolveTransitionEventName();
+
+String resolveCreateTransitionEventName(ReferenceViewProperty prop) :
+	prop.getCreateTransition().resolveTransitionEventName();
+
+String resolveUpdateTransitionEventName(ReferenceViewProperty prop) :
+	prop.getUpdateTransition().resolveTransitionEventName();
+
+String resolveRemoveTransitionEventName(ReferenceViewProperty prop) :
+	resolveReferenceName("remove", prop, "Event");
+
+String resolveSubFlowId(SubTaskTransition subTaskTransition) :
+	resolveTransitionName(subTaskTransition.to.taskType, subTaskTransition, "Subflow");
+
+
+String resolveTransitionName(String prefix, SubTaskTransition transition, String suffix) :
+	prefix + transition.forReference.name.toFirstUpper().singular() + (transition.to.for.extends != null ? "ForType" + transition.to.for.name.toFirstUpper() : "") + suffix;
+
+String resolveReferenceName(ReferenceViewProperty prop) :
+	resolveReferenceName("", prop, "");
+
+String resolveReferenceName(String prefix, ReferenceViewProperty prop, String suffix) :
+	resolveReferenceName(prefix, prop.reference, prop.target, suffix);
+
+String resolveReferenceName(String prefix, Reference ref, DomainObject target, String suffix) :
+	prefix + ref.name.toFirstUpper().singular() + (target.extends != null ? "ForType" + target.name.toFirstUpper() : "") + suffix;
+
+// TODO is this one really correct? ref.to.extends has nothing to do with ForType, compare with above with target.
+String resolveReferenceName(String prefix, Reference ref, String suffix) :
+	prefix + ref.name.toFirstUpper().singular() + (ref.to.extends != null ? "ForType" + ref.to.name.toFirstUpper() : "") + suffix;
+
+String toPresentation(String name) :
+	(name.length >= 2 && name.toUpperCase() == name) ?
+	 	name.toLowerCase().toFirstUpper().replaceAll("_", " ") :
+		name.camelCaseToWords().uncapitalizeSecondaryWords();
+
+String formatPropertyName(String name, String prefix) :
+	name.formatPropertyPath(prefix);
+
+String formatPropertyPath(String name, String prefix) :
+	(prefix == "") ?
+		name :
+		prefix + name.toFirstUpper();
+
+boolean defaultText(String text, String key) :
+	isHighlightMissingMessageResources() ?
+		text.toPresentation() + " [??? " + key + "]" :
+		text.toPresentation();
+
+String camelCaseToWords(String camelCase) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.CamelCaseConverter.camelCaseToWords(java.lang.String);
+
+String uncapitalizeSecondaryWords(String text) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.uncapitalizeSecondaryWords(java.lang.String);
+
+Collection[Reference] getRequiredReferences(DomainObject do) :
+	//do.references.reject(ref | ref.many || ref.nullable || (ref.to.metaType == BasicType) || (ref.to.metaType == Enum));
+	getAllReferences(do).reject(ref | !isRequired(ref));
+
+boolean isRequired(Reference ref) :
+	ref.to.metaType != BasicType && ref.to.metaType != Enum && ((isOne(ref) && !ref.nullable) || (isMany(ref) && ref.required));
+
+boolean isRequired(ReferenceViewProperty property) :
+	isRequired(property.reference);
+
+boolean isSystemAttribute(ViewDataProperty property) :
+	false;
+
+boolean isSystemAttribute(AttributeViewProperty property) :
+	property.attribute.isSystemAttribute();
+
+boolean isChangeable(ViewDataProperty property) :
+	false;
+
+boolean isChangeable(AttributeViewProperty property) :
+	property.attribute.changeable;
+
+boolean isChangeable(ReferenceViewProperty property) :
+	property.reference.changeable;
+
+boolean isChangeable(BasicTypeViewProperty property) :
+	property.reference.changeable;
+
+boolean isChangeable(EnumViewProperty property) :
+	property.reference.changeable;
+
+boolean isNullable(ViewDataProperty property) :
+	false;
+
+boolean isNullable(AttributeViewProperty property) :
+	property.attribute.nullable;
+
+boolean isNullable(ReferenceViewProperty property) :
+	property.reference.nullable;
+
+boolean isNullable(BasicTypeViewProperty property) :
+	property.reference.nullable;
+
+boolean isNullable(EnumViewProperty property) :
+	property.reference.nullable;
+
+String getDOPropertyPath(ViewDataProperty property) :
+	property.name;
+
+String getDOPropertyPath(BasicTypeViewProperty property) :
+	property.reference.name + '.' + property.attribute.name;
+
+String getDOPropertyPath(BasicTypeEnumViewProperty property) :
+	property.basicTypeReference.name + '.' + property.reference.name;
+
+boolean isCreateSubTaskAvailable(ReferenceViewProperty property) :
+	property.getCreateTransition() != null;
+
+boolean isUpdateSubTaskAvailable(UserTask task) :
+	task.subTaskTransitions.exists(t | t.to.metaType == UpdateTask);
+
+boolean isUpdateSubTaskAvailable(ReferenceViewProperty property) :
+	property.getUpdateTransition() != null;
+
+boolean isDeleteSubTaskAvailable(UserTask task) :
+	task.subTaskTransitions.exists(t | t.to.metaType == DeleteTask);
+
+boolean isDeleteSubTaskAvailable(ReferenceViewProperty property) :
+	property.getDeleteTransition() != null;
+
+UserTask firstIfAny(List[UserTask] tasks) :
+	tasks.isEmpty ?
+		null :
+		tasks.first();
+
+
+boolean isViewSubTaskAvailable(ReferenceViewProperty property) :
+	property.getViewTransition() != null;
+
+SubTaskTransition getViewTransition(ReferenceViewProperty prop) :
+	prop.relatedTransitions.select(t|t.to.metaType == ViewTask).firstIfAny();
+
+SubTaskTransition getCreateTransition(ReferenceViewProperty prop) :
+	prop.relatedTransitions.select(t|t.to.metaType == CreateTask).firstIfAny();
+
+SubTaskTransition getUpdateTransition(ReferenceViewProperty prop) :
+	prop.relatedTransitions.select(t|t.to.metaType == UpdateTask).firstIfAny();
+
+SubTaskTransition getDeleteTransition(ReferenceViewProperty prop) :
+	prop.relatedTransitions.select(t|t.to.metaType == DeleteTask).firstIfAny();
+
+SubTaskTransition getListTransition(ReferenceViewProperty prop) :
+	prop.relatedTransitions.select(t|t.to.metaType == ListTask).firstIfAny();
+
+SubTaskTransition firstIfAny2(List[SubTaskTransition] transitions) :
+	transitions.isEmpty ?
+		null :
+		transitions.first();
+
+boolean isOne(Reference ref) :
+	!ref.isMany();
+
+boolean isOne(ReferenceViewProperty prop) :
+	!prop.isMany();
+boolean isMany(Reference ref) :
+	ref.isOneToMany() || ref.isManyToMany();
+
+boolean isMany(ReferenceViewProperty prop) :
+	prop.reference.isMany();
+
+boolean isMany(SubTaskTransition subTaskTransition) :
+	subTaskTransition.forReference.isMany();
+
+
+
+boolean isAddMethodApplicable(ReferenceViewProperty prop) :
+	isMany(prop) && (prop.userTask.metaType == CreateTask || prop.userTask.metaType == UpdateTask);
+
+List[ViewDataProperty] filterOutDuplicateReferenceViewProperty(List[ViewDataProperty] list) :
+		JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.filterReferences(java.util.List);
+
+List[ReferenceViewProperty] referencePropertiesWithAdditionlBaseReferenceProperties(List[ReferenceViewProperty] list) :
+		JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.referencePropertiesWithAdditionlBaseReferenceProperties(java.util.List);
+
+List[ReferenceViewProperty] createParentProperties(List[ReferenceViewProperty] list) :
+		JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.createParentProperties(java.util.List);
+
+Service getPrimaryService(UserTask task) :
+	let op = task.getPrimaryServiceOperation() :
+	op == null ? null : op.service;
+
+ServiceOperation getPrimaryServiceOperation(UserTask task) :
+	null;
+
+ServiceOperation getPrimaryServiceOperation(CreateTask task) :
+	task.createDOWith == null ? null : task.createDOWith;
+
+ServiceOperation getPrimaryServiceOperation(UpdateTask task) :
+	task.updateDOWith == null ? null : task.updateDOWith;
+
+ServiceOperation getPrimaryServiceOperation(ListTask task) :
+	task.searchDOWith == null ? null : task.searchDOWith;
+
+ServiceOperation getPrimaryServiceOperation(ViewTask task) :
+	task.findDOWith == null ? null : task.findDOWith;
+
+ServiceOperation getPrimaryServiceOperation(DeleteTask task) :
+	task.deleteDOWith == null ? null : task.deleteDOWith;
+
+ServiceOperation getPrimaryServiceOperation(AddTask task) :
+	task.findDOWith == null ? null : task.findDOWith;
+
+
+Set[String] getApplicationExceptions(GuiModule module) :
+	module.userTasks.getApplicationExceptions().toSet();
+
+Set[String] getApplicationExceptions(UserTask task) :
+	task.getPrimaryServiceOperation() == null ? {} : task.getPrimaryServiceOperation().getExceptions().toSet();
+
+Set[String] getApplicationExceptions(UpdateTask task) :
+	(task.getPrimaryServiceOperation() == null ? {} : task.getPrimaryServiceOperation().getExceptions()).
+		addAll(task.findDOWith == null ? {} : task.findDOWith.getExceptions()).toSet();
+
+Set[String] getApplicationExceptions(DeleteTask task) :
+	(task.getPrimaryServiceOperation() == null ? {} : task.getPrimaryServiceOperation().getExceptions()).
+		addAll(task.findDOWith == null ? {} : task.findDOWith.getExceptions()).toSet();
+
+Set[Service] getAllUsedServices(GuiApplication app) :
+	app.modules.userTasks.getUsedServices().toSet();
+
+Set[Service] getUsedServices(UserTask task) :
+	task.getPrimaryService() == null ? {} : {}.add(task.getPrimaryService());
+
+Set[Service] getUsedServices(CreateTask task) :
+	(task.getPrimaryService() == null ? {} : {}.add(task.getPrimaryService())).
+		addAll(task.getServicesToSelectDomainObjects()).toSet();
+
+Set[Service] getUsedServices(UpdateTask task) :
+	(task.getPrimaryService() == null ? {} : {}.add(task.getPrimaryService())).
+		addAll(task.findDOWith == null ? {} : {}.add(task.findDOWith.service)).
+		addAll(task.getServicesToSelectDomainObjects()).toSet();
+
+Set[Service] getUsedServices(DeleteTask task) :
+	(task.getPrimaryService() == null ? {} : {}.add(task.getPrimaryService())).
+		addAll(task.findDOWith == null ? {} : {}.add(task.findDOWith.service)).toSet();
+
+Set[Service] getServicesToSelectDomainObjects(UserTask userTask) :
+	userTask.viewProperties.typeSelect(ReferenceViewProperty).select(refProp | refProp.isAddSubTaskAvailable()).
+		collect(refProp | refProp.getRelatedAddTask().getPrimaryService()).toSet();
+
+AddTask getRelatedAddTask(ReferenceViewProperty refProp) :
+	refProp.relatedTransitions.to.typeSelect(AddTask).selectFirst(e|true);
+
+List[UserTaskGroup] menuTasksGroupedByTarget(GuiApplication app) :
+	app.modules.userTasks.menuTasksGroupedByTarget();
+
+private List[UserTaskGroup] menuTasksGroupedByTarget(List[UserTask] tasks) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.menuTasksGroupedByTarget(java.util.List);
+
+cached List[UserTaskGroup] groupByTarget(GuiApplication app) :
+	app.modules.groupByTarget();
+
+cached List[UserTaskGroup] groupByTarget(GuiModule module) :
+	module.userTasks.groupByTargetImpl();
+
+private List[UserTaskGroup] groupByTargetImpl(List[UserTask] tasks) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.groupByTarget(java.util.List);
+
+cached UserTask aTask(UserTaskGroup group) :
+	group.userTasks.first();
+
+cached boolean hasReferenceViewProperties(UserTaskGroup group) :
+	!group.userTasks.viewProperties.typeSelect(ReferenceViewProperty).isEmpty;
+
+cached List[ViewDataProperty] getAggregatedViewProperties(UserTaskGroup group) :
+	// use a predefined order
+	let all = {}
+		.addAll(group.userTasks.typeSelect(CreateTask).viewProperties)
+		.addAll(group.userTasks.typeSelect(UpdateTask).viewProperties)
+		.addAll(group.userTasks.typeSelect(ViewTask).viewProperties) :
+	filterViewProperties((List[ViewDataProperty]) all);
+
+List[ViewDataProperty] filterViewProperties(List[ViewDataProperty] properties) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.filterViewProperties(java.util.List);
+
+
+List[ReferenceViewProperty] getReferencesPropertiesToSelect(UserTask task) :
+	task.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.metaType == DerivedReferenceViewProperty).select(p | p.isAddSubTaskAvailable());
+
+List[ReferenceViewProperty] getReferencesPropertiesChildrenToSelect(UserTask task) :
+	task.viewProperties.typeSelect(ReferenceViewProperty).reject(p | p.base).select(p | p.isAddSubTaskAvailable()).filterOutDuplicateReferenceTargets();
+
+List[ReferenceViewProperty] filterOutDuplicateReferenceTargets(List[ReferenceViewProperty] props) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GuiGenerationHelper.filterReferenceTargets(java.util.List);
+
+String resolveInputType(ViewDataProperty prop) :
+	prop.getTypeName().toLowerCase() == "boolean" ? "checkbox" : "input";
+
+String getTypeName(ViewDataProperty prop) :
+	null;
+
+String getTypeName(AttributeViewProperty prop) :
+	prop.attribute.getTypeName();
+
+String getTypeName(BasicTypeViewProperty prop) :
+	prop.attribute.getTypeName();
+
+String getAttributeType(ViewDataProperty prop) :
+	null;
+
+String getAttributeType(AttributeViewProperty prop) :
+	prop.attribute.type;
+
+String getAttributeType(BasicTypeViewProperty prop) :
+	prop.attribute.type;
+
+String getDatabaseLength(ViewDataProperty prop) :
+	null;
+
+String getDatabaseLength(AttributeViewProperty prop) :
+	prop.attribute.getDatabaseLength();
+
+String getDatabaseLength(BasicTypeViewProperty prop) :
+	prop.attribute.getDatabaseLength();
+
+String resolveModuleName(UserTask userTask) :
+	userTask.module.name.toFirstUpper();
+
+String resolveModuleName(ViewDataProperty prop) :
+	prop.userTask.resolveModuleName();
+
+String resolveModuleName(ReferenceViewProperty ref) :
+	ref.target.module.name.toFirstUpper();
+
+String resolveApplicationName(UserTask userTask) :
+	userTask.module.application.name;
+
+String resolveApplicationName(GuiModule module) :
+	module.application.name;
+
+String resolveJSFInputComponent(ViewDataProperty prop, boolean startTag) :
+	if (prop.getAttributeType() == "Date") then
+		((getDateTimeLibrary() == "java") ? 't:inputDate' + (startTag ? ' popupCalendar="true"' : '') : "h:inputText")
+	else if (prop.getAttributeType() == "DateTime" || prop.getAttributeType() == "Timestamp") then
+		((getDateTimeLibrary() == "java") ? 't:inputDate' + (startTag ? ' popupCalendar="true" type="both"' : '') : "h:inputText")
+	else if (prop.getAttributeType() == "boolean" || prop.getAttributeType() == "Boolean") then
+		"h:selectBooleanCheckbox"
+	else if prop.getDatabaseLength() != null && prop.getDatabaseLength().asInteger() > 100 then
+		'h:inputTextarea' + (startTag ? ' rows="10"' : '')
+	else 
+		"h:inputText";
+
+String resolveJSFInputConverterTag(ViewDataProperty prop) :
+	if (prop.getAttributeType() == "java.util.Date") then
+		'<a:dateConverter pattern="#{msg[' + "'format.DateTimePattern'" + ']}" />'
+	else if (prop.getAttributeType() == "Date") then
+		((getDateTimeLibrary() == "joda") ?
+			'<a:localDateConverter pattern="#{msg[' + "'format.DatePattern'" + ']}" />' :
+			'') // inputDate component is used for java dates
+	else if (prop.getAttributeType() == "DateTime" || prop.getAttributeType() == "Timestamp") then
+		((getDateTimeLibrary() == "joda") ?
+			'<a:dateTimeConverter pattern="#{msg[' + "'format.DateTimePattern'" + ']}" />' :
+			'<a:dateConverter pattern="#{msg[' + "'format.DateTimePattern'" + ']}" />')
+	else
+		"";
+
+String resolveJSFOutputConverterTag(ViewDataProperty prop) :
+	if (prop.getAttributeType() == "java.util.Date") then
+		'<a:dateConverter pattern="#{msg[' + "'format.DateTimePattern'" + ']}" />'
+	else if (prop.getAttributeType() == "Date") then
+		((getDateTimeLibrary() == "joda") ?
+			'<a:localDateConverter pattern="#{msg[' + "'format.DatePattern'" + ']}" />' :
+			'<a:dateConverter pattern="#{msg[' + "'format.DatePattern'" + ']}" />')
+	else if (prop.getAttributeType() == "DateTime" || prop.getAttributeType() == "Timestamp") then
+		((getDateTimeLibrary() == "joda") ?
+			'<a:dateTimeConverter pattern="#{msg[' + "'format.DateTimePattern'" + ']}" />' :
+			'<a:dateConverter pattern="#{msg[' + "'format.DateTimePattern'" + ']}" />')
+	else
+		"";
+
+String getResourceBundleLocaleSuffix() :
+	isHighlightMissingMessageResources() ?
+	    "_xx" :
+	    "";
+
+boolean isDateOrDateTime(ViewDataProperty prop) :
+	{"Date", "DateTime", "Timestamp"}.contains(prop.getAttributeType());
+
+ServiceOperation getListTaskPrimaryServiceOperation(UserTaskGroup group) :
+    group.userTasks.typeSelect(ListTask).isEmpty ?
+        null :
+        group.userTasks.typeSelect(ListTask).first().getPrimaryServiceOperation();
+
+ServiceOperation getCreateTaskPrimaryServiceOperation(UserTaskGroup group) :
+    group.userTasks.typeSelect(CreateTask).isEmpty ?
+        null :
+        group.userTasks.typeSelect(CreateTask).first().getPrimaryServiceOperation();
+
+ServiceOperation getUpdateTaskPrimaryServiceOperation(UserTaskGroup group) :
+    group.userTasks.typeSelect(UpdateTask).isEmpty ?
+        null :
+        group.userTasks.typeSelect(UpdateTask).first().getPrimaryServiceOperation();
+
+ServiceOperation getUpdateTaskFindWithServiceOperation(UserTaskGroup group) :
+    group.userTasks.typeSelect(UpdateTask).isEmpty ?
+        null :
+        group.userTasks.typeSelect(UpdateTask).first().findDOWith;
+
+ServiceOperation getUpdateTaskPopulateWithServiceOperation(UserTaskGroup group) :
+    group.userTasks.typeSelect(UpdateTask).isEmpty ?
+        null :
+        group.userTasks.typeSelect(UpdateTask).first().populateDOWith;
+
+ServiceOperation getCreateTaskPopulateWithServiceOperation(UserTaskGroup group) :
+    group.userTasks.typeSelect(CreateTask).isEmpty ?
+        null :
+        group.userTasks.typeSelect(CreateTask).first().populateDOWith;
+
+ServiceOperation getDeleteTaskPrimaryServiceOperation(UserTaskGroup group) :
+    group.userTasks.typeSelect(DeleteTask).isEmpty ?
+        null :
+        group.userTasks.typeSelect(DeleteTask).first().getPrimaryServiceOperation();
+
+ServiceOperation getViewTaskPrimaryServiceOperation(UserTaskGroup group) :
+    group.userTasks.typeSelect(ViewTask).isEmpty ?
+        null :
+        group.userTasks.typeSelect(ViewTask).first().getPrimaryServiceOperation();
+
+boolean isPossibleSubtask(UserTask task) :
+    task.getPrimaryServiceOperation() == null;
+
+boolean isGapClassToBeGenerated(UserTaskGroup group, String className) :
+	isGapClassToBeGenerated() ?
+		(group.userTasks.notExists(e | e.gapClass) ?
+			false :
+			group.userTasks.exists(e | isGapClassToBeGenerated(e.module.name, className))) :
+		(group.userTasks.exists(e | e.gapClass) ?
+			true :
+			group.userTasks.exists(e | isGapClassToBeGenerated(e.module.name, className)));
+
+boolean isGapClassToBeGenerated(UserTask task, String className) :
+	isGapClassToBeGenerated() ?
+		(!task.gapClass ?
+			false :
+			isGapClassToBeGenerated(task.module.name, className)) :
+		(task.gapClass ?
+			true :
+			isGapClassToBeGenerated(task.module.name, className));
+
+String gapSubclassSuffix(UserTask task, String className) :
+	isGapClassToBeGenerated(task, className) ?
+		"Base" :
+		"";
+		
+String gapSubclassSuffix(UserTaskGroup group, String className) :
+	isGapClassToBeGenerated(group, className) ?
+		"Base" :
+		"";
+	
+String gapSubclassSuffix(GuiModule module, String className) :
+	(isGapClassToBeGenerated(module.name, className) ? "Base" : "");
+
+String gapSubclassSuffix(Module module, String className) :
+	(isGapClassToBeGenerated(module.name, className) ? "Base" : "");
+
+String gapSubclassSuffix(String className) :
+	(isGapClassToBeGenerated("", className) ? "Base" : "");
+
+boolean hasUpdatingSubtask(Reference ref, UserTaskGroup group) :
+    let refProperties = {}
+		.addAll(group.userTasks.typeSelect(CreateTask))
+		.addAll(group.userTasks.typeSelect(UpdateTask))
+		.typeSelect(UserTask)
+		.viewProperties.typeSelect(ReferenceViewProperty).select(e|e.reference == ref).reject(e|e.base) :
+	(!refProperties.isEmpty && refProperties.first().getCreateTransition() != null && !refProperties.first().getCreateTransition().to.conversationRoot)
+    || (!refProperties.isEmpty && refProperties.first().getUpdateTransition() != null && !refProperties.first().getUpdateTransition().to.conversationRoot);
+
+Set[UserTaskGroup] relatedUserTaskGroupsIncludingSubclassSiblings(ReferenceViewProperty prop) :
+     let aTask = prop.relatedTransitions.first().to :
+     let potentialDomainObjects = {}.add(aTask.for).addAll(aTask.for.extends == null ? {} : aTask.for.extends.getSubclasses()) :
+     groupByTarget(aTask.module.application).select(e | potentialDomainObjects.contains(e.for));
+
+Set[Service] getUsedServices(UserTaskGroup group) :
+	group.userTasks.getPrimaryService().
+		addAll(group.for.getFindAllMethod() == null ? {} : {group.for.getFindAllMethod().service}).
+		addAll(group.for.getPopulateAssociationsMethod() == null ? {} : {group.for.getPopulateAssociationsMethod().service}).
+		addAll(group.getUpdateTaskFindWithServiceOperation() == null ? {} : {group.getUpdateTaskFindWithServiceOperation().service}).
+		reject(e|e == null).toSet();
+
+boolean isListStubOperation(ServiceOperation op) :
+	op.collectionType == "List";
+	
+boolean isPagedStubOperation(ServiceOperation op) :
+	op.isPagedResult();
+
+boolean isSaveStubOperation(ServiceOperation op) :
+	let param = op.stubOperationParameter() :
+	param != null &&
+	param.collectionType == null &&
+	param.domainObjectType != null &&
+	op.type == null &&
+	op.collectionType == null &&
+	(op.domainObjectType == null || param.domainObjectType == param.domainObjectType) &&
+	// delete and save have similar signatures
+	!op.isDeleteStubOperation() &&
+	// populateAssociations and save have similar signatures
+	!op.isPopulateStubOperation();
+
+Parameter stubOperationParameter(ServiceOperation op) :
+	(isServiceContextToBeGenerated() && op.parameters.size >= 2 ?
+		op.parameters.get(1) :
+		op.parameters.first());
+
+boolean isDeleteStubOperation(ServiceOperation op) :
+	let param = op.stubOperationParameter() :
+	param != null &&
+	param.collectionType == null &&
+	param.domainObjectType != null &&
+	op.type == null &&
+	op.domainObjectType == null &&
+	(op.name.toLowerCase().contains("delete") || op.name.toLowerCase().contains("remove"));
+
+boolean isFindByIdStubOperation(ServiceOperation op) :
+	let param = op.stubOperationParameter() :
+	param != null &&
+	param.getTypeName() == "Long" &&
+	param.collectionType == null &&
+	op.type == null &&
+	op.collectionType == null &&
+	op.domainObjectType != null;
+
+boolean isPopulateStubOperation(ServiceOperation op) :
+	let param = op.stubOperationParameter() :
+	param != null &&
+	param.collectionType == null &&
+	param.domainObjectType != null &&
+	param.domainObjectType == op.domainObjectType &&
+	op.collectionType == null &&
+	op.parameters.last().getTypeName().contains("AssociationSpecification");
+
+
+boolean isPaging(ListTask listTask) :
+	listTask.getPrimaryServiceOperation().parameters.exists(e|e.isPagingParameter());
+	
+boolean isPaging(AddTask addTask) :
+	addTask.findDOWith.parameters.exists(e|e.isPagingParameter());
+	
+String springServletMapping() :
+	getProperty("gui.springServletMapping");
+	

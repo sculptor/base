@@ -1,0 +1,29 @@
+<archetype>
+  <id>fornax-cartridges-sculptor-archetype-jsf</id>
+  <sources>
+    <source>src/main/java/placeholder.txt</source>
+  </sources>
+  <resources>
+    <resource>src/main/resources/model.guidesign</resource>
+    <resource>src/main/resources/generator/GuiWorkflow.mwe2</resource>
+    <resource>src/main/resources/generator/sculptor-gui-generator.properties</resource>
+    <resource filtered="false" encoding="ISO-8859-1">src/main/resources/generator/WebSpecialCases.xpt</resource>
+    <resource>src/main/resources/generator/WebSpecialCases.ext</resource>
+	<resource>src/test/resources/placeholder.txt</resource>
+	<resource filtered="false">src/main/webapp/img/create.png</resource>
+	<resource filtered="false">src/main/webapp/img/list.png</resource>
+	<resource filtered="false">src/main/webapp/img/item.png</resource>
+	<resource filtered="false">src/main/webapp/img/delete.png</resource>
+	<resource filtered="false">src/main/webapp/img/update.png</resource>
+	<resource>src/test/resources/log4j-test.properties</resource>
+    <resource>src/generated/java/placeholder.txt</resource>
+    <resource>src/generated/resources/placeholder.txt</resource>
+    <resource>src/test/generated/resources/placeholder.txt</resource>
+    <resource>src/test/generated/java/placeholder.txt</resource>
+	<resource>antbuild-war.xml</resource>
+	<resource>antbuild-ear.xml</resource>
+  </resources>
+  <testSources>
+    <source>src/test/java/placeholder.txt</source>
+  </testSources>
+</archetype>

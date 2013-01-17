@@ -1,0 +1,6 @@
+import 'classpath:/stringid.btdesign' 
+
+gui StringIdWeb for StringId {
+	
+
+}

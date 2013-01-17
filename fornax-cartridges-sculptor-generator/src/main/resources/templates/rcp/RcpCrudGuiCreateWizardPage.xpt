@@ -1,0 +1,353 @@
+«REM»
+ * Copyright 2008 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+
+«EXTENSION extensions::helper»
+«EXTENSION extensions::guihelper»
+«EXTENSION extensions::rcphelper»
+«EXTENSION extensions::properties»
+
+«DEFINE createWizardPage FOR GuiApplication»
+	«EXPAND createWizardPage FOREACH modules»
+«ENDDEFINE»
+
+«DEFINE createWizardPage FOR GuiModule»
+	«EXPAND createWizardPage FOREACH userTasks.typeSelect(CreateTask)»
+	«EXPAND gapCreateWizardPage FOREACH userTasks.typeSelect(CreateTask)
+		.select(e | isGapClassToBeGenerated(e, "New" + e.for.name + "WizardPage"))»
+«ENDDEFINE»
+
+«DEFINE gapCreateWizardPage FOR CreateTask»
+«LET "New" + for.name + "WizardPage" AS className»
+«FILE javaFileName(module.getRichClientPackage() + ".ui." + className) TO_SRC -»
+«javaHeader()»
+package «module.getRichClientPackage()».ui;
+
+«EXPAND createWizardPageSpringAnnotation»
+public class «className» extends «className»Base {
+	public «className»() {
+    }
+}
+«ENDFILE»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE createWizardPage FOR CreateTask»
+«LET "New" + for.name + "WizardPage" + gapSubclassSuffix(this, "New" + for.name + "WizardPage") AS className»
+«FILE javaFileName(module.getRichClientPackage() + ".ui." + className) -»
+«javaHeader()»
+package «module.getRichClientPackage()».ui;
+
+«IF !className.endsWith("Base")»
+«EXPAND createWizardPageSpringAnnotation»
+«ENDIF»
+public «IF className.endsWith("Base")»abstract«ENDIF» class «className» extends org.eclipse.jface.wizard.WizardPage implements «module.getRichClientPackage()».controller.New«for.name»Presentation {
+	«EXPAND createWizardPageConstructor»
+	«EXPAND RcpCrudGuiMessageResources::messageSourceDependencyProperty»
+	«EXPAND createWizardPageController»
+	«EXPAND createWizardPageResetForm»
+	«EXPAND createWizardPageRetrieveReferenceInput FOREACH viewProperties.typeSelect(ReferenceViewProperty).reject(e|e.base)»
+	«EXPAND createWizardPageCreateControl»
+	«EXPAND createWizardPageInitParentLayout»
+	«EXPAND createWizardPageCreateInitFromSelection»
+	«EXPAND createWizardPageCreateContentComposite»
+	«EXPAND createWizardPageCreatePage»
+	«EXPAND createWizardPageCreatePageContainer»
+	«EXPAND createWizardPageTargetObservables»
+	«EXPAND createWizardPageErrorMessage»
+	«EXPAND createWizardPageOpenQuestion»
+	«IF !viewProperties.typeSelect(ReferenceViewProperty).isEmpty»
+		«EXPAND createWizardPageShowMainTask»
+	«ENDIF»
+	«EXPAND RcpCrudGuiPage::pageCreateWidget FOREACH viewProperties.reject(e|e.isSystemAttribute())»
+	«IF isPossibleSubtask()»
+		«EXPAND RcpCrudGuiPage::pageSubtaskParent»
+	«ENDIF»
+
+}
+«ENDFILE»
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE createWizardPageSpringAnnotation FOR CreateTask»
+@org.springframework.stereotype.Component("new«for.name»WizardPage")
+@org.springframework.context.annotation.Scope("prototype")
+«ENDDEFINE»
+
+«DEFINE createWizardPageConstructor FOR CreateTask»
+«LET "New" + for.name + "WizardPage" + gapSubclassSuffix(this, "New" + for.name + "WizardPage") AS className»
+    public «className»() {
+        super("wizardPage"); //$NON-NLS-1$
+        setTitle(org.eclipse.osgi.util.NLS.bind(«getMessagesClass()».newWizardPage_title, «getMessagesClass()».«for.getMessagesKey()»));
+        setDescription(«getMessagesClass()».new«for.name»WizardPage_description);
+    }
+«ENDLET»
+«ENDDEFINE»
+
+«DEFINE createWizardPageController FOR CreateTask»
+	@org.springframework.beans.factory.annotation.Autowired
+    private «module.getRichClientPackage()».controller.New«for.name»Controller controller;
+
+    protected «module.getRichClientPackage()».controller.New«for.name»Controller getController() {
+        return controller;
+    }
+«ENDDEFINE»
+
+«DEFINE createWizardPageResetForm FOR CreateTask»
+    public void resetForm() {
+        «EXPAND createWizardPageCallEvaluateEnabled»
+        «FOREACH viewProperties.typeSelect(ReferenceViewProperty).reject(e|e.base) AS refProp»
+        retrieve«refProp.resolveReferenceName().toFirstUpper()»Input();
+        «ENDFOREACH»
+    }
+«ENDDEFINE»
+
+«DEFINE createWizardPageRetrieveReferenceInput FOR ReferenceViewProperty»
+«IF isSingleSelectAddSubTask() »
+	«EXPAND createWizardPageRetrieveReferenceInputForSingleSelect»
+«ELSE»    
+    private void retrieve«resolveReferenceName().toFirstUpper()»Input() {
+        if («resolveReferenceName().toFirstLower()»TableViewer == null) {
+            return;
+        }
+        «resolveReferenceName().toFirstLower()»TableViewer.getViewer().setInput(null);
+        «resolveReferenceName().toFirstLower()»Section.setEnabled(false);
+        org.eclipse.core.runtime.jobs.Job job = new «fw("richclient.errorhandling.ExceptionAwareJob")»(
+            org.eclipse.osgi.util.NLS.bind(«relatedTransitions.first().to.getMessagesClass()».readJob, «relatedTransitions.first().to.getMessagesClass()».«relatedTransitions.first().to.for.getMessagesKey()»_plural), messages) {
+            @Override
+            protected org.eclipse.core.runtime.IStatus doRun(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                monitor.beginTask(getName(), org.eclipse.core.runtime.IProgressMonitor.UNKNOWN);
+                final java.util.List<«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»> result = getController().get«resolveReferenceName().toFirstUpper()»Input();
+                org.eclipse.swt.widgets.Display.getDefault().asyncExec(new Runnable() {
+                    public void run() {
+                        «resolveReferenceName().toFirstLower()»TableViewer.getViewer().setInput(result);
+                        «resolveReferenceName().toFirstLower()»Section.setEnabled(true);
+                    }
+                });
+                monitor.done();
+                return org.eclipse.core.runtime.Status.OK_STATUS;
+            }
+        };
+        job.schedule();
+    }
+«ENDIF»
+«ENDDEFINE»
+
+«DEFINE createWizardPageRetrieveReferenceInputForSingleSelect FOR ReferenceViewProperty»
+    private void retrieve«resolveReferenceName().toFirstUpper()»Input() {
+        if («resolveReferenceName().toFirstLower()» == null) {
+            return;
+        }
+        «resolveReferenceName().toFirstLower()».setInput(null);
+        org.eclipse.core.runtime.jobs.Job job = new «fw("richclient.errorhandling.ExceptionAwareJob")»(
+            org.eclipse.osgi.util.NLS.bind(«relatedTransitions.first().to.getMessagesClass()».readJob, «relatedTransitions.first().to.getMessagesClass()».«relatedTransitions.first().to.for.getMessagesKey()»_plural), messages) {
+            @Override
+            protected org.eclipse.core.runtime.IStatus doRun(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                monitor.beginTask(getName(), org.eclipse.core.runtime.IProgressMonitor.UNKNOWN);
+                final java.util.List<«IF isNullable()»Object«ELSE»«relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name»«ENDIF»> input = getController().get«resolveReferenceName().toFirstUpper()»Input();
+                final «relatedTransitions.first().to.module.getRichClientPackage()».data.Rich«target.name» selection = getController().get«resolveReferenceName().toFirstUpper()»Selection();
+                org.eclipse.swt.widgets.Display.getDefault().asyncExec(new Runnable() {
+                    public void run() {
+                        «resolveReferenceName().toFirstLower()».setInput(input);
+                        if (selection == null) {
+                            «resolveReferenceName().toFirstLower()».setSelection(new org.eclipse.jface.viewers.StructuredSelection());
+                        } else {
+                            «resolveReferenceName().toFirstLower()».setSelection(new org.eclipse.jface.viewers.StructuredSelection(selection), true);
+                        }
+                    }
+                });
+                monitor.done();
+                return org.eclipse.core.runtime.Status.OK_STATUS;
+            }
+        };
+        job.schedule();
+    }
+«ENDDEFINE»
+
+«DEFINE createWizardPageCallEvaluateEnabled FOR CreateTask»
+        «FOREACH viewProperties.typeSelect(AttributeViewProperty).select(e|e.getAttributeType() == "Date" && e.isNullable()) AS prop»
+        evaluate«prop.name.toFirstUpper()»Enabled();
+        «ENDFOREACH»
+«ENDDEFINE»
+
+«DEFINE createWizardPageCreateControl FOR CreateTask»
+    protected org.eclipse.swt.widgets.Composite parent;
+
+    public void createControl(org.eclipse.swt.widgets.Composite parent) {
+        this.parent = parent;
+        initParentLayout();
+
+        createInitFromSelection();
+        contentComposite = createContentComposite();
+
+        createPage();
+
+        setControl(parent);
+
+        «EXPAND createWizardPageCallEvaluateEnabled»
+
+        getController().pageCreated(this);
+
+        resetForm();
+    }
+
+    protected org.eclipse.swt.widgets.Composite getParent() {
+        return parent;
+    }
+«ENDDEFINE»
+
+«DEFINE createWizardPageCreateInitFromSelection FOR CreateTask»
+    protected void createInitFromSelection() {
+        if (getController().isSelectedObjectValid()) {
+            org.eclipse.swt.widgets.Composite fromComposite = new org.eclipse.swt.widgets.Composite(parent, org.eclipse.swt.SWT.FILL);
+            fromComposite.setLayoutData(new org.eclipse.swt.layout.GridData(org.eclipse.swt.SWT.FILL, org.eclipse.swt.SWT.TOP, true, false));
+
+            fromComposite.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
+            org.eclipse.swt.widgets.Button fromSelectionButton = new org.eclipse.swt.widgets.Button(fromComposite, org.eclipse.swt.SWT.PUSH | org.eclipse.swt.SWT.RIGHT);
+            fromSelectionButton.setText(«getMessagesClass()».newWizardPage_initFromSelected);
+            fromSelectionButton.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @SuppressWarnings("unchecked")
+                @Override
+                public void widgetSelected(org.eclipse.swt.events.SelectionEvent event) {
+                    getController().copyFromSelection();
+                }
+            });
+            fromSelectionButton.setLayoutData(new org.eclipse.swt.layout.GridData(org.eclipse.swt.SWT.RIGHT, org.eclipse.swt.SWT.CENTER, true, false));
+            org.eclipse.swt.widgets.Label separator = new org.eclipse.swt.widgets.Label(parent, org.eclipse.swt.SWT.HORIZONTAL | org.eclipse.swt.SWT.SEPARATOR);
+            separator.setLayoutData(new org.eclipse.swt.layout.GridData(org.eclipse.swt.SWT.FILL, org.eclipse.swt.SWT.CENTER, false, false));
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE createWizardPageCreateContentComposite FOR CreateTask»
+    protected org.eclipse.swt.widgets.Composite contentComposite;
+
+    protected org.eclipse.swt.widgets.Composite createContentComposite() {
+        org.eclipse.swt.widgets.Composite result = new org.eclipse.swt.widgets.Composite(parent, org.eclipse.swt.SWT.NONE);
+        result.setLayoutData(new org.eclipse.swt.layout.GridData(org.eclipse.swt.SWT.FILL, org.eclipse.swt.SWT.CENTER, true, false));
+
+        org.eclipse.swt.layout.FillLayout layout = new org.eclipse.swt.layout.FillLayout(org.eclipse.swt.SWT.VERTICAL);
+        layout.marginWidth = 5;
+        layout.marginHeight = 5;
+        result.setLayout(layout);
+        return result;
+    }
+
+    protected org.eclipse.swt.widgets.Composite getContentComposite() {
+        return contentComposite;
+    }
+«ENDDEFINE»
+
+«DEFINE createWizardPageCreatePage FOR CreateTask»
+    public void createPage() {
+        pageContainer = createPageContainer();
+
+        «EXPAND createWizardPageCreatePageCreateWidget FOREACH viewProperties.reject(e|e.isSystemAttribute())»
+    }
+«ENDDEFINE»
+
+«DEFINE createWizardPageCreatePageCreateWidget FOR ViewDataProperty»
+        «name» = create«name.toFirstUpper()»();
+«ENDDEFINE»
+
+«DEFINE createWizardPageCreatePageCreateWidget FOR ReferenceViewProperty»
+«IF !base -»
+	«IF userTask.isPossibleSubtask()»
+        if (getController().getSubtaskParent() == null ||
+        		(«FOREACH relatedUserTaskGroupsIncludingSubclassSiblings() AS group SEPARATOR " && " -»
+        		!«group.module.getRichClientPackage()».data.Rich«group.for.name».class.isAssignableFrom(getController().getSubtaskParent().getParentType())
+        		«ENDFOREACH-»)) {
+
+    «ENDIF»
+	«IF isSingleSelectAddSubTask()-»
+		«name» = create«name.toFirstUpper()»();
+	«ELSE-»
+        «resolveReferenceName().toFirstLower()»Section = create«resolveReferenceName().toFirstUpper()»Section();
+        «resolveReferenceName().toFirstLower()»Composite = create«resolveReferenceName().toFirstUpper()»Composite();
+        «resolveReferenceName().toFirstLower()»TableViewer = create«resolveReferenceName().toFirstUpper()»Viewer();
+		«IF isCreateSubTaskAvailable()-»
+		    «resolveReferenceName().toFirstLower()»NewButton = create«resolveReferenceName()»NewButton();
+		«ENDIF»
+		«IF isAddSubTaskAvailable()»
+		    «resolveReferenceName().toFirstLower()»AddButton = create«resolveReferenceName()»AddButton();
+		«ENDIF»
+	    «resolveReferenceName().toFirstLower()»RemoveButton = create«resolveReferenceName()»RemoveButton();
+
+        evaluate«resolveReferenceName()»ButtonsEnabled();
+	«ENDIF -»
+	«IF userTask.isPossibleSubtask()»
+        }
+    «ENDIF»
+«ENDIF -»
+«ENDDEFINE»
+
+«DEFINE createWizardPageInitParentLayout FOR CreateTask»
+    protected void initParentLayout() {
+        parent.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
+    }
+«ENDDEFINE»
+
+«DEFINE createWizardPageCreatePageContainer FOR CreateTask»
+    protected org.eclipse.swt.widgets.Composite pageContainer;
+
+    protected org.eclipse.swt.widgets.Composite createPageContainer() {
+        org.eclipse.swt.widgets.Composite result = new org.eclipse.swt.widgets.Composite(contentComposite, org.eclipse.swt.SWT.NULL);
+        org.eclipse.swt.layout.GridLayout gridLayout = new org.eclipse.swt.layout.GridLayout();
+        gridLayout.numColumns = 2;
+        result.setLayout(gridLayout);
+        return result;
+    }
+
+    protected org.eclipse.swt.widgets.Composite getPageContainer() {
+        return pageContainer;
+    }
+«ENDDEFINE»
+
+«DEFINE createWizardPageTargetObservables FOR CreateTask»
+    private java.util.Map<String, org.eclipse.core.databinding.observable.value.IObservableValue> targetObservables = new java.util.HashMap<String, org.eclipse.core.databinding.observable.value.IObservableValue>();
+
+    public java.util.Map<String, org.eclipse.core.databinding.observable.value.IObservableValue> getTargetObservables() {
+        return targetObservables;
+    }
+«ENDDEFINE»
+
+«DEFINE createWizardPageErrorMessage FOR CreateTask»
+    public void clearErrorMessage() {
+        setErrorMessage(null);
+    }
+
+    public boolean hasErrorMessage() {
+        return (getErrorMessage() != null);
+    }
+«ENDDEFINE»
+
+«DEFINE createWizardPageOpenQuestion FOR CreateTask»
+    protected boolean openQuestion(String title, String message) {
+        return org.eclipse.jface.dialogs.MessageDialog.openQuestion(org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
+            title, message);
+    }
+«ENDDEFINE»
+
+«DEFINE createWizardPageShowMainTask FOR CreateTask»
+    public void showMainTask() {
+    }
+«ENDDEFINE»
+
+
+

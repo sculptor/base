@@ -1,0 +1,755 @@
+/*
+ * Copyright 2007 The Fornax Project Team, including the original
+ * author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import sculptordsl;
+
+extension org::fornax::cartridges::sculptor::dsl::ModelLoadExtensions;
+
+extension extensions::helper;
+extension extensions::properties;
+extension transformation::CheckCrossLink;
+
+create sculptormetamodel::Application this transform(DslModel dslModel) :
+	let allDslModules = dslModel.allElements().typeSelect(DslModule) :
+	initPropertiesHook() ->
+    setGlobalApplication(this) ->
+    allDslModules.checkCrossLink() ->
+    setDoc(dslModel.app.doc) ->
+    setName(dslModel.app.name) ->
+    setBasePackage(dslModel.app.basePackage) ->
+    modules.addAll(allDslModules.transform()) ->
+    // have to transform the dependencies afterwards, otherwise strange errors
+    allDslModules.services.transformDependencies() ->
+    allDslModules.resources.transformDependencies() ->
+    allDslModules.consumers.transformDependencies() ->
+    allDslModules.domainObjects().transformDependencies() ->
+    allDslModules.domainObjects().select(d | d.scaffold).scaffold() ->
+    allDslModules.resources.select(e | e.scaffold).scaffold();
+
+create sculptormetamodel::Module this transform(DslModule module) :
+    setApplication(getGlobalApplication()) ->
+    setDoc(module.doc) ->
+    setName(module.name) ->
+    setHint(module.hint) ->
+    setExternal(!isModuleToBeGenerated(module.name)) ->
+    setBasePackage(module.basePackage) ->
+    domainObjects.addAll(module.domainObjects.transform()) ->
+    services.addAll(module.services.transform()) ->
+    resources.addAll(module.resources.transform()) ->
+    consumers.addAll(module.consumers.transform());
+
+create sculptormetamodel::Service this transform(DslService service) :
+	setModule(((DslModule) service.eContainer).transform()) ->
+    setDoc(service.doc) ->
+    setName(service.name) ->
+    setGapClass(service.isGapClassToBeGenerated()) ->
+    setWebService(service.webService) ->
+    setHint(service.hint) ->
+    // these hints will probably be replaced by real keywords in DSL
+    setRemoteInterface(hasHint("notRemote") ? false : true) ->
+    setLocalInterface(hasHint("notLocal") ? false : true) ->
+    (service.subscribe != null ?
+    	setSubscribe(service.subscribe.transform()) :
+    	null) ->
+    operations.addAll(service.operations.transform());
+
+create sculptormetamodel::Resource this transform(DslResource resource) :
+	setModule(((DslModule) resource.eContainer).transform()) ->
+    setDoc(resource.doc) ->
+    setName(resource.name) ->
+    setGapClass(resource.isGapClassToBeGenerated()) ->
+    setHint(resource.hint) ->
+    setPath(resource.path) ->
+    operations.addAll(resource.operations.transform());
+
+create sculptormetamodel::Consumer this transform(DslConsumer consumer) :
+	setModule(((DslModule) consumer.eContainer).transform()) ->
+    setDoc(consumer.doc) ->
+    setName(consumer.name) ->
+    setHint(consumer.hint) ->
+    (consumer.messageRoot != null ?
+      setMessageRoot(consumer.messageRoot.transform()) :
+      null) ->
+    (consumer.subscribe != null ?
+    	setSubscribe(consumer.subscribe.transform()) :
+    	null) ->
+    setChannel(consumer.channel == null && subscribe != null ? subscribe.topic : consumer.channel) ->
+    (subscribe == null && channel != null ?
+    	setSubscribe(createSubscribe(consumer, channel)) :
+    	null)
+    ;
+
+create sculptormetamodel::Subscribe this createSubscribe(DslConsumer consumer, String channel) :
+    setTopic(channel);
+
+create sculptormetamodel::Subscribe this transform(DslSubscribe subscribe) :
+	setEventBus(subscribe.eventBus) ->
+	setTopic(subscribe.topic);
+
+create sculptormetamodel::Publish this transform(DslPublish publish) :
+	setEventBus(publish.eventBus) ->
+	setTopic(publish.topic) ->
+	setEventType(publish.eventType == null ? null : publish.eventType.transform()) ->
+	(eventBus == null && eventType != null && eventType.metaType == sculptormetamodel::CommandEvent ?
+		setEventBus("commandBus") :
+		null);
+
+create sculptormetamodel::ServiceOperation this transform(DslServiceOperation operation) :
+	setService(((DslService) operation.eContainer).transform()) ->
+    setDoc(operation.doc) ->
+    setName(operation.name) ->
+    setVisibility(convertVisibility(operation.visibility)) ->
+    parameters.addAll(operation.parameters.transform()) ->
+    setCollectionType(convertCollectionType(operation.returnType)) ->
+    setMapKeyType(operation.returnType == null ? null : operation.returnType.mapKeyType) ->
+    setMapKeyDomainObjectType(operation.returnType == null || operation.returnType.mapKeyDomainObjectType == null ?
+        null :
+        operation.returnType.mapKeyDomainObjectType.transform()) ->
+    setType(operation.returnType == null ? null : operation.returnType.type) ->
+    setDomainObjectType(operation.returnType == null || operation.returnType.domainObjectType == null ?
+    	null :
+    	operation.returnType.domainObjectType.transform()) ->
+    setThrows(operation.throws) ->
+    setHint(operation.hint) ->
+    (operation.publish != null ?
+    	setPublish(operation.publish.transform()) :
+    	null) ->
+    ((operation.delegateHolder != null) && (operation.delegateHolder.delegate != null) && (operation.delegateHolder.delegate.metaType == DslRepository) ?
+      setDelegate(((DslRepositoryOperation) operation.delegateHolder.delegateOperation).transform()) :
+      null) ->
+    ((operation.delegateHolder != null) && (operation.delegateHolder.delegate != null) && (operation.delegateHolder.delegate.metaType == DslService) ?
+      setServiceDelegate(((DslServiceOperation) operation.delegateHolder.delegateOperation).transform()) :
+      null);
+
+create sculptormetamodel::ResourceOperation this transform(DslResourceOperation operation) :
+	setResource(((DslResource) operation.eContainer).transform()) ->
+    setDoc(operation.doc) ->
+    setName(operation.name) ->
+    setVisibility(convertVisibility(operation.visibility)) ->
+    parameters.addAll(operation.parameters.transform()) ->
+    setCollectionType(convertCollectionType(operation.returnType)) ->
+    setMapKeyType(operation.returnType == null ? null : operation.returnType.mapKeyType) ->
+    setMapKeyDomainObjectType(operation.returnType == null || operation.returnType.mapKeyDomainObjectType == null ?
+        null :
+        operation.returnType.mapKeyDomainObjectType.transform()) ->
+    setType(operation.returnType == null ? null : operation.returnType.type) ->
+    setDomainObjectType(operation.returnType == null || operation.returnType.domainObjectType == null ?
+    	null :
+    	operation.returnType.domainObjectType.transform()) ->
+    setThrows(operation.throws) ->
+    setHint(operation.hint) ->
+    setPath(operation.path) ->
+    setReturnString(operation.returnString) ->
+    if (operation.httpMethod != null && operation.httpMethod != DslHttpMethod::None) then
+    	setHttpMethod(operation.httpMethod.toString().mapHttpMethod()) ->
+
+    ((operation.delegateHolder != null) && (operation.delegateHolder.delegate != null) ?
+      setDelegate(((DslServiceOperation) operation.delegateHolder.delegateOperation).transform()) :
+      null);
+
+create sculptormetamodel::DomainObjectOperation this transform(DslDomainObjectOperation operation) :
+	setDomainObject(((DslDomainObject) operation.eContainer).transform()) ->
+    setDoc(operation.doc) ->
+    setName(operation.name) ->
+    setAbstract(operation.abstract) ->
+    setVisibility(convertVisibility(operation.visibility)) ->
+    parameters.addAll(operation.parameters.transform()) ->
+    setCollectionType(convertCollectionType(operation.returnType)) ->
+    setMapKeyType(operation.returnType == null ? null : operation.returnType.mapKeyType) ->
+    setMapKeyDomainObjectType(operation.returnType == null || operation.returnType.mapKeyDomainObjectType == null ?
+        null :
+        operation.returnType.mapKeyDomainObjectType.transform()) ->
+    setType(operation.returnType == null ? null : operation.returnType.type) ->
+    setDomainObjectType(operation.returnType == null || operation.returnType.domainObjectType == null ?
+    	null :
+    	operation.returnType.domainObjectType.transform()) ->
+    setThrows(operation.throws) ->
+    setHint(operation.hint);
+
+private String convertVisibility(DslVisibility dslVisibility) :
+	dslVisibility == null ?
+		"public" :
+		dslVisibility.toString();
+
+private String convertCollectionType(DslComplexType dslComplexType) :
+	if (dslComplexType == null) then
+		null
+	else if (dslComplexType.mapCollectionType != null) then
+		dslComplexType.mapCollectionType
+	else
+		convertCollectionTypeEnum(dslComplexType.collectionType);
+
+private String convertCollectionTypeEnum(DslCollectionType collectionType) :
+	if (collectionType == null || collectionType == DslCollectionType::None) then
+		null
+	else
+		collectionType.toString();
+
+create sculptormetamodel::RepositoryOperation this transform(DslRepositoryOperation operation) :
+	setRepository(((DslRepository) operation.eContainer).transform()) ->
+    setDoc(operation.doc) ->
+    setName(operation.name) ->
+    setVisibility(convertVisibility(operation.visibility)) ->
+    parameters.addAll(operation.parameters.transform()) ->
+    setCollectionType(convertCollectionType(operation.returnType)) ->
+    setMapKeyType(operation.returnType == null ? null : operation.returnType.mapKeyType) ->
+    setMapKeyDomainObjectType(operation.returnType == null || operation.returnType.mapKeyDomainObjectType == null ?
+        null :
+        operation.returnType.mapKeyDomainObjectType.transform()) ->
+    setType(operation.returnType == null ? null : operation.returnType.type) ->
+    setDomainObjectType(operation.returnType == null || operation.returnType.domainObjectType == null ?
+    	null :
+    	operation.returnType.domainObjectType.transform()) ->
+    setThrows(operation.throws) ->
+    setHint(operation.hint) ->
+    setDelegateToAccessObject(operation.delegateToAccessObject) ->
+    setAccessObjectName(operation.accessObjectName) ->
+    (operation.publish != null ?
+    	setPublish(operation.publish.transform()) :
+    	null) ->
+    (operation.cache ?
+        this.addHint("cache") :
+        null
+    ) ->
+    (operation.construct ? this.addHint("construct") : null) ->
+    (operation.build ? this.addHint("build") : null) ->
+    (operation.gapOperation ? this.addHint("gap") : null) ->
+    (operation.query != null ? this.addHint("query=" + operation.query, ";") : null) ->
+    (operation.^select != null ? this.addHint("select=" + operation.^select, ";") : null) ->
+    (operation.condition != null ? this.addHint("condition=" + operation.condition, ";") : null) ->
+    (operation.groupBy != null ? this.addHint("groupBy=" + operation.groupBy, ";") : null) ->
+    (operation.orderBy != null ? this.addHint("orderBy=" + operation.orderBy, ";") : null);
+
+create sculptormetamodel::Parameter this transform(DslParameter parameter) :
+    setName(parameter.name) ->
+    setDoc(parameter.doc) ->
+    setCollectionType(convertCollectionType(parameter.parameterType)) ->
+    setMapKeyType(parameter.parameterType == null ? null : parameter.parameterType.mapKeyType) ->
+    setMapKeyDomainObjectType(parameter.parameterType == null || parameter.parameterType.mapKeyDomainObjectType == null ?
+        null :
+        parameter.parameterType.mapKeyDomainObjectType.transform()) ->
+    setType(parameter.parameterType == null ? null : parameter.parameterType.type) ->
+    setDomainObjectType(parameter.parameterType == null || parameter.parameterType.domainObjectType == null ?
+    	null :
+    	parameter.parameterType.domainObjectType.transform());
+
+// this "method" is not used, it is kind of "abstract"
+create sculptormetamodel::Entity this transform(DslSimpleDomainObject domainObject) :
+	null;
+
+create sculptormetamodel::Entity this transform(DslEntity domainObject) :
+	setModule(((DslModule) domainObject.eContainer).transform()) ->
+    setDoc(domainObject.doc) ->
+    setName(domainObject.name) ->
+    setPackage(domainObject.package) ->
+    setAbstract(domainObject.abstract) ->
+    setOptimisticLocking(!domainObject.notOptimisticLocking) ->
+    setAuditable(!domainObject.notAuditable) ->
+    setCache(domainObject.cache) ->
+    setDatabaseTable(domainObject.databaseTable) ->
+    setBelongsToAggregate(domainObject.belongsTo == null ? null : domainObject.belongsTo.transform()) ->
+    setAggregateRoot(!domainObject.notAggregateRoot && (domainObject.belongsTo == null || domainObject.belongsTo == domainObject)) ->
+    setValidate(domainObject.validate) ->
+    setGapClass(isGapClassToBeGenerated(domainObject.gapClass, domainObject.noGapClass)) ->
+    setHint(domainObject.hint) ->
+    setDiscriminatorColumnValue(domainObject.discriminatorValue) ->
+    setInheritance(domainObject.createInheritance()) ->
+    attributes.addAll(domainObject.attributes.transform()) ->
+    references.addAll(domainObject.references.transform()) ->
+    operations.addAll(domainObject.operations.transform()) ->
+    domainObject.transformExtends(this) ->
+    traits.addAll(domainObject.traits.transform()) ->
+    (domainObject.repository != null ?
+      setRepository(domainObject.repository.transform()) :
+      null);
+
+create sculptormetamodel::ValueObject this transform(DslValueObject domainObject) :
+	setModule(((DslModule) domainObject.eContainer).transform()) ->
+    setDoc(domainObject.doc) ->
+    setName(domainObject.name) ->
+    setPackage(domainObject.package) ->
+    setAbstract(domainObject.abstract) ->
+    setOptimisticLocking(!domainObject.notOptimisticLocking) ->
+    setImmutable(!domainObject.notImmutable) ->
+    setCache(domainObject.cache) ->
+    setDatabaseTable(domainObject.databaseTable) ->
+    setBelongsToAggregate(domainObject.belongsTo == null ? null : domainObject.belongsTo.transform()) ->
+    setAggregateRoot(!domainObject.notAggregateRoot && !domainObject.notPersistent && (domainObject.belongsTo == null || domainObject.belongsTo == domainObject)) ->
+    setPersistent(!domainObject.notPersistent) ->
+    setValidate(domainObject.validate) ->
+    setHint(domainObject.hint) ->
+    setGapClass(isGapClassToBeGenerated(domainObject.gapClass, domainObject.noGapClass)) ->
+    setDiscriminatorColumnValue(domainObject.discriminatorValue) ->
+    setInheritance(domainObject.createInheritance()) ->
+    attributes.addAll(domainObject.attributes.transform()) ->
+    references.addAll(domainObject.references.transform()) ->
+    operations.addAll(domainObject.operations.transform()) ->
+    domainObject.transformExtends(this) ->
+    traits.addAll(domainObject.traits.transform()) ->
+    (domainObject.repository != null ?
+      setRepository(domainObject.repository.transform()) :
+      null);
+
+sculptormetamodel::Event transform(DslEvent event) :
+	// Never used, only purpose is to be an 'abstract' placeholder
+	error("Unexpected call to transform(DslEvent): " + event);
+
+create sculptormetamodel::DomainEvent this transform(DslDomainEvent dslEvent) :
+	transformCommonEventFeatures(this, dslEvent);
+
+create sculptormetamodel::CommandEvent this transform(DslCommandEvent dslEvent) :
+	transformCommonEventFeatures(this, dslEvent);
+
+transformCommonEventFeatures(sculptormetamodel::Event event, DslEvent dslEvent) :
+	event.setModule(((DslModule) dslEvent.eContainer).transform()) ->
+    event.setDoc(dslEvent.doc) ->
+    event.setName(dslEvent.name) ->
+    event.setPackage(dslEvent.package) ->
+    event.setAbstract(dslEvent.abstract) ->
+    event.setOptimisticLocking(false) ->
+    event.setCache(dslEvent.cache) ->
+    event.setDatabaseTable(dslEvent.databaseTable) ->
+    event.setBelongsToAggregate(dslEvent.belongsTo == null ? null : dslEvent.belongsTo.transform()) ->
+    event.setAggregateRoot(!dslEvent.notAggregateRoot && dslEvent.persistent && (dslEvent.belongsTo == null || dslEvent.belongsTo == dslEvent)) ->
+    event.setPersistent(dslEvent.persistent) ->
+    event.setValidate(dslEvent.validate) ->
+    event.setHint(dslEvent.hint) ->
+    event.setGapClass(isGapClassToBeGenerated(dslEvent.gapClass, dslEvent.noGapClass)) ->
+    event.setDiscriminatorColumnValue(dslEvent.discriminatorValue) ->
+    event.setInheritance(dslEvent.createInheritance()) ->
+    event.attributes.addAll(dslEvent.attributes.transform()) ->
+    event.references.addAll(dslEvent.references.transform()) ->
+    event.operations.addAll(dslEvent.operations.transform()) ->
+    dslEvent.transformExtends(event) ->
+    event.traits.addAll(dslEvent.traits.transform()) ->
+    (dslEvent.repository != null ?
+      event.setRepository(dslEvent.repository.transform()) :
+      null);
+
+create sculptormetamodel::DataTransferObject this transform(DslDataTransferObject dslDto) :
+	setModule(((DslModule) dslDto.eContainer).transform()) ->
+    setDoc(dslDto.doc) ->
+    setName(dslDto.name) ->
+    setPackage(dslDto.package) ->
+    setAbstract(dslDto.abstract) ->
+    setImmutable(false) ->
+    setPersistent(false) ->
+    setAggregateRoot(false) ->
+    setValidate(dslDto.validate) ->
+    setHint(dslDto.hint) ->
+    setGapClass(isGapClassToBeGenerated(dslDto.gapClass, dslDto.noGapClass)) ->
+    attributes.addAll(dslDto.attributes.transform()) ->
+    references.addAll(dslDto.references.transform()) ->
+    dslDto.transformExtends(this);
+
+create sculptormetamodel::Trait this transform(DslTrait dslTrait) :
+	setModule(((DslModule) dslTrait.eContainer).transform()) ->
+    setDoc(dslTrait.doc) ->
+    setName(dslTrait.name) ->
+    setPackage(dslTrait.package) ->
+    setAbstract(true) ->
+    setAggregateRoot(false) ->
+    setHint(dslTrait.hint) ->
+    setGapClass(true) ->
+    attributes.addAll(dslTrait.attributes.transform()) ->
+    references.addAll(dslTrait.references.transform()) ->
+    operations.addAll(dslTrait.operations.transform());
+
+create sculptormetamodel::Inheritance this createInheritance(DslDomainObject domainObject) :
+	setType((domainObject.inheritanceType == DslInheritanceType::SINGLE_TABLE) ?
+		sculptormetamodel::InheritanceType::SINGLE_TABLE :
+		sculptormetamodel::InheritanceType::JOINED) ->
+	setDiscriminatorColumnName(domainObject.discriminatorColumn) ->
+	setDiscriminatorColumnLength(domainObject.discriminatorLength) ->
+	setDiscriminatorType(mapDiscriminatorType(domainObject.discriminatorType));
+
+private sculptormetamodel::DiscriminatorType mapDiscriminatorType(DslDiscriminatorType dslDiscriminatorType) :
+	switch (dslDiscriminatorType) {
+		case DslDiscriminatorType::CHAR :
+			sculptormetamodel::DiscriminatorType::CHAR
+		case DslDiscriminatorType::INTEGER :
+			sculptormetamodel::DiscriminatorType::INTEGER
+		default :
+			sculptormetamodel::DiscriminatorType::STRING
+	};
+
+private transformExtends(DslEntity dslDomainObject, sculptormetamodel::DomainObject domainObject) :
+    dslDomainObject.transformExtendsImpl(dslDomainObject.extends, domainObject);
+
+private transformExtends(DslValueObject dslDomainObject, sculptormetamodel::DomainObject domainObject) :
+    dslDomainObject.transformExtendsImpl(dslDomainObject.extends, domainObject);
+
+private transformExtends(DslEvent dslDomainObject, sculptormetamodel::DomainObject domainObject) :
+    // Never used, only purpose is to be an 'abstract' placeholder
+	error("Unexpected call to transformExtends(DslEvent): " + dslDomainObject);
+
+private transformExtends(DslCommandEvent dslDomainObject, sculptormetamodel::DomainObject domainObject) :
+    dslDomainObject.transformExtendsImpl(dslDomainObject.extends, domainObject);
+
+private transformExtends(DslDomainEvent dslDomainObject, sculptormetamodel::DomainObject domainObject) :
+    dslDomainObject.transformExtendsImpl(dslDomainObject.extends, domainObject);
+
+private transformExtendsImpl(DslDomainObject dslDomainObject, DslDomainObject dslExtendsDomainObject, sculptormetamodel::DomainObject domainObject) :
+    (dslExtendsDomainObject != null ?
+      domainObject.setExtends(dslExtendsDomainObject.transform()) :
+      null) ->
+    (dslDomainObject.extendsName != null ?
+        domainObject.setExtendsName(dslDomainObject.extendsName) :
+        null);
+
+private transformExtends(DslDataTransferObject dslDto, sculptormetamodel::DataTransferObject dto) :
+	(dslDto.extends != null ?
+      dto.setExtends(dslDto.extends.transform()) :
+      null) ->
+    (dslDto.extendsName != null ?
+        dto.setExtendsName(dslDto.extendsName) :
+        null);
+
+private transformExtends(DslDomainEvent dslEvent, sculptormetamodel::DomainEvent event) :
+	(dslEvent.extends != null ?
+      event.setExtends(dslEvent.extends.transform()) :
+      null) ->
+    (dslEvent.extendsName != null ?
+        event.setExtendsName(dslEvent.extendsName) :
+        null);
+
+create sculptormetamodel::BasicType this transform(DslBasicType domainObject) :
+	setModule(((DslModule) domainObject.eContainer).transform()) ->
+    setDoc(domainObject.doc) ->
+    setName(domainObject.name) ->
+    setPackage(domainObject.package) ->
+    setHint(domainObject.hint) ->
+    setImmutable(!domainObject.notImmutable) ->
+    setAggregateRoot(false) ->
+    setGapClass(isGapClassToBeGenerated(domainObject.gapClass, domainObject.noGapClass)) ->
+    attributes.addAll(domainObject.attributes.transform()) ->
+    references.addAll(domainObject.references.transform()) ->
+    operations.addAll(domainObject.operations.transform()) ->
+    traits.addAll(domainObject.traits.transform());
+
+create sculptormetamodel::Enum this transform(DslEnum domainObject) :
+	setModule(((DslModule) domainObject.eContainer).transform()) ->
+    setDoc(domainObject.doc) ->
+    setName(domainObject.name) ->
+    setPackage(domainObject.package) ->
+    setHint(domainObject.hint) ->
+    setOrdinal(domainObject.ordinal) ->
+    setAggregateRoot(false) ->
+    attributes.addAll(domainObject.attributes.transform()) ->
+    values.addAll(domainObject.values.transform());
+
+create sculptormetamodel::EnumValue this transform(DslEnumValue enumValue) :
+	setName(enumValue.name) ->
+	setDoc(enumValue.doc) ->
+	parameters.addAll(enumValue.parameters.transform());
+
+create sculptormetamodel::EnumConstructorParameter this transform(DslEnumParameter parameter) :
+	parameter.value == null ?
+		setValue("" + parameter.integerValue) :
+		setValue(parameter.value);
+
+create sculptormetamodel::Attribute this transform(DslEnumAttribute attribute) :
+    setDoc(attribute.doc) ->
+    setName(attribute.name) ->
+    setType(attribute.type) ->
+    setNaturalKey(attribute.key);
+
+sculptormetamodel::NamedElement transform(DslAnyProperty prop) :
+	// Never used, only purpose is to be an 'abstract' placeholder
+	error("Unexpected call to transform(DslAnyProperty): " + prop);
+
+create sculptormetamodel::Attribute this transform(DslAttribute attribute) :
+    setDoc(attribute.doc) ->
+    setName(attribute.name) ->
+    setType(attribute.type) ->
+    setCollectionType(convertCollectionTypeEnum(attribute.collectionType)) ->
+    setNaturalKey(attribute.key) ->
+    setChangeable(!attribute.notChangeable) ->
+    setRequired(attribute.required) ->
+    setNullable(attribute.nullable) ->
+    setIndex(attribute.index) ->
+    setLength(attribute.length) ->
+    setValidate(attribute.handleValidation()) ->
+    setDatabaseType(attribute.databaseType) ->
+    setDatabaseColumn(attribute.databaseColumn) ->
+    setHint(attribute.hint) ->
+    setTransient(attribute.transient) ->
+    setVisibility(convertVisibility(attribute.visibility));
+
+create sculptormetamodel::Reference this transform(DslReference reference) :
+	setFrom(((DslSimpleDomainObject) reference.eContainer).transform()) ->
+    setDoc(reference.doc) ->
+    setName(reference.name) ->
+    setCollectionType(convertCollectionTypeEnum(reference.collectionType)) ->
+    setMany(reference.collectionType != null && reference.collectionType != DslCollectionType::None) ->
+    setNaturalKey(reference.key) ->
+    setChangeable(!reference.notChangeable) ->
+    setRequired(reference.required) ->
+    setNullable(reference.nullable) ->
+    setCache(reference.cache) ->
+    setInverse(reference.inverse) ->
+    setCascade(reference.cascade) ->
+    setFetch(reference.fetch) ->
+    setOrderBy(reference.orderBy) ->
+    setTo(reference.domainObjectType.transform()) ->
+    setDatabaseColumn(reference.databaseColumn) ->
+    setDatabaseJoinTable(reference.databaseJoinTable) ->
+    setDatabaseJoinColumn(reference.databaseJoinColumn) ->
+    setValidate(reference.handleValidation()) ->
+    setHint(reference.hint) ->
+    setTransient(reference.transient) ->
+    setVisibility(convertVisibility(reference.visibility)) ->
+    (reference.oppositeHolder != null && reference.oppositeHolder.opposite != null ?
+      setOpposite(reference.oppositeHolder.opposite.transform()):
+      null) ->
+    (reference.orderColumn ? this.addHint(buildOrderColumnHint(reference)) : null) ->
+    // backwards compatible hint
+    (if hasHint("joinTableName") then setDatabaseJoinTable(getHint("joinTableName"))) ->
+    (if hasHint("joinColumnName") then setDatabaseJoinColumn(getHint("joinColumnName")))
+    ;
+
+private String buildOrderColumnHint(DslReference reference) :
+    (reference.orderColumnName != null) ? "orderColumn="+reference.orderColumnName : "orderColumn";
+
+create sculptormetamodel::Attribute this transform(DslDtoAttribute attribute) :
+    setDoc(attribute.doc) ->
+    setName(attribute.name) ->
+    setType(attribute.type) ->
+    setCollectionType(convertCollectionTypeEnum(attribute.collectionType)) ->
+    setNaturalKey(attribute.key) ->
+    setChangeable(!attribute.notChangeable) ->
+    setRequired(attribute.required) ->
+    setNullable(attribute.nullable) ->
+    setValidate(attribute.handleValidation()) ->
+    setHint(attribute.hint) ->
+    setTransient(attribute.transient) ->
+    setVisibility(convertVisibility(attribute.visibility));
+
+create sculptormetamodel::Reference this transform(DslDtoReference reference) :
+	setFrom(((DslSimpleDomainObject) reference.eContainer).transform()) ->
+    setDoc(reference.doc) ->
+    setName(reference.name) ->
+    setCollectionType(convertCollectionTypeEnum(reference.collectionType)) ->
+    setMany(reference.collectionType != null && reference.collectionType != DslCollectionType::None) ->
+    setNaturalKey(reference.key) ->
+    setChangeable(!reference.notChangeable) ->
+    setRequired(reference.required) ->
+    setNullable(reference.nullable) ->
+    setTo(reference.domainObjectType.transform()) ->
+    setValidate(reference.handleValidation()) ->
+    setHint(reference.hint) ->
+    setTransient(reference.transient) ->
+    setVisibility(convertVisibility(reference.visibility));
+
+create sculptormetamodel::Repository this transform(DslRepository repository) :
+	setAggregateRoot(((DslDomainObject) repository.eContainer).transform()) ->
+    setDoc(repository.doc) ->
+    setName(repository.name) ->
+    setGapClass(repository.isGapClassToBeGenerated()) ->
+    setHint(repository.hint) ->
+    (repository.subscribe != null ?
+    	setSubscribe(repository.subscribe.transform()) :
+    	null) ->
+    operations.addAll(repository.operations.transform());
+
+transformDependencies(DslService service) :
+    service.transform().serviceDependencies.addAll(
+        (service.dependencies.transformServiceDependency()).select(s | s != null)) ->
+    service.transform().repositoryDependencies.addAll(
+        service.dependencies.transformRepositoryDependency().select(r | r != null)) ->
+    service.transform().otherDependencies.addAll(
+        service.dependencies.transformOtherDependency().select(r | r != null));
+
+transformDependencies(DslResource resource) :
+    resource.transform().serviceDependencies.addAll(
+        (resource.dependencies.transformServiceDependency()).select(s | s != null));
+
+transformDependencies(DslConsumer consumer) :
+    consumer.transform().serviceDependencies.addAll(
+        (consumer.dependencies.transformServiceDependency()).select(s | s != null)) ->
+    consumer.transform().repositoryDependencies.addAll(
+        consumer.dependencies.transformRepositoryDependency().select(r | r != null)) ->
+    consumer.transform().otherDependencies.addAll(
+        consumer.dependencies.transformOtherDependency().select(r | r != null));
+
+sculptormetamodel::Repository transformRepositoryDependency(DslDependency dependency) :
+    dependency.dependency != null && dependency.dependency.metaType == DslRepository ?
+        ((DslRepository) dependency.dependency).transform() :
+        null;
+
+sculptormetamodel::Service transformServiceDependency(DslServiceDependency dependency) :
+    dependency.dependency != null ?
+        ((DslService) dependency.dependency).transform() :
+        null;
+
+sculptormetamodel::Service transformServiceDependency(DslDependency dependency) :
+    dependency.dependency != null && dependency.dependency.metaType == DslService ?
+        ((DslService) dependency.dependency).transform() :
+        null;
+
+String transformOtherDependency(DslDependency dependency) :
+    (dependency.name == null) ?
+    	null :
+        dependency.name;
+
+transformDependencies(DslDomainObject domainObject) :
+    (domainObject.repository != null ?
+      domainObject.repository.transformDependencies() :
+      null);
+
+transformDependencies(DslRepository repository) :
+    repository.transform().repositoryDependencies.addAll(
+        repository.dependencies.transformRepositoryDependency().select(r | r != null)) ->
+    repository.transform().otherDependencies.addAll(
+        repository.dependencies.transformOtherDependency().select(r | r != null));
+
+scaffold(DslDomainObject domainObject) :
+    domainObject.transform().scaffold();
+
+scaffold(sculptormetamodel::DomainObject domainObject) :
+    (domainObject.repository == null ?
+        domainObject.addRepository() :
+        null) ->
+    domainObject.repository.addScaffoldOperations() ->
+    (domainObject.module.services.exists(s | s.name == (domainObject.name + "Service")) ?
+        null :
+        domainObject.module.addService(domainObject.name + "Service")) ->
+    domainObject.module.services.select(s | s.name == (domainObject.name + "Service")).addScaffoldOperations(domainObject.repository);
+
+sculptormetamodel::DomainObject addRepository(sculptormetamodel::DomainObject domainObject) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addRepository(sculptormetamodel.DomainObject);
+
+sculptormetamodel::Repository addScaffoldOperations(sculptormetamodel::Repository repository) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addRepositoryScaffoldOperations(sculptormetamodel.Repository);
+
+sculptormetamodel::Module addService(sculptormetamodel::Module module, String serviceName) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addService(sculptormetamodel.Module, java.lang.String);
+
+sculptormetamodel::Service addScaffoldOperations(sculptormetamodel::Service service, sculptormetamodel::Repository delegateRepository) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addServiceScaffoldOperations(sculptormetamodel.Service, sculptormetamodel.Repository);
+
+scaffold(DslResource resource) :
+    resource.transform().scaffold();
+
+scaffold(sculptormetamodel::Resource resource) :
+	let serviceName = resource.getDomainResourceName() + "Service" :
+	let delegateService = resource.module.application.modules.services.selectFirst(e|e.name == serviceName) :
+    resource.addScaffoldOperations(delegateService);
+
+sculptormetamodel::Resource addScaffoldOperations(sculptormetamodel::Resource resource, sculptormetamodel::Service delegateService) :
+    JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.addResourceScaffoldOperations(sculptormetamodel.Resource, sculptormetamodel.Service);
+
+private boolean isGapClassToBeGenerated(DslService dslService) :
+	hasGapOperations(dslService) ?
+		true :
+		isGapClassToBeGenerated(dslService.gapClass, dslService.noGapClass);
+
+private boolean isGapClassToBeGenerated(DslResource dslResource) :
+	hasGapOperations(dslResource) ?
+		true :
+		isGapClassToBeGenerated(dslResource.gapClass, dslResource.noGapClass);
+
+private boolean isGapClassToBeGenerated(DslRepository dslRepository) :
+	hasGapOperations(dslRepository) ?
+		true :
+		isGapClassToBeGenerated(dslRepository.gapClass, dslRepository.noGapClass);
+
+private boolean hasGapOperations(DslService dslService) :
+	dslService.operations.exists(op |
+		!scaffoldOperations().contains(op.name) && op.delegateHolder == null);
+
+private boolean hasGapOperations(DslResource dslResource) :
+	dslResource.operations.exists(op | op.delegateHolder == null);
+
+private boolean hasGapOperations(DslRepository dslRepository) :
+	dslRepository.operations.exists(op |
+		!scaffoldOperations().contains(op.name) &&
+		!op.delegateToAccessObject && op.accessObjectName == null &&
+		!op.transform().isGenericAccessObject());
+
+private String handleValidation(DslAttribute attribute) :
+    ((attribute.validate != null) ? attribute.validate : "") +
+	handleParameterizedAnnotation("digits", "integer,fraction,message", attribute.digits, attribute.validate) +
+	handleParameterizedAnnotation("size", "min,max,message", attribute.size, attribute.validate) +
+	handleBooleanAnnotation("assertTrue", attribute.assertTrue, attribute.assertTrueMessage, attribute.validate) +
+	handleBooleanAnnotation("assertFalse", attribute.assertFalse, attribute.assertFalseMessage, attribute.validate) +
+	handleBooleanAnnotation("notNull", !attribute.nullable && !attribute.type.isPrimitiveType(), attribute.nullableMessage, attribute.validate) +
+	handleBooleanAnnotation("future", attribute.future, attribute.futureMessage, attribute.validate) +
+	handleBooleanAnnotation("past", attribute.past, attribute.pastMessage, attribute.validate) +
+	handleSimpleAnnotation("min", attribute.min, attribute.validate) +
+	handleSimpleAnnotation("max", attribute.max, attribute.validate) +
+	handleSimpleAnnotation("decimalMin", attribute.decimalMin, attribute.validate) +
+	handleSimpleAnnotation("decimalMax", attribute.decimalMax, attribute.validate) +
+	handleParameterizedAnnotation("pattern", "regexp,message", attribute.pattern, attribute.validate) +
+	handleBooleanAnnotation("creditCardNumber", attribute.creditCardNumber, attribute.creditCardNumberMessage, attribute.validate) +
+	handleBooleanAnnotation("email", attribute.email, attribute.emailMessage, attribute.validate) +
+	handleBooleanAnnotation("notEmpty", attribute.notEmpty, attribute.notEmptyMessage, attribute.validate) +
+	handleBooleanAnnotation("notBlank", attribute.notBlank, attribute.notBlankMessage, attribute.validate) +
+	handleParameterizedAnnotation("scriptAssert", "lang,script,alias,message", attribute.scriptAssert, attribute.validate) +
+	handleParameterizedAnnotation("url", "protocol,host,port,message", attribute.url, attribute.validate) +
+	handleParameterizedAnnotation("range", "min,max,message", attribute.range, attribute.validate) +
+	handleParameterizedAnnotation("length", "max,min,message", attribute.length, attribute.validate)
+	;
+
+private String handleValidation(DslDtoAttribute attribute) :
+    ((attribute.validate != null) ? attribute.validate : "") +
+	handleParameterizedAnnotation("digits", "integer,fraction,message", attribute.digits, attribute.validate) +
+	handleParameterizedAnnotation("size", "min,max,message", attribute.size, attribute.validate) +
+	handleBooleanAnnotation("assertTrue", attribute.assertTrue, attribute.assertTrueMessage, attribute.validate) +
+	handleBooleanAnnotation("assertFalse", attribute.assertFalse, attribute.assertFalseMessage, attribute.validate) +
+	handleBooleanAnnotation("notNull", !attribute.nullable && !attribute.type.isPrimitiveType(), attribute.nullableMessage, attribute.validate) +
+	handleBooleanAnnotation("future", attribute.future, attribute.futureMessage, attribute.validate) +
+	handleBooleanAnnotation("past", attribute.past, attribute.pastMessage, attribute.validate) +
+	handleSimpleAnnotation("min", attribute.min, attribute.validate) +
+	handleSimpleAnnotation("max", attribute.max, attribute.validate) +
+	handleSimpleAnnotation("decimalMin", attribute.decimalMin, attribute.validate) +
+	handleSimpleAnnotation("decimalMax", attribute.decimalMax, attribute.validate) +
+	handleParameterizedAnnotation("pattern", "regexp,message", attribute.pattern, attribute.validate) +
+	handleBooleanAnnotation("creditCardNumber", attribute.creditCardNumber, attribute.creditCardNumberMessage, attribute.validate) +
+	handleBooleanAnnotation("email", attribute.email, attribute.emailMessage, attribute.validate) +
+	handleBooleanAnnotation("notEmpty", attribute.notEmpty, attribute.notEmptyMessage, attribute.validate) +
+	handleBooleanAnnotation("notBlank", attribute.notBlank, attribute.notBlankMessage, attribute.validate) +
+	handleParameterizedAnnotation("scriptAssert", "lang,script,alias,message", attribute.scriptAssert, attribute.validate) +
+	handleParameterizedAnnotation("url", "protocol,host,port,message", attribute.url, attribute.validate) +
+	handleParameterizedAnnotation("range", "min,max,message", attribute.range, attribute.validate) +
+	handleParameterizedAnnotation("length", "max,min,message", attribute.length, attribute.validate)
+	;
+
+private String handleValidation(DslReference reference) :
+    ((reference.validate != null) ? reference.validate : "") +
+	handleParameterizedAnnotation("size", "min,max,message", reference.size, reference.validate) +
+	handleBooleanAnnotation("notNull", !reference.nullable, reference.nullableMessage, reference.validate) +
+	handleBooleanAnnotation("notEmpty", reference.notEmpty, reference.notEmptyMessage, reference.validate) +
+	handleBooleanAnnotation("valid", reference.valid, reference.validMessage, reference.validate)
+	;
+
+private String handleValidation(DslDtoReference reference) :
+    ((reference.validate != null) ? reference.validate : "") +
+	handleParameterizedAnnotation("size", "min,max,message", reference.size, reference.validate) +
+	handleBooleanAnnotation("notNull", !reference.nullable, reference.nullableMessage, reference.validate) +
+	handleBooleanAnnotation("valid", reference.valid, reference.validMessage, reference.validate)
+	;
+
+private String handleParameterizedAnnotation(String annotation, String parameterNames, String parameters, String validate) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.handleParameterizedAnnotation(java.lang.String, java.lang.String, java.lang.String, java.lang.String);
+
+private String handleSimpleAnnotation(String annotation, String value, String validate) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.handleSimpleAnnotation(java.lang.String, java.lang.String, java.lang.String);
+
+private String handleBooleanAnnotation(String annotation, Boolean value, String message, String validate) :
+	JAVA org.fornax.cartridges.sculptor.generator.util.GenerationHelper.handleBooleanAnnotation(java.lang.String, java.lang.Boolean, java.lang.String, java.lang.String);
+

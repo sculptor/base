@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<dataset>
+<!-- 
+  PROPKIND VARCHAR(100) NOT NULL,
+  PROPNAME VARCHAR(256) NOT NULL,
+  PROPVALUE VARCHAR(256) NOT NULL,
+ -->
+	<PROPERTYDEFINITION id="1" propname="file.storage.dir" version="1" level="System" type="STRING"/>
+	<PROPERTY id="1" propvalue="/tmp" propname="file.storage.dir" propkind="System" uuid="1"/>
+</dataset>

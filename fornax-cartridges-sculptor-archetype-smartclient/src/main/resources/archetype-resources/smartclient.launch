@@ -1,0 +1,23 @@
+#set($dollar = '$')
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="com.google.gdt.eclipse.suite.webapp">
+<stringAttribute key="com.google.gdt.eclipse.suiteMainTypeProcessor.PREVIOUSLY_SET_MAIN_TYPE_NAME" value="com.google.gwt.dev.DevMode"/>
+<booleanAttribute key="com.google.gdt.eclipse.suiteWarArgumentProcessor.IS_WAR_FROM_PROJECT_PROPERTIES" value="true"/>
+<stringAttribute key="com.google.gwt.eclipse.core.LOG_LEVEL" value="WARN"/>
+<stringAttribute key="com.google.gwt.eclipse.core.URL" value="smartclient/Main.html"/>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/${artifactId}"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="4"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.ui.favoriteGroups">
+<listEntry value="org.eclipse.debug.ui.launchGroup.debug"/>
+<listEntry value="org.eclipse.debug.ui.launchGroup.run"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="com.google.gwt.eclipse.core.moduleClasspathProvider"/>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="com.google.gwt.dev.DevMode"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-remoteUI ${dollar}{gwt_remote_ui_server_port}:${dollar}{unique_id} -logLevel WARN -port 8888 -war ${basedir}/${artifactId}/war -server org.fornax.cartridges.sculptor.smartclient.server.util.JettyLauncher -startupUrl smartclient/Main.html org.fornax.cartridges.sculptor.smartclient.smartclient"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="${artifactId}"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xms212m -Xmx212m -Dsculptor.serverName=dev -Dlog4j.configuration=log4j.properties -Djava.net.preferIPv4Stack=true"/>
+</launchConfiguration>

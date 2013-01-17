@@ -1,0 +1,190 @@
+«REM»
+ * Copyright 2007 The Fornax Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+«ENDREM»
+
+«IMPORT sculptormetamodel»
+«IMPORT sculptorguimetamodel»
+«EXTENSION extensions::helper»
+«EXTENSION extensions::properties»
+«EXTENSION extensions::guihelper»
+
+«DEFINE webTools FOR GuiApplication»
+	«EXPAND tagFunctions»
+«ENDDEFINE »
+
+«DEFINE tagFunctions FOR GuiApplication»
+	«EXPAND functionsJava»
+	«EXPAND functionsTagDef»
+«ENDDEFINE»
+
+«DEFINE functionsJava FOR GuiApplication»
+«FILE javaFileName(this.basePackage + ".util." + subPackage("web") + "." + name + "Functions") -»
+«javaHeader()»
+package «basePackage».util.«subPackage("web")»;
+public class «name»Functions {
+«EXPAND isOfTypeMethod »
+«EXPAND isNullMethod »
+«EXPAND isNotNullMethod »
+«EXPAND breadCrumbMethod »
+«EXPAND breadCrumbInnerClass»
+«EXPAND breadCrumbFactoryMethod»
+}
+«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE isOfTypeMethod FOR GuiApplication »
+    @SuppressWarnings("unchecked")
+    public static boolean isOfType(Object domainObject, String type) {
+        if (domainObject == null) {
+            return false;
+        }
+        if (type == null) {
+            throw new IllegalArgumentException("Unspecified class name.");
+        }
+        try {
+            Class typeClass = Class.forName(type);
+        
+            return typeClass.isAssignableFrom(domainObject.getClass());
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException("Invalid class name: " + type);
+        }
+    }
+«ENDDEFINE»
+
+«DEFINE isNullMethod FOR GuiApplication »
+	public static boolean isNull(Object obj) {
+	    return obj == null;
+	}
+«ENDDEFINE»
+
+«DEFINE isNotNullMethod FOR GuiApplication »
+	public static boolean isNotNull(Object obj) {
+	    return !isNull(obj);
+	}
+«ENDDEFINE»
+
+«DEFINE breadCrumbMethod FOR GuiApplication »
+    public static java.util.List breadCrumb(org.springframework.webflow.execution.FlowExecutionContext ctx) {
+        List<BreadCrumbElement> breadCrumbList = new java.util.ArrayList<BreadCrumbElement>(); 
+        if (ctx == null || !ctx.isActive()) {
+            return breadCrumbList;
+        }
+        org.springframework.webflow.execution.FlowSession flowSession = ctx.getActiveSession();
+        if (flowSession == null) {
+            return breadCrumbList;
+        }
+        while (flowSession != null) {
+            breadCrumbList.add(createBreadCrumbElement(flowSession.getDefinition()));
+            // continue with parent flow, if there is any parent
+            flowSession = flowSession.getParent();
+        }
+        
+        java.util.Collections.reverse(breadCrumbList);
+        
+        return breadCrumbList;
+    }
+«ENDDEFINE»
+
+«DEFINE functionsTagDef FOR GuiApplication»
+«FILE "WEB-INF/tld/" + name + "Functions.tld" TO_GEN_WEBROOT-»
+<?xml version="1.0" encoding="UTF-8" ?>
+<taglib xmlns="http://java.sun.com/xml/ns/j2ee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee web-jsptaglibrary_2_0.xsd"
+	version="2.0">
+	<description>A tag library that defines static functions for the «name» application.</description>
+	<tlib-version>1.0</tlib-version>
+	<short-name>«name»FunctionTagLibrary</short-name>
+	<uri>/«name»FunctionLibrary</uri>
+	«EXPAND tagIsOfTypeFunction»
+	«EXPAND tagIsNullFunction»
+	«EXPAND tagIsNotNullFunction»
+	«EXPAND tagBreadCrumbFunction»
+</taglib>
+«ENDFILE»
+«ENDDEFINE»
+
+«DEFINE tagIsOfTypeFunction FOR GuiApplication»
+	<function>
+		<name>isOfType</name>
+		<function-class>
+			«basePackage + ".util." + subPackage("web") + "." + name + "Functions"»</function-class>
+		<function-signature>boolean isOfType(java.lang.Object, java.lang.String)</function-signature>
+	</function>
+«ENDDEFINE»
+
+«DEFINE tagIsNullFunction FOR GuiApplication»
+	<function>
+		<name>isNull</name>
+		<function-class>
+			«basePackage + ".util." + subPackage("web") + "." + name + "Functions"»</function-class>
+		<function-signature>boolean isNull(java.lang.Object)</function-signature>
+	</function>
+«ENDDEFINE»
+
+«DEFINE tagIsNotNullFunction FOR GuiApplication»
+	<function>
+		<name>isNotNull</name>
+		<function-class>
+			«basePackage + ".util." + subPackage("web") + "." + name + "Functions"»</function-class>
+		<function-signature>boolean isNotNull(java.lang.Object)</function-signature>
+	</function>
+«ENDDEFINE»
+
+«DEFINE tagBreadCrumbFunction FOR GuiApplication»
+	<function>
+		<name>breadCrumb</name>
+		<function-class>
+			«basePackage + ".util." + subPackage("web") + "." + name + "Functions"»</function-class>
+		<function-signature>java.util.List breadCrumb(org.springframework.webflow.execution.FlowExecutionContext)</function-signature>
+	</function>
+«ENDDEFINE»
+
+«DEFINE breadCrumbFactoryMethod FOR GuiApplication »
+    private static BreadCrumbElement createBreadCrumbElement(org.springframework.webflow.definition.FlowDefinition definition) {
+        String flowId = definition.getId();
+		FlowIdentifier flowIdentifier = new FlowIdentifier(flowId);
+        String crudOperation = flowIdentifier.action();
+        String domainObjectName = flowIdentifier.domainObjectName();
+        return new BreadCrumbElement(flowId, crudOperation, domainObjectName);
+    }
+«ENDDEFINE»
+
+«DEFINE breadCrumbInnerClass FOR GuiApplication »
+    public static class BreadCrumbElement {
+        private String flowId;
+        private String domainObjectName;
+        private String crudOperation;
+
+        public BreadCrumbElement(String flowId, String crudOperation, String domainObjectName) {
+            this.flowId = flowId;
+            this.domainObjectName = domainObjectName;
+            this.crudOperation = crudOperation;
+        }
+
+        public String getFlowId() {
+            return flowId;
+        }
+
+        public String getCrudOperation() {
+            return crudOperation;
+        }
+
+        public String getDomainObjectName() {
+            return domainObjectName;
+        }
+    }
+«ENDDEFINE»
