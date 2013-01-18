@@ -1,0 +1,94 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<parent>
+		<artifactId>fornax-parent</artifactId>
+		<groupId>org.fornax</groupId>
+		<version>3.1</version>
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.fornax.utilities</groupId>
+	<artifactId>fornax-utilities-formatter-xml</artifactId>
+	<version>2.0.2-SNAPSHOT</version>
+	<name>Fornax XML Code Formatter</name>
+	<description>
+		XML code formatter for Xpand 
+	</description>
+
+	<properties>
+		<projectId>FUF</projectId>
+		<projectPID>10081</projectPID>
+		<projectName>XMLFormatter</projectName>
+		<category>utilities/formatter</category>
+	</properties>
+
+	<modules>
+	</modules>
+
+	<developers>
+		<developer>
+			<id>kthoms</id>
+			<name>Karsten Thoms</name>
+			<email>karsten.thoms@itemis.de</email>
+			<organization>itemis AG</organization>
+			<organizationUrl>http://www.itemis.eu/</organizationUrl>
+			<roles>
+				<role>Project-Manager</role>
+				<role>Developer</role>
+				<role>Documentation</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+		<developer>
+			<id>dariusJ</id>
+			<name>Darius Jockel</name>
+			<email>darius.jockel@itemis.de</email>
+			<organization>itemis AG</organization>
+			<organizationUrl>http://www.itemis.eu/</organizationUrl>
+			<roles>
+				<role>Developer</role>
+				<role>Documentation</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+		<developer>
+			<id>ingof</id>
+			<name>Ingo Feltes</name>
+			<email>ingo.feltes@itemis.de</email>
+			<organization>itemis AG</organization>
+			<organizationUrl>http://www.itemis.eu/</organizationUrl>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+	</developers>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>org.eclipse.m2t.xpand</groupId>
+			<artifactId>m2t-xpand-xpand</artifactId>
+			<scope>provided</scope>
+			<version>0.7.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>dom4j</groupId>
+			<artifactId>dom4j</artifactId>
+			<version>1.6.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${version.junit}</version>
+			<scope>test</scope>
+		</dependency>
+		
+	</dependencies>
+
+  <scm xmlns="">
+    <connection xmlns="http://maven.apache.org/POM/4.0.0">scm:svn:https://fornax.svn.sourceforge.net/svnroot/fornax/tags/utilities/fornax-utilities-formatter-xml/2.0.1</connection>
+    <developerConnection xmlns="http://maven.apache.org/POM/4.0.0">scm:svn:https://fornax.svn.sourceforge.net/svnroot/fornax/tags/utilities/fornax-utilities-formatter-xml/2.0.1</developerConnection>
+    <url xmlns="http://maven.apache.org/POM/4.0.0">http://fisheye3.atlassian.com/browse/fornax/tags/utilities/fornax-utilities-formatter-xml/2.0.1</url>
+  </scm>
+</project>

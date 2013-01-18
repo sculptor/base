@@ -1,0 +1,37 @@
+<assembly>
+  <id>release</id>
+  <formats>
+    <format>tar.gz</format>
+    <format>zip</format>
+  </formats>
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>target/site</directory>
+      <outputDirectory>docs</outputDirectory>
+      <includes>
+        <include>site/apidocs/**</include>
+        <include>site/xref/**</include>
+        <include>site/xref-test/**</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>src/etc/apidocs</directory>
+      <outputDirectory>apidocs</outputDirectory>
+    </fileSet>
+    <fileSet>
+      <directory>src/etc/docs</directory>
+      <outputDirectory></outputDirectory>
+    </fileSet>
+  </fileSets>
+  <moduleSets>
+    <moduleSet>
+      <includes>
+        <include>org.fornax.utilities:fornax-utilities-xtendtools</include>
+      </includes>
+      <binaries>
+        <unpack>false</unpack>
+      </binaries>
+    </moduleSet>
+  </moduleSets>
+</assembly>

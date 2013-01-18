@@ -1,0 +1,114 @@
+/*
+ * Copyright 2010 The Xtend Tools Team and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+ 
+/**
+ * This extension provides utility functions for UML models.
+ */
+import uml;
+
+extension org::fornax::utilities::xtendtools::lib::strings;
+extension org::eclipse::xtend::util::stdlib::io;
+
+Boolean isUnnamed(NamedElement this): 
+	isNotBlank(name);
+	
+Boolean isNameUnique (List[uml::NamedElement] elements) :
+	elements.forAll(p|!elements.exists(x|x.name == p.name && x != p));
+
+Boolean isJavaPrimitive (Type this) :
+	{"int", "byte", "short", "boolean", "long", "float", "double"}.contains(name);
+
+String javaPrimitiveWrapper (Type this) :
+	switch (name) {
+		case "int" : "Integer"
+		default : name.toFirstUpper()
+	};
+	
+/**
+ * Returns true, if the property was a composition.
+ */
+Boolean isComposition (Property this) :
+	aggregation.toString() == "composite";
+
+/**
+ * This extension returns the opposite of the given uml::Property prop.
+ * Precondition: The Property is part of association (AssociationEnd)
+ */
+Property oppositeProperty(Property this) :
+	opposite != null ? opposite : association.memberEnd.selectFirst(e|e != this);
+		
+/**
+ * Returns the primitivy type with the name <tt>name</tt>, if such a type
+ * existed in the model, or null, otherwise. 
+ */
+cached Type getType (Model this, String name) :
+	standardPrimitives().selectFirst(e|e.name == name);
+	
+/**
+ * Returns a list of all primitive types contained in the model.
+ */
+cached List[PrimitiveType] standardPrimitives (Model this) :
+	allOwnedElements().typeSelect(PackageImport).importedPackage.allOwnedElements().typeSelect(PrimitiveType); 
+	
+/**
+ * Applies the stereotype with the name <tt>name</tt> to this element.
+ */
+Void applyStereotypeToElement (Element this, String name) :
+	applyStereotype(getApplicableStereotypes().selectFirst(s|s.name == name));
+	
+/**
+ * #############################
+ * ### UML2-Transformations ###
+ * #############################
+ */
+ 
+/**
+ * Modelmodification that name unnamed assiociation ends.
+ */
+Void nameUnnamedAssociationEnds(Model this) :
+	allOwnedElements().typeSelect(Property).select(p|Class.isInstance(p.type) && p.isUnnamed()).modifyUnnamedProperty();
+
+/*Set the name of the association end to the name of the type.*/
+private Void modifyUnnamedProperty(Property this) :
+	setPropertyName(upper == 1 ? type.name.toFirstLower() : (type.name.toFirstLower() + "s"));
+
+private setPropertyName(Property this, String n):
+	debug("Set name: " + n + " in association : " + association.name + " between: " + association.memberEnd.type.name) ->
+	setName(n);
+ 
+/**
+ * Tools persist models in different XMI-dialects. This modifcation fixes self-references of classes
+ * (e.g. for Topcased)
+ */
+Void fixSelfReference(Model this) :
+	eAllContents.typeSelect(Association).select(e|e.memberEnd.first().type.conformsTo(e.memberEnd.last().type)).fixSelfReference();
+	
+/**
+ * This extension proves for every association,
+ * if the target classes have a reference to the
+ * association. If not, the AssociationEnd is set. 
+ */
+private Void fixSelfReference(Association assoc) :
+	let property1 = assoc.memberEnd.first(): 
+	let property2 = assoc.memberEnd.last(): 
+	let clazz = (Class)property1.type:
+	if !(clazz.ownedAttribute.exists(a|a.association == property1.association)) then
+	{
+	if (property1.isNavigable()) then
+		clazz.ownedAttribute.add(property1) ->
+	if (property2.isNavigable()) then
+		clazz.ownedAttribute.add(property2)
+	};
