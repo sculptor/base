@@ -267,52 +267,6 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-	<reporting>
-		<plugins>
-			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId> maven-project-info-reports-plugin </artifactId> <reportSets> <reportSet> <reports> <report>index</report> </reports> </reportSet> 
-				</reportSets> </plugin> <plugin> <groupId>org.fornax.maven.plugin</groupId> <artifactId>fornax-projectinfo</artifactId> <version>${version.fornax-projectinfo}</version> </plugin> -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-changes-plugin</artifactId>
-				<version>2.3</version>
-				<reportSets>
-					<reportSet>
-						<reports>
-							<report>changes-report</report>
-							<report>jira-report</report>
-						</reports>
-					</reportSet>
-				</reportSets>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.7</version>
-				<configuration>
-					<minmemory>128m</minmemory>
-					<maxmemory>512</maxmemory>
-					<sourcepath>${compileSourceRoots}</sourcepath>
-					<aggregate>true</aggregate>
-					<windowtitle> Fornax-Platform:
-						${project.groupId}:${project.artifactId}:${project.version}
-					</windowtitle>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jxr-plugin</artifactId>
-				<version>2.2</version>
-				<configuration>
-					<aggregate>true</aggregate>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>2.3.1</version>
-			</plugin>
-		</plugins>
-	</reporting>
 	<profiles>
 		<profile>
 			<activation>
