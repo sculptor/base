@@ -1,19 +1,17 @@
-<project
-	xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<parent>
-		<groupId>org.fornax.cartridges</groupId>
-		<artifactId>fornax-cartridges-sculptor-parent</artifactId>
-		<version>2.2.0-SNAPSHOT</version>
-		<relativePath>../fornax-cartridges-sculptor-parent/</relativePath>
-	</parent>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.fornax.cartridges</groupId>
-	<artifactId>fornax-cartridges-sculptor-archetype-standalone</artifactId>
-	<name>Fornax Cartridge: Sculptor Maven Archetype for standalone project</name>
+	<parent>
+		<groupId>org.sculptor</groupId>
+		<artifactId>sculptor-parent</artifactId>
+		<version>3.5</version>
+		<relativePath>../sculptor-parent/</relativePath>
+	</parent>
+	<version>2.3.0-SNAPSHOT</version>
+	<artifactId>sculptor-archetype-standalone</artifactId>
+	<name>Sculptor Maven Archetype for standalone project</name>
 	<description></description>
-    <packaging>maven-archetype</packaging>
+  	<packaging>maven-archetype</packaging>
     <build>
         <extensions>
             <extension>
