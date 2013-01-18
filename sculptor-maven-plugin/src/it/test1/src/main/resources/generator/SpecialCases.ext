@@ -1,4 +1,0 @@
-import sculptormetamodel;
-
-extension extensions::properties;
-extension extensions::helper;

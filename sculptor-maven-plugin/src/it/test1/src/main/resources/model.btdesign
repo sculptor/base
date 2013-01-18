@@ -1,5 +1,0 @@
-import "classpath:/model-test.btdesign"
-
-Application Test {
-    basePackage=com.acme
-}
