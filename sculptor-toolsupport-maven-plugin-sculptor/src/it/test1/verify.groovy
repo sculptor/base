@@ -1,0 +1,7 @@
+File log = new File(basedir, 'build.log')
+assert log.exists()
+assert log.getText().contains("[INFO] Deleting previously generated file: ")
+assert log.getText().contains("[INFO] Deleted status file: ")
+assert log.getText().contains("[INFO] Written 5 files to outlet TO_GEN_RESOURCES_TEST(src/test/generated/resources)")
+assert log.getText().contains("[INFO] Adding compile source directory ")
+assert log.getText().contains("[INFO] 3 dot files have been changed")
