@@ -1,7 +1,0 @@
-«DEFINE Class FOR ecore::EClass»
-«FILE name + ".java"»
-public class «name» {
-public «name»() {}
-}
-«ENDFILE»
-«ENDDEFINE»

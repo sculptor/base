@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.sculptor</groupId>
+	<artifactId>sculptor-aggregator</artifactId>
+	<version>2.3.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>Sculptor</name>
+	<description>Aggregator project for all child modules.</description>
+	<modules>
+	<!--
+		<module>../org.fornax.cartridges.sculptor.dsl</module>
+		<module>../org.fornax.cartridges.sculptor.gui.dsl</module>
+		<module>../fornax-cartridges-sculptor-metamodel</module>
+		<module>../fornax-cartridges-sculptor-generator</module>
+		<module>../fornax-cartridges-sculptor-framework</module>
+		<module>../fornax-cartridges-sculptor-framework-test</module>
+		<module>../fornax-cartridges-sculptor-framework-web</module>
+		<module>../fornax-cartridges-sculptor-mongodb</module>
+		<module>../fornax-cartridges-sculptor-smartclient-bt</module>
+
+		<module>../fornax-cartridges-sculptor-archetype</module>
+		<module>../fornax-cartridges-sculptor-archetype-jsf</module>
+		<module>../fornax-cartridges-sculptor-archetype-ear</module>
+		<module>../fornax-cartridges-sculptor-archetype-parent</module>
+		<module>../fornax-cartridges-sculptor-archetype-standalone</module>
+		<module>../fornax-cartridges-sculptor-archetype-appengine</module>
+		<module>../fornax-cartridges-sculptor-archetype-pure-ejb3</module>
+		<module>../fornax-cartridges-sculptor-archetype-smartclient</module>
+		<module>../fornax-cartridges-sculptor-archetype-mongodb</module>
+-->
+	</modules>
+</project>

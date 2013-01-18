@@ -1,266 +1,260 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<parent>
-		<groupId>org.fornax</groupId>
-		<artifactId>fornax-parent</artifactId>
-		<version>3.3</version>
-	</parent>
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.fornax.cartridges</groupId>
-	<artifactId>fornax-cartridges-sculptor-parent</artifactId>
-	<version>2.2.0-SNAPSHOT</version>
-	<packaging>pom</packaging>
-	<name>Fornax Cartridge :: Sculptor</name>
-
-	<description>Sculptor is subproject of Fornax cartridge project</description>
-
-	<properties>
-		<projectId>CSC</projectId>
-		<projectPID>10050</projectPID>
-		<projectName>Sculptor</projectName>
-		<category>cartridges/sculptor</category>
-		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
-
-		<fornax-oaw-m2.version>3.2.3</fornax-oaw-m2.version>
-		<slf4j.version>1.6.4</slf4j.version>
-		<logback.version>1.0.0</logback.version>
-	</properties>
-	
-	<distributionManagement>
-		<repository>
-			<id>releases.fornax-platform.org</id>
-			<url>dav:http://fornax-platform.org/nexus/content/repositories/releases</url>
-		</repository>
-		<snapshotRepository>
-			<id>snapshots.fornax-platform.org</id>
-			<url>dav:http://fornax-platform.org/nexus/content/repositories/snapshots</url>
-		</snapshotRepository>
-	</distributionManagement>
-
-	<modules>
-		<module>../org.fornax.cartridges.sculptor.dsl</module>
-		<module>../org.fornax.cartridges.sculptor.gui.dsl</module>
-		<module>../fornax-cartridges-sculptor-metamodel</module>
-		<module>../fornax-cartridges-sculptor-generator</module>
-		<module>../fornax-cartridges-sculptor-framework</module>
-		<module>../fornax-cartridges-sculptor-framework-test</module>
-		<module>../fornax-cartridges-sculptor-framework-web</module>
-		<module>../fornax-cartridges-sculptor-mongodb</module>
-		<module>../fornax-cartridges-sculptor-smartclient-bt</module>
-
-		<module>../fornax-cartridges-sculptor-archetype</module>
-		<module>../fornax-cartridges-sculptor-archetype-jsf</module>
-		<module>../fornax-cartridges-sculptor-archetype-ear</module>
-		<module>../fornax-cartridges-sculptor-archetype-parent</module>
-		<module>../fornax-cartridges-sculptor-archetype-standalone</module>
-		<module>../fornax-cartridges-sculptor-archetype-appengine</module>
-		<module>../fornax-cartridges-sculptor-archetype-pure-ejb3</module>
-		<module>../fornax-cartridges-sculptor-archetype-smartclient</module>
-		<module>../fornax-cartridges-sculptor-archetype-mongodb</module>
-
-	</modules>
-
-	<repositories>
-		<repository>
-			<id>fornax-platform.org</id>
-			<name>Fornax Repository</name>
-			<url>http://fornax-platform.org/nexus/content/repositories/public</url>
-			<releases><enabled>true</enabled></releases>
-			<snapshots><enabled>true</enabled></snapshots>
-		</repository>
-		<repository>
-			<id>com.springsource.repository.bundles.external</id>
-			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
-			<url>http://repository.springsource.com/maven/bundles/external</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>com.springsource.repository.bundles.release</id>
-			<name>SpringSource Enterprise Bundle Repository - SpringSource Releases</name>
-			<url>http://repository.springsource.com/maven/bundles/release</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>jboss.org</id>
-			<url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>nexus.jboss.org</id>
-			<url>https://repository.jboss.org/nexus/content/groups/public/</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>www.mvnsearch.org</id>
-			<name>Maven search repository</name>
-			<url>http://www.mvnsearch.org/maven2/</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>gae.googlecode.com</id>
-			<name>GAE SVN repository</name>
-			<url>http://maven-gae-plugin.googlecode.com/svn/repository/</url>
-		</repository>
-	</repositories>
-
-	<pluginRepositories>
-		<pluginRepository>
-			<id>fornax-platform.org</id>
-			<name>Fornax Repository</name>
-			<url>
-				http://fornax-platform.org/nexus/content/repositories/public
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.fornax</groupId>
+    <artifactId>fornax-parent</artifactId>
+    <packaging>pom</packaging>
+    <version>3.4-SNAPSHOT</version>
+    <name>Fornax-Project</name>
+    <description> The parent project for all fornax subprojects
+	</description>
+    <organization>
+        <name>Fornax Development Team</name>
+        <url>http://fornax-platform.org</url>
+    </organization>
+    <properties>
+        <category />
+        <!-- The URL components classifying the SCM URL -->
+        <scm-url-prefix>trunk</scm-url-prefix>
+        <scm-url-suffix>${category}</scm-url-suffix>
+        <!-- Commonly used library versions. Refer to these properties when using one of the artifacts in your dependency. By doing this library versions
+            can be upgraded when fornax-parent changes. Use explicit version identifiers only if you want to use explicitly a fixed version in your project. -->
+        <version.activation>1.0.2</version.activation>
+        <version.ant>1.7.0</version.ant>
+        <version.commons-io>1.4</version.commons-io>
+        <version.commons-lang>2.3</version.commons-lang>
+        <version.commons-net>1.4.1</version.commons-net>
+        <version.commons-validator>1.2.0</version.commons-validator>
+        <version.eclipse-emf>2.4.0</version.eclipse-emf>
+        <version.eclipse-xsd>2.4.0</version.eclipse-xsd>
+        <version.eclipse-uml2>2.2.0</version.eclipse-uml2>
+        <version.gmaven>1.0-rc-2</version.gmaven>
+        <version.groovy>1.5.6</version.groovy>
+        <version.hybridlabs-beautifier>1.1.9</version.hybridlabs-beautifier>
+        <version.javamail>1.3.2</version.javamail>
+        <version.junit>4.4</version.junit>
+        <version.log4j>1.2.14</version.log4j>
+        <version.maven-eclipse-plugin>2.4</version.maven-eclipse-plugin>
+        <version.maven-plugin-api>2.0.9</version.maven-plugin-api>
+        <version.maven-project>2.0.9</version.maven-project>
+        <version.maven-plugin-tools>2.1</version.maven-plugin-tools>
+        <version.oaw>4.3.1</version.oaw>
+        <!-- Version identifiers used within this parent POM -->
+        <version.fornax-buildhelper>1.0.1</version.fornax-buildhelper>
+        <version.fornax-oaw-m2-plugin>3.2.0</version.fornax-oaw-m2-plugin>
+        <version.fornax-projectinfo>1.0.1</version.fornax-projectinfo>
+        <version.plexus-utils>1.5.1</version.plexus-utils>
+        <version.wagon-webdav>1.0-beta-2</version.wagon-webdav>
+        <version.xercesImpl>2.8.1</version.xercesImpl>
+    </properties>
+    <licenses>
+        <license>
+            <name>Apache 2.0 License</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>manual</distribution>
+        </license>
+    </licenses>
+    <issueManagement>
+        <system>jira</system>
+        <url> http://fornax-platform.org/tracker/browse/${projectId} </url>
+    </issueManagement>
+    <scm>
+        <connection>
+			scm:svn:https://fornax.svn.sourceforge.net/svnroot/fornax/trunk/
+		</connection>
+        <developerConnection>
+			scm:svn:https://fornax.svn.sourceforge.net/svnroot/fornax/trunk/
+		</developerConnection>
+        <url>
+			http://fisheye3.cenqua.com/browse/fornax/trunk/
+		</url>
+    </scm>
+    <distributionManagement>
+        <repository>
+            <id>releases.fornax-platform.org</id>
+            <name>Fornax Release Repository</name>
+            <url>dav:http://fornax-platform.org/nexus/content/repositories/releases/
 			</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</pluginRepository>
-	</pluginRepositories>
-
-	<developers>
-		<developer>
-			<id>patrik_nordwall</id>
-			<name>Patrik Nordwall</name>
-			<roles>
-				<role>Project-Manager</role>
-				<role>Developer</role>
-				<role>Documentation</role>
-			</roles>
-			<timezone>+1</timezone>
-		</developer>
-		<developer>
-			<id>bear50</id>
-			<name>Andreas Källberg</name>
-			<roles>
-				<role>Developer</role>
-				<role>Documentation</role>
-			</roles>
-			<timezone>+1</timezone>
-		</developer>
-		<developer>
-			<id>oringel</id>
-			<name>Oliver Ringel</name>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>+1</timezone>
-		</developer>
-		<developer>
-			<id>bakattila</id>
-			<name>Attila Bak</name>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>+1</timezone>
-		</developer>
-		<developer>
-			<id>aderriba</id>
-			<name>Alberto de Arriba</name>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>+1</timezone>
-		</developer>
-		<developer>
-			<id>paveltavoda</id>
-			<name>Pavel Tavoda</name>
-			<roles>
-				<role>Developer</role>
-			</roles>
-		</developer>
-		<developer>
-			<id>eugeis</id>
-			<name>Eugen Eisler</name>
-			<roles>
-				<role>Developer</role>
-			</roles>
-		</developer>
-		<developer>
-			<id>ootferrell</id>
-			<name>Todd Ferrell</name>
-			<roles>
-				<role>Developer</role>
-			</roles>
-		</developer>
-		<developer>
-			<id>wrungel</id>
-			<name>Maxim Frolov</name>
-			<roles>
-				<role>Developer</role>
-			</roles>
-		</developer>
-		<developer>
-		    <id>rsmith7209</id>
-		    <name>Ron Smith</name>
-		    <roles>
-				<role>Developer</role>
-			</roles>
-		</developer>
-	</developers>
-
-	<dependencies>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.6</version>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-plugin-plugin</artifactId>
-				<version>2.2</version>
-			</plugin>
-			<plugin>
-				<artifactId>maven-eclipse-plugin</artifactId>
-				<version>2.8</version>
-				<configuration>
-					<downloadSources>true</downloadSources>
-					<classpathContainers>
-	   					<classpathContainer>org.eclipse.jdt.launching.JRE_CONTAINER</classpathContainer>
-	   				</classpathContainers>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots.fornax-platform.org</id>
+            <name>Fornax Snapshot Repository</name>
+            <url>
+				dav:http://fornax-platform.org/nexus/content/repositories/snapshots/
+			</url>
+        </snapshotRepository>
+        <site>
+            <id>deploy.fornax-platform.org</id>
+            <url>
+				scp://${sfuser}@shell.sf.net:/home/groups/f/fo/fornax/htdocs/${projectId}/
+			</url>
+        </site>
+    </distributionManagement>
+    <build>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-webdav</artifactId>
+                <version>${version.wagon-webdav}</version>
+            </extension>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh</artifactId>
+                <version>1.0-beta-6</version>
+            </extension>
+        </extensions>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>2.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-plugin-plugin</artifactId>
+                    <version>2.6</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>2.3.2</version>
+                    <configuration>
+                        <source>1.5</source>
+                        <target>1.5</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.7.1</version>
+                    <configuration>
+                        <forkMode>pertest</forkMode>
+                        <excludes>
+                            <exclude>**/Abstract*TestHelper.java</exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.fornax.maven.plugin</groupId>
+                    <artifactId>fornax-buildhelper</artifactId>
+                    <version>${version.fornax-buildhelper}</version>
+                    <executions>
+                        <execution>
+                            <id>add-source</id>
+                            <phase>site</phase>
+                            <goals>
+                                <goal>add-source</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <cpatterns>
+                            <cpattern>src/generated/java</cpattern>
+                            <cpattern>src/main/java</cpattern>
+                            <cpattern>src/protected/java</cpattern>
+                        </cpatterns>
+                        <tpatterns>
+                            <tpattern>src/test/java</tpattern>
+                            <tpattern>src/test/generated/java</tpattern>
+                            <tpattern>src/test/protected/java</tpattern>
+                        </tpatterns>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>2.2</version>
+                    <configuration>
+                        <outputDirectory> ${project.build.directory}/releases
+					</outputDirectory>
+                        <descriptors>
+                            <descriptor>src/main/assembly/repository.xml</descriptor>
+                            <descriptor>src/main/assembly/release.xml</descriptor>
+                        </descriptors>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+    <reporting>
+        <plugins>
+            <!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId> maven-project-info-reports-plugin </artifactId> <reportSets> <reportSet>
+                <reports> <report>index</report> </reports> </reportSet> </reportSets> </plugin> <plugin> <groupId>org.fornax.maven.plugin</groupId> <artifactId>fornax-projectinfo</artifactId>
+                <version>${version.fornax-projectinfo}</version> </plugin> -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-changes-plugin</artifactId>
+                <version>2.3</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>changes-report</report>
+                            <report>jira-report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.7</version>
+                <configuration>
+                    <minmemory>128m</minmemory>
+                    <maxmemory>512</maxmemory>
+                    <sourcepath>${compileSourceRoots}</sourcepath>
+                    <aggregate>true</aggregate>
+                    <windowtitle> Fornax-Platform:
+                        ${project.groupId}:${project.artifactId}:${project.version}
+					</windowtitle>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jxr-plugin</artifactId>
+                <version>2.2</version>
+                <configuration>
+                    <aggregate>true</aggregate>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>2.3.1</version>
+            </plugin>
+        </plugins>
+    </reporting>
+    <profiles>
+        <profile>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <id>fornax</id>
+            <repositories>
+                <repository>
+                    <id>public.fornax-platform.org</id>
+                    <name>Fornax Public Repository</name>
+                    <url>http://fornax-platform.org/nexus/content/groups/public/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>public.fornax-platform.org</id>
+                    <name>Fornax Public Repository</name>
+                    <url>http://fornax-platform.org/nexus/content/groups/public/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+    </profiles>
 </project>
-
