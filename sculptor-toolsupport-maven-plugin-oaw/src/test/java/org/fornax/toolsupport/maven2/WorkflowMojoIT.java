@@ -20,7 +20,7 @@ public class WorkflowMojoIT extends AbstractMojoTestCase {
 		List<String> cliOptions = new ArrayList<String>();
 		cliOptions.add("-X");
 		verifier.setCliOptions(cliOptions);
-		verifier.executeGoal("org.fornax.toolsupport:fornax-oaw-m2-plugin:run-workflow");
+		verifier.executeGoal("org.sculptor:sculptor-toolsupport-maven-plugin-oaw:run-workflow");
 
 		// writes streams to src/test/projects/oaw-workflow/log.txt
 		verifier.displayStreamBuffers();

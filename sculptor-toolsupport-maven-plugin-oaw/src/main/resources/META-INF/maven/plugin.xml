@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin>
-  <name>XXX Model Workflow-M2-Plugin</name>
+  <name>Model Workflow-M2-Plugin</name>
   <description>The Maven2-Plugin for the
 		Model Workflow execution (oAW 4.x / Eclipse MWE)</description>
-  <groupId>org.fornax.toolsupport</groupId>
-  <artifactId>fornax-oaw-m2-plugin</artifactId>
-  <version>3.4.0-SNAPSHOT</version>
-  <goalPrefix>fornax-oaw-m2</goalPrefix>
+  <groupId>org.sculptor</groupId>
+  <artifactId>sculptor-toolsupport-maven-plugin-oaw</artifactId>
+  <version>3.5.1</version>
+  <goalPrefix>sculptor-toolsupport-maven-plugin-oaw</goalPrefix>
   <isolatedRealm>false</isolatedRealm>
   <inheritedByDefault>true</inheritedByDefault>
   <mojos>
