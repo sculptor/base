@@ -26,6 +26,7 @@
 		
 		<module>sculptor-framework</module>
 		<module>sculptor-framework-test</module>
+		<module>sculptor-framework-web</module>
 		
 	<!--
 		<module>../org.fornax.cartridges.sculptor.dsl</module>

@@ -1,16 +1,15 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<parent>
-		<groupId>org.fornax.cartridges</groupId>
-		<artifactId>fornax-cartridges-sculptor-parent</artifactId>
-		<version>2.2.0-SNAPSHOT</version>
-		<relativePath>../fornax-cartridges-sculptor-parent/</relativePath>
-	</parent>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.fornax.cartridges</groupId>
-	<artifactId>fornax-cartridges-sculptor-framework-web</artifactId>
-	<name>Fornax Cartridge: Sculptor Runtime Web Framework</name>
+	<parent>
+		<groupId>org.sculptor</groupId>
+		<artifactId>sculptor-parent</artifactId>
+		<version>3.5</version>
+		<relativePath>../sculptor-parent/</relativePath>
+	</parent>
+	<artifactId>sculptor-framework-web</artifactId>
+	<version>2.3.0-SNAPSHOT</version>
+	<name>Sculptor Runtime Web Framework</name>
 	<description></description>
 	<properties>
 		<spring.version>3.0.4.RELEASE</spring.version>
@@ -31,12 +30,12 @@
 			<version>${validation.version}</version>
 			<scope>provided</scope>
 		</dependency>
-        <dependency>
-            <groupId>org.springframework.webflow</groupId>
-            <artifactId>org.springframework.webflow</artifactId>
-            <version>${spring.webflow.version}</version>
-            <scope>provided</scope>
-        </dependency>
+		<dependency>
+			<groupId>org.springframework.webflow</groupId>
+			<artifactId>org.springframework.webflow</artifactId>
+			<version>${spring.webflow.version}</version>
+			<scope>provided</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
@@ -72,8 +71,8 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.fornax.cartridges</groupId>
-			<artifactId>fornax-cartridges-sculptor-framework</artifactId>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>sculptor-framework</artifactId>
 			<version>${project.version}</version>
 			<scope>provided</scope>
 		</dependency>
