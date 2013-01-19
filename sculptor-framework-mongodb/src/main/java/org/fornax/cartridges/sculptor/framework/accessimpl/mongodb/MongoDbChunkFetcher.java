@@ -38,7 +38,6 @@ import com.mongodb.QueryOperators;
  * @author Patrik Nordwall
  * 
  */
-@SuppressWarnings("unchecked")
 public abstract class MongoDbChunkFetcher<T, KEY> extends ChunkFetcherBase<T, KEY> {
 
     private final DBCollection dbCollection;
@@ -56,10 +55,10 @@ public abstract class MongoDbChunkFetcher<T, KEY> extends ChunkFetcherBase<T, KE
     }
 
     @Override
-    protected List<T> getChunk(Collection keys) {
+    protected List<T> getChunk(Collection<KEY> keys) {
         DBObject query = new BasicDBObject();
         DBObject inCondition = new BasicDBObject();
-        Collection restrictionPropertyValues = restrictionPropertyValues(keys);
+        Collection<KEY> restrictionPropertyValues = restrictionPropertyValues(keys);
         inCondition.put(QueryOperators.IN, restrictionPropertyValues);
         query.put(getRestrictionPropertyName(), inCondition);
 

@@ -35,100 +35,109 @@ import org.fornax.cartridges.sculptor.framework.accessapi.FindByKeysAccess;
  * Command design pattern.
  * </p>
  */
-public class MongoDbFindByKeysAccessImpl<T> extends MongoDbAccessBase<T> implements FindByKeysAccess<T> {
+public class MongoDbFindByKeysAccessImpl<T> extends MongoDbAccessBase<T>
+		implements FindByKeysAccess<T> {
 
-    private String keyPropertyName;
-    private String restrictionPropertyName;
-    private Set keys;
-    private Map<Object, T> result;
+	private String keyPropertyName;
+	private String restrictionPropertyName;
+	private Set<?> keys;
+	private Map<Object, T> result;
 
-    public MongoDbFindByKeysAccessImpl(Class<T> persistentClass) {
-        setPersistentClass(persistentClass);
-    }
+	public MongoDbFindByKeysAccessImpl(Class<T> persistentClass) {
+		setPersistentClass(persistentClass);
+	}
 
-    protected String getKeyPropertyName() {
-        return keyPropertyName;
-    }
+	protected String getKeyPropertyName() {
+		return keyPropertyName;
+	}
 
-    public void setKeyPropertyName(String keyPropertyName) {
-        this.keyPropertyName = keyPropertyName;
-    }
+	public void setKeyPropertyName(String keyPropertyName) {
+		this.keyPropertyName = keyPropertyName;
+	}
 
-    protected String getRestrictionPropertyName() {
-        if (restrictionPropertyName == null) {
-            return getKeyPropertyName();
-        } else {
-            return restrictionPropertyName;
-        }
-    }
+	protected String getRestrictionPropertyName() {
+		if (restrictionPropertyName == null) {
+			return getKeyPropertyName();
+		} else {
+			return restrictionPropertyName;
+		}
+	}
 
-    public void setRestrictionPropertyName(String restrictionPropertyName) {
-        this.restrictionPropertyName = restrictionPropertyName;
-    }
+	public void setRestrictionPropertyName(String restrictionPropertyName) {
+		this.restrictionPropertyName = restrictionPropertyName;
+	}
 
-    protected String getRestrictionValuePropertyName() {
-        if (restrictionPropertyName == null) {
-            return null;
-        } else if (restrictionPropertyName.startsWith(getKeyPropertyName() + ".")) {
-            return restrictionPropertyName.substring(getKeyPropertyName().length() + 1);
-        } else {
-            return restrictionPropertyName;
-        }
-    }
+	protected String getRestrictionValuePropertyName() {
+		if (restrictionPropertyName == null) {
+			return null;
+		} else if (restrictionPropertyName.startsWith(getKeyPropertyName()
+				+ ".")) {
+			return restrictionPropertyName.substring(getKeyPropertyName()
+					.length() + 1);
+		} else {
+			return restrictionPropertyName;
+		}
+	}
 
-    public void setKeys(Set keys) {
-        this.keys = keys;
-    }
+	public void setKeys(Set<?> keys) {
+		this.keys = keys;
+	}
 
-    @Override
-    public void setPersistentClass(Class<? extends T> persistentClass) {
-        super.setPersistentClass(persistentClass);
-    }
+	@Override
+	public void setPersistentClass(Class<? extends T> persistentClass) {
+		super.setPersistentClass(persistentClass);
+	}
 
-    public Map<Object, T> getResult() {
-        return this.result;
-    }
+	public Map<Object, T> getResult() {
+		return this.result;
+	}
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public void performExecute() {
-        MongoDbChunkFetcher<T, Object> chunkFetcher = new MongoDbChunkFetcher<T, Object>(getDBCollection(),
-                getDataMapper(), getRestrictionPropertyName()) {
-            @Override
-            protected Object key(T obj) {
-                try {
-                    return PropertyUtils.getProperty(obj, getKeyPropertyName());
-                } catch (Exception e) {
-                    throw new IllegalArgumentException("Invalid property: " + getKeyPropertyName());
-                }
-            }
+	@Override
+	public void performExecute() {
+		MongoDbChunkFetcher<T, Object> chunkFetcher = new MongoDbChunkFetcher<T, Object>(
+				getDBCollection(), getDataMapper(),
+				getRestrictionPropertyName()) {
+			@Override
+			protected Object key(T obj) {
+				try {
+					return PropertyUtils.getProperty(obj, getKeyPropertyName());
+				} catch (Exception e) {
+					throw new IllegalArgumentException("Invalid property: "
+							+ getKeyPropertyName());
+				}
+			}
 
-            @Override
-            protected Collection restrictionPropertyValues(Collection keys) {
-                if (getRestrictionValuePropertyName() == null) {
-                    Collection values = super.restrictionPropertyValues(keys);
-                    List dbValues = new ArrayList();
-                    for (Object each : values) {
-                        dbValues.add(toData(each));
-                    }
-                    return dbValues;
-                } else {
-                    try {
-                        List values = new ArrayList();
-                        for (Object k : keys) {
-                            Object restrictionValue = PropertyUtils.getProperty(k, getRestrictionValuePropertyName());
-                            Object dbValue = toData(restrictionValue);
-                            values.add(dbValue);
-                        }
-                        return values;
-                    } catch (Exception e) {
-                        throw new IllegalArgumentException("Invalid property: " + getRestrictionValuePropertyName());
-                    }
-                }
-            }
-        };
+			@Override
+			protected Collection<Object> restrictionPropertyValues(
+					Collection<Object> keys) {
+				if (getRestrictionValuePropertyName() == null) {
+					Collection<Object> values = super
+							.restrictionPropertyValues(keys);
+					List<Object> dbValues = new ArrayList<Object>();
+					for (Object each : values) {
+						dbValues.add(toData(each));
+					}
+					return dbValues;
+				} else {
+					try {
+						List<Object> values = new ArrayList<Object>();
+						for (Object k : keys) {
+							Object restrictionValue = PropertyUtils
+									.getProperty(k,
+											getRestrictionValuePropertyName());
+							Object dbValue = toData(restrictionValue);
+							values.add(dbValue);
+						}
+						return values;
+					} catch (Exception e) {
+						throw new IllegalArgumentException("Invalid property: "
+								+ getRestrictionValuePropertyName());
+					}
+				}
+			}
+		};
 
-        this.result = chunkFetcher.getDomainObjects(keys);
-    }
+		this.result = chunkFetcher.getDomainObjects(keys);
+	}
 
 }

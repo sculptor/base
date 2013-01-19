@@ -55,7 +55,8 @@ public class DbManager implements Cloneable {
     }
 
     // lazy init
-    private synchronized void init() {
+    @SuppressWarnings("deprecation")	
+	private synchronized void init() {
         if (initialized) {
             return;
         }

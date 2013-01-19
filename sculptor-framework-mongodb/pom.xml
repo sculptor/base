@@ -9,7 +9,7 @@
 	</parent>
 	<artifactId>sculptor-framework-mongodb</artifactId>
 	<version>2.3.0-SNAPSHOT</version>
-	<name>Sculptor MongoDB Library</name>
+	<name>Sculptor MongoDB Framework</name>
 	<description></description>
 	<properties>
 		<mongodb.version>2.7.2</mongodb.version>
