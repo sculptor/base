@@ -2,7 +2,6 @@ package org.fornax.cartridges.sculptor.framework.accessimpl.jpahibernate;
 
 import org.hibernate.Criteria;
 import org.hibernate.EntityMode;
-import org.hibernate.Hibernate;
 import org.hibernate.HibernateException;
 import org.hibernate.criterion.CriteriaQuery;
 import org.hibernate.criterion.Criterion;
@@ -24,9 +23,10 @@ public class NumericLikeExpression implements Criterion {
 	}
 
 	@Override
-	public TypedValue[] getTypedValues(Criteria criteria, CriteriaQuery criteriaQuery)
-				throws HibernateException {
-		return new TypedValue[] { new TypedValue(Hibernate.STRING, value, EntityMode.POJO) };
+	public TypedValue[] getTypedValues(Criteria criteria,
+			CriteriaQuery criteriaQuery) throws HibernateException {
+		return new TypedValue[] { new TypedValue(
+				new org.hibernate.type.StringType(), value, EntityMode.POJO) };
 	}
 
 	@Override

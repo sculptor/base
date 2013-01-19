@@ -4,12 +4,11 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-
 /**
  * Holds the expressions of the query
- *
+ * 
  * @author Oliver Ringel
- *
+ * 
  */
 public class QueryExpressionsTest {
 
@@ -22,15 +21,25 @@ public class QueryExpressionsTest {
 		assertEquals("counter", qe.getSelections().get(1));
 	}
 
-    public static class Person {
-    	private String name;
-    	private Long sal;
-    	private int counter;
-    }
+	public static class Person {
+		@SuppressWarnings("unused")
+		private String name;
 
-    public static class PersonDto {
-    	private String name;
-    	private Long salary;
-    	private int counter;
-    }
+		@SuppressWarnings("unused")
+		private Long sal;
+
+		@SuppressWarnings("unused")
+		private int counter;
+	}
+
+	public static class PersonDto {
+		@SuppressWarnings("unused")
+		private String name;
+
+		@SuppressWarnings("unused")
+		private Long salary;
+
+		@SuppressWarnings("unused")
+		private int counter;
+	}
 }
