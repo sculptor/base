@@ -23,29 +23,30 @@ import javax.persistence.PersistenceException;
 
 import org.fornax.cartridges.sculptor.framework.web.hibernate.ConversationDomainObjectRepository;
 import org.springframework.orm.jpa.JpaCallback;
+import org.springframework.orm.jpa.JpaTemplate;
 import org.springframework.orm.jpa.support.JpaDaoSupport;
 
-public class ConversationDomainObjectJpaRepositoryImpl extends JpaDaoSupport implements
-        ConversationDomainObjectRepository {
+public class ConversationDomainObjectJpaRepositoryImpl extends JpaDaoSupport
+		implements ConversationDomainObjectRepository {
 
-    public <T> T get(Class<T> domainObjectClass, Serializable id) {
-        return getJpaTemplate().find(domainObjectClass, id);
-    }
+	public <T> T get(Class<T> domainObjectClass, Serializable id) {
+		return getJpaTemplate().find(domainObjectClass, id);
+	}
 
-    public void revert(Object domainObject) {
-        if (getJpaTemplate().contains(domainObject)) {
-            getJpaTemplate().refresh(domainObject);
+	public <T> void revert(T domainObject) {
+		JpaTemplate jpaTemplate = getJpaTemplate();
+		if (jpaTemplate.contains(domainObject)) {
+			jpaTemplate.refresh(domainObject);
+		}
+	}
 
-        }
-    }
+	public <T> void clear() {
+		getJpaTemplate().execute(new JpaCallback<T>() {
+			public T doInJpa(EntityManager em) throws PersistenceException {
+				em.clear();
+				return null;
+			}
 
-    public void clear() {
-        getJpaTemplate().execute(new JpaCallback() {
-            public Object doInJpa(EntityManager em) throws PersistenceException {
-                em.clear();
-                return null;
-            }
-
-        });
-    }
+		});
+	}
 }

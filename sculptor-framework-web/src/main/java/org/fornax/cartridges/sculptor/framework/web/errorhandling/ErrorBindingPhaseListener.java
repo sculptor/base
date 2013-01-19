@@ -50,6 +50,7 @@ import org.springframework.webflow.execution.RequestContextHolder;
  * {@link ObjectError} is used instead.
  *
  */
+@SuppressWarnings("serial")
 public class ErrorBindingPhaseListener implements PhaseListener, MessageSourceAware {
 
 	private MessageSource messageSource;
@@ -66,7 +67,7 @@ public class ErrorBindingPhaseListener implements PhaseListener, MessageSourceAw
 		
 		if (requestContext==null)
 			return;
-		Map model;
+		Map<?, ?> model;
 		try {
 			model = requestContext.getFlashScope().asMap();
 		} catch (IllegalStateException e) {
@@ -74,7 +75,7 @@ public class ErrorBindingPhaseListener implements PhaseListener, MessageSourceAw
 		}
 		Locale locale = context.getExternalContext().getRequestLocale();
 
-		for (Iterator iter = model.keySet().iterator(); iter.hasNext();) {
+		for (Iterator<?> iter = model.keySet().iterator(); iter.hasNext();) {
 			String key = (String) iter.next();
 			Object value = model.get(key);
 			
@@ -83,7 +84,7 @@ public class ErrorBindingPhaseListener implements PhaseListener, MessageSourceAw
 			if (value instanceof Errors && !key.endsWith("currentFormObject")) {
 				Errors errors = (Errors) value;
 
-				for (Iterator eter = errors.getAllErrors().iterator(); eter.hasNext();) {
+				for (Iterator<?> eter = errors.getAllErrors().iterator(); eter.hasNext();) {
 					ObjectError error = (ObjectError) eter.next();
 					String summary = null;
 					try {

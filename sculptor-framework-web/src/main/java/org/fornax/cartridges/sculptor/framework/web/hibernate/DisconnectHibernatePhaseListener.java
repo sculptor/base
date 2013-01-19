@@ -30,6 +30,7 @@ import org.hibernate.Session;
  * This faces listener is the JSF version of DisconnectHibernateInterceptor.
  * @see org.fornax.cartridges.sculptor.framework.web.hibernate.DisconnectHibernateInterceptor
  */
+@SuppressWarnings("serial")
 public class DisconnectHibernatePhaseListener implements PhaseListener {
 	private static final String HIBERNATE_SESSION_ATTRIBUTE = "hibernateSession";
     

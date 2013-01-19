@@ -38,12 +38,12 @@ public interface ConversationDomainObjectRepository {
      * Discard modifications of the domain object and
      * populate it with fresh state.
      */
-    void revert(Object domainObject);
+    <T> void revert(T domainObject);
 
     /**
      * Remove all objects from memory, to ensure fresh reload.
      */
-    void clear();
+    <T> void clear();
 
 
 }
