@@ -1,7 +1,6 @@
 package org.fornax.cartridges.sculptor.framework.domain;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 

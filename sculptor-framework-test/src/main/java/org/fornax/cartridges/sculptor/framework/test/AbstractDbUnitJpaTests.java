@@ -17,14 +17,11 @@
 
 package org.fornax.cartridges.sculptor.framework.test;
 
-import java.math.BigInteger;
-
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceUnit;
 import javax.persistence.Query;
 
-import org.junit.After;
 import org.springframework.orm.jpa.SharedEntityManagerCreator;
 
 /**
