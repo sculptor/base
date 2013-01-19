@@ -4,8 +4,6 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.fornax.cartridges.sculptor.framework.accessimpl.jpahibernate.JpaHibFindByCriteriaAccessImpl;
-
 public class FindByCriteriaAccessImplTest extends TestCase {
 
     public void testCreateSubCriteriasWithoutAnySubCriterias() {

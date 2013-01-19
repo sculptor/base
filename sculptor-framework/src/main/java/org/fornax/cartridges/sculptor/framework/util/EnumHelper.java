@@ -21,30 +21,36 @@ import java.lang.reflect.Method;
 
 public class EnumHelper {
 
-    @SuppressWarnings("unchecked")
-    public static Enum toEnum(Class enumClass, Object value) {
-        assert enumClass != null;
-        if (value == null) {
-            return null;
-        }
-        try {
-            Method method = enumClass.getMethod("toEnum", Object.class);
-            return (Enum) method.invoke(null, value);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("value " + value + " can not be converted to Enum '" + enumClass.getSimpleName() + "'" , e);
-        }
-    }
+	public static <T extends Enum<T>> Enum<T> toEnum(Class<T> enumClass,
+			Object value) {
+		assert enumClass != null;
+		if (value == null) {
+			return null;
+		}
+		try {
+			Method method = enumClass.getMethod("toEnum", Object.class);
+			@SuppressWarnings("unchecked")
+			Enum<T> cast = (Enum<T>) method.invoke(null, value);
+			return cast;
+		} catch (Exception e) {
+			throw new IllegalArgumentException("value " + value
+					+ " can not be converted to Enum '"
+					+ enumClass.getSimpleName() + "'", e);
+		}
+	}
 
-    public static Object toData(Enum<?> enumClass) {
-        if (enumClass == null) {
-            return null;
-        }
-        try {
-            Method method = enumClass.getClass().getMethod("toData");
-            return method.invoke(enumClass);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Enum '" + enumClass.getClass().getSimpleName() + "' can not be converted to value", e);
-        }
-    }
+	public static Object toData(Enum<?> enumClass) {
+		if (enumClass == null) {
+			return null;
+		}
+		try {
+			Method method = enumClass.getClass().getMethod("toData");
+			return method.invoke(enumClass);
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Enum '"
+					+ enumClass.getClass().getSimpleName()
+					+ "' can not be converted to value", e);
+		}
+	}
 
 }

@@ -17,7 +17,6 @@
 
 package org.fornax.cartridges.sculptor.framework.accessapi;
 
-import org.fornax.cartridges.sculptor.framework.accessimpl.jpa2.QueryExpressions;
 
 
 /**

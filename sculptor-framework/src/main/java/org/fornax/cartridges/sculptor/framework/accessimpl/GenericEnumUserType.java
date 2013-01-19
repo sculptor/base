@@ -83,6 +83,7 @@ import org.hibernate.usertype.UserType;
  *
  * @author Martin Kersten
  */
+@SuppressWarnings("deprecation")
 public class GenericEnumUserType implements UserType, ParameterizedType, Serializable {
     private static final long serialVersionUID = -3519064203142497321L;
     private static final String DEFAULT_IDENTIFIER_METHOD_NAME = "name";

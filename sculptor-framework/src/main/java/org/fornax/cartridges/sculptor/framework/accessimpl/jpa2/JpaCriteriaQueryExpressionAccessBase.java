@@ -147,7 +147,7 @@ public abstract class JpaCriteriaQueryExpressionAccessBase<T,R>
 	 * @param value
 	 * @return
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "unchecked", "rawtypes", "unused" })
 	private Predicate preparePredicate(Path<?> path, String property, Operator operator, Object value) {
 
 		path = getPath(path, property);

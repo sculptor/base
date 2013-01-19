@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.fornax.cartridges.sculptor.framework.accessapi.ConditionalCriteria.Operator;
-import org.fornax.cartridges.sculptor.framework.accessapi.ConditionalCriteriaBuilder.Selection;
 import org.fornax.cartridges.sculptor.framework.domain.Property;
 
 /**
