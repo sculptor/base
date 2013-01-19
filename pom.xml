@@ -14,6 +14,7 @@
 		
 		<module>sculptor-toolsupport-maven-plugin-oaw</module>
 		<module>sculptor-toolsupport-maven-plugin-checksum</module>
+		<module>sculptor-toolsupport-maven-plugin-graphviz</module>
 		
 		<module>sculptor-archetype</module>
 		<module>sculptor-archetype-jsf</module>
