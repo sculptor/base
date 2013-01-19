@@ -25,6 +25,8 @@
 		<module>sculptor-archetype-mongodb</module>
 		
 		<module>sculptor-framework</module>
+		<module>sculptor-framework-test</module>
+		
 	<!--
 		<module>../org.fornax.cartridges.sculptor.dsl</module>
 		<module>../org.fornax.cartridges.sculptor.gui.dsl</module>
