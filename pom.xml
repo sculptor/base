@@ -11,7 +11,9 @@
 	<description>Aggregator project for all child modules.</description>
 	<modules>
 		<module>sculptor-parent</module>
+		
 		<module>sculptor-toolsupport-maven-plugin-oaw</module>
+		
 		<module>sculptor-archetype</module>
 		<module>sculptor-archetype-jsf</module>
 		<module>sculptor-archetype-ear</module>
@@ -21,6 +23,8 @@
 		<module>sculptor-archetype-pure-ejb3</module>
 		<module>sculptor-archetype-smartclient</module>
 		<module>sculptor-archetype-mongodb</module>
+		
+		<module>sculptor-framework</module>
 	<!--
 		<module>../org.fornax.cartridges.sculptor.dsl</module>
 		<module>../org.fornax.cartridges.sculptor.gui.dsl</module>

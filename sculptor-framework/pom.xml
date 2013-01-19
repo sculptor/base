@@ -1,16 +1,17 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<parent>
-		<groupId>org.fornax.cartridges</groupId>
-		<artifactId>fornax-cartridges-sculptor-parent</artifactId>
-		<version>2.2.0-SNAPSHOT</version>
-		<relativePath>../fornax-cartridges-sculptor-parent/</relativePath>
-	</parent>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.fornax.cartridges</groupId>
-	<artifactId>fornax-cartridges-sculptor-framework</artifactId>
-	<name>Fornax Cartridge: Sculptor Runtime Framework</name>
+	<parent>
+		<groupId>org.sculptor</groupId>
+		<artifactId>sculptor-parent</artifactId>
+		<version>3.5</version>
+		<relativePath>../sculptor-parent/</relativePath>
+	</parent>
+	<version>2.3.0-SNAPSHOT</version>
+	<artifactId>sculptor-framework</artifactId>
+	<name>Sculptor Runtime Framework</name>
 	<description></description>
+	<packaging>jar</packaging>
 	<properties>
 		<spring.version>3.0.4.RELEASE</spring.version>
 		<hibernate.version>3.5.5-Final</hibernate.version>
@@ -74,12 +75,6 @@
 		</plugins>
 	</build>
 	<dependencies>
-<!--		<dependency>-->
-<!--			<groupId>org.eclipse.persistence</groupId>-->
-<!--			<artifactId>javax.persistence</artifactId>-->
-<!--			<version>2.0.0</version>-->
-<!--			<scope>provided</scope>-->
-<!--		</dependency>-->
 		<dependency>
 	    	<groupId>org.hibernate.javax.persistence</groupId>
 	    	<artifactId>hibernate-jpa-2.0-api</artifactId>
@@ -158,16 +153,10 @@
 			<version>3.2.3</version>
 			<scope>provided</scope>
 		</dependency>
-<!--		<dependency>-->
-<!--			<groupId>javaee</groupId>-->
-<!--			<artifactId>javaee-api</artifactId>-->
-<!--			<version>5</version>-->
-<!--			<scope>provided</scope>-->
-<!--		</dependency>-->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.8.1</version>
+			<version>${version.junit}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -291,10 +280,4 @@
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
-<!--	<repositories>-->
-<!--		<repository>-->
-<!--		    <id>EclipseLink Repo</id>-->
-<!--		    <url>http://www.eclipse.org/downloads/download.php?r=1&amp;nf=1&amp;file=/rt/eclipselink/maven.repo</url>-->
-<!--		</repository>-->
-<!--	</repositories>-->
 </project>
