@@ -17,9 +17,6 @@
 		<module>sculptor-utilities</module>
 		
 		<module>sculptor-framework</module>
-		<module>sculptor-framework-test</module>
-		<module>sculptor-framework-web</module>
-		<module>sculptor-framework-mongodb</module>
 		
 	<!--
 		<module>../org.fornax.cartridges.sculptor.dsl</module>
