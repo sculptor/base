@@ -5,11 +5,11 @@
 		<groupId>org.sculptor</groupId>
 		<artifactId>sculptor-parent</artifactId>
 		<version>3.5</version>
-		<relativePath>../sculptor-parent/</relativePath>
+		<relativePath>../../sculptor-parent/</relativePath>
 	</parent>
 	<version>2.3.0-SNAPSHOT</version>
-	<artifactId>sculptor-archetype-mongodb</artifactId>
-	<name>Sculptor Maven Archetype for mongoDB business tier</name>
+	<artifactId>sculptor-archetype-parent</artifactId>
+	<name>Sculptor Maven Archetype for parent project</name>
 	<description></description>
   	<packaging>maven-archetype</packaging>
     <build>

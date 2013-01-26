@@ -8,6 +8,16 @@
 	<name>Sculptor Maven Suite</name>
 	<description>Aggregator project for all maven modules.</description>
 	<modules>
+		<module>sculptor-archetype</module>
+		<module>sculptor-archetype-jsf</module>
+		<module>sculptor-archetype-ear</module>
+		<module>sculptor-archetype-parent</module>
+		<module>sculptor-archetype-standalone</module>
+		<module>sculptor-archetype-appengine</module>
+		<module>sculptor-archetype-pure-ejb3</module>
+		<module>sculptor-archetype-smartclient</module>
+		<module>sculptor-archetype-mongodb</module>
+		
 		<module>sculptor-maven-plugin-checksum</module>
 		<module>sculptor-maven-plugin-graphviz</module>
 		<module>sculptor-maven-plugin-oaw</module>

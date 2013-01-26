@@ -15,16 +15,6 @@
 		<module>sculptor-maven</module>
 		<module>sculptor-eclipse</module>
 		
-		<module>sculptor-archetype</module>
-		<module>sculptor-archetype-jsf</module>
-		<module>sculptor-archetype-ear</module>
-		<module>sculptor-archetype-parent</module>
-		<module>sculptor-archetype-standalone</module>
-		<module>sculptor-archetype-appengine</module>
-		<module>sculptor-archetype-pure-ejb3</module>
-		<module>sculptor-archetype-smartclient</module>
-		<module>sculptor-archetype-mongodb</module>
-		
 		<module>sculptor-framework</module>
 		<module>sculptor-framework-test</module>
 		<module>sculptor-framework-web</module>

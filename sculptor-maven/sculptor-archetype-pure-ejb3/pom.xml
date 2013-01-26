@@ -5,13 +5,13 @@
 		<groupId>org.sculptor</groupId>
 		<artifactId>sculptor-parent</artifactId>
 		<version>3.5</version>
-		<relativePath>../sculptor-parent/</relativePath>
+		<relativePath>../../sculptor-parent/</relativePath>
 	</parent>
 	<version>2.3.0-SNAPSHOT</version>
-	<artifactId>sculptor-archetype-jsf</artifactId>
-	<name>Sculptor Maven Archetype for JSF web app</name>
+	<artifactId>sculptor-archetype-pure-ejb3</artifactId>
+	<name>Sculptor Maven Archetype for pure EJB3</name>
 	<description></description>
-	<packaging>maven-archetype</packaging>
+  	<packaging>maven-archetype</packaging>
     <build>
         <extensions>
             <extension>
