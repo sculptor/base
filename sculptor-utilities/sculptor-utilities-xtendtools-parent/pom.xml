@@ -1,24 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<parent>
-		<groupId>org.fornax</groupId>
-		<artifactId>fornax-parent</artifactId>
-		<version>3.3</version>
-	</parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.fornax.utilities</groupId>
-	<artifactId>fornax-utilities-xtendtools-parent</artifactId>
-	<version>1.0.1</version>
+	<parent>
+		<groupId>org.sculptor</groupId>
+		<artifactId>sculptor-parent</artifactId>
+		<version>3.5</version>
+		<relativePath>../../sculptor-parent</relativePath>
+	</parent>
+	<groupId>org.sculptor</groupId>
+	<artifactId>sculptor-utilities-xtendtools-parent</artifactId>
+	<version>3.5</version>
+	<name>Sculptor Xtend-Tools Parent</name>
 	<packaging>pom</packaging>
-	<name>Fornax Xtend-Tools parent project</name>
-
-	<description>
-
-	</description>
-
 	<properties>
 		<projectId>FXT</projectId>
 		<projectPID>10120</projectPID>
@@ -26,12 +19,6 @@
 		<category>utilities</category>
 		<scm-url-suffix>${category}/${projectName}</scm-url-suffix>
 	</properties>
-
-	<modules>
-		<module>../fornax-utilities-xtendtools-generator</module>
-		<module>../fornax-utilities-xtendtools-reference</module>
-	</modules>
-
 	<developers>
 		<developer>
 			<id>ingof</id>
@@ -59,7 +46,6 @@
 			<timezone>+1</timezone>
 		</developer>
 	</developers>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.eclipse.m2t.xpand</groupId>
@@ -79,48 +65,42 @@
 			<version>2.5.0</version>
 		</dependency>
 		<dependency>
-      		<groupId>org.eclipse.xtext</groupId>
-     		<artifactId>xtext-core</artifactId> 
-     		<scope>provided</scope>    
-      		<version>0.7.2</version>
-    	</dependency>
-    	
-    	<dependency>
-      		<groupId>org.eclipse.m2t.xpand</groupId>
-      		<artifactId>m2t-xpand-xtend-util-stdlib</artifactId>     
-      		<scope>provided</scope>
-      		<version>0.7.2</version>
-    	</dependency>
-    	
-    	<dependency>
-    		<groupId>commons-io</groupId>
-    		<artifactId>commons-io</artifactId>
-    		<version>1.4</version>
-    		<type>jar</type>
-    		<scope>compile</scope>
-    	</dependency>
+			<groupId>org.eclipse.xtext</groupId>
+			<artifactId>xtext-core</artifactId>
+			<scope>provided</scope>
+			<version>0.7.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.m2t.xpand</groupId>
+			<artifactId>m2t-xpand-xtend-util-stdlib</artifactId>
+			<scope>provided</scope>
+			<version>0.7.2</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>1.4</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
 	</dependencies>
-
 	<build>
 		<finalName>
-			fornax-utilities-xtendtools-${project.version}
+			sculptor-utilities-xtendtools-${project.version}
 		</finalName>
 		<plugins>
 			<plugin>
 				<groupId>com.google.code.maven-license-plugin</groupId>
 				<artifactId>maven-license-plugin</artifactId>
 				<version>1.4.0</version>
-				<!--
-					see
-					http://code.google.com/p/maven-license-plugin/wiki/Configuration
-				-->
+				<!-- see http://code.google.com/p/maven-license-plugin/wiki/Configuration -->
 				<configuration>
 					<aggregate>true</aggregate>
 					<header>src/etc/license/header.txt</header>
 					<mapping>
 						<ext>JAVADOC_STYLE</ext>
 					</mapping>
- 					<includes>
+					<includes>
 						<include>src/main/java/**</include>
 						<include>src/main/groovy/**</include>
 						<include>src/main/resources/**/*.ext</include>
@@ -132,7 +112,7 @@
 							<firstLine>/*</firstLine>
 							<beforeEachLine> * </beforeEachLine>
 							<endLine> */</endLine>
-							<!--skipLine></skipLine-->
+							<!--skipLine></skipLine -->
 							<firstLineDetectionPattern>(\s|\t)*/\*.*$</firstLineDetectionPattern>
 							<lastLineDetectionPattern>.*\*/(\s|\t)*$</lastLineDetectionPattern>
 							<allowBlankLines>false</allowBlankLines>
@@ -143,19 +123,4 @@
 			</plugin>
 		</plugins>
 	</build>
-	
-	<repositories>
-		<repository>
-			<id>public.fornax-platform.org</id>
-			<name>Fornax Public Repository</name>
-			<url>http://fornax-platform.org/nexus/content/groups/public</url>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>public.fornax-platform.org</id>
-			<name>Fornax Public Repository</name>
-			<url>http://fornax-platform.org/nexus/content/groups/public</url>
-		</pluginRepository>
-	</pluginRepositories>
 </project>
