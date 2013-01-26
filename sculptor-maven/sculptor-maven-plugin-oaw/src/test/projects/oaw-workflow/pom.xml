@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.sculptor</groupId>
+		<artifactId>sculptor-parent</artifactId>
+		<version>3.6</version>
+		<relativePath>../../../../../../sculptor-parent</relativePath>
+	</parent>
+	<artifactId>sculptor-maven-plugin-oaw-test-workflow</artifactId>
+    <packaging>jar</packaging>
+    <dependencies>
+        <dependency>
+            <groupId>org.fornax.cartridges</groupId>
+            <artifactId>fornax-cartridges-uml2-javabasic-generator</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.fornax.openarchitectureware</groupId>
+            <artifactId>oaw-uml2</artifactId>
+            <version>4.3.1</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>sculptor-maven-plugin-oaw</artifactId>
+                <version>${project.version}</version>
+                <configuration>
+                    <workflowEngine>oaw</workflowEngine>
+                    <workflowDescriptor>workflow.oaw</workflowDescriptor>
+                    <timestampFileName>oaw-generation-lastrun.timestamp</timestampFileName>
+                    <outletSrcDir>${project.build.directory}/generated-sources/fornax-workflow</outletSrcDir>
+                    <!-- <outletResDir>${project.build.directory}/generated-resources/fornax-workflow</outletResDir> -->
+                    <!-- <defaultOawResourceDir>${basedir}/src/test/oaw-generator</defaultOawResourceDir> -->
+                    <checkFilesets>
+                        <checkFileset>
+                            <directory>${basedir}/src/test/oaw-generator/model</directory>
+                            <includes>
+                                <include>*.uml</include>
+                            </includes>
+                        </checkFileset>
+                    </checkFilesets>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
