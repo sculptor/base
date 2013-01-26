@@ -9,6 +9,7 @@
 	</parent>
 	<version>2.3.0-SNAPSHOT</version>
 	<artifactId>org.sculptor.eclipse.m2e.plugin</artifactId>
+	<name>Sculptor M2E Connector - Plugin</name>
 	<packaging>eclipse-plugin</packaging>
 	<build>
 		<plugins>
