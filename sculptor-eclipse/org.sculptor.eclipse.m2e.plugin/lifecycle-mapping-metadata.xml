@@ -4,7 +4,7 @@
 		<pluginExecution>
 			<pluginExecutionFilter>
 				<groupId>org.sculptor</groupId>
-				<artifactId>sculptor-toolsupport-maven-plugin-oaw</artifactId>
+				<artifactId>sculptor-maven-plugin-oaw</artifactId>
 				<versionRange>[1.0.0,)</versionRange>
 				<goals>
 					<goal>run-workflow</goal>
@@ -13,14 +13,14 @@
 			</pluginExecutionFilter>
 			<action>
 				<configurator>
-					<id>org.fornax.toolsupport.eclipse.m2e.plugin.workflowConfigurator</id>
+					<id>org.sculptor.eclipse.m2e.plugin.workflowConfigurator</id>
 				</configurator>
 			</action>
 		</pluginExecution>
 		<pluginExecution>
 			<pluginExecutionFilter>
-				<groupId>org.fornax.toolsupport</groupId>
-				<artifactId>sculptor-maven-plugin</artifactId>
+				<groupId>org.sculptor</groupId>
+				<artifactId>sculptor-maven-plugin-sculptor</artifactId>
 				<versionRange>[1.0.0,)</versionRange>
 				<goals>
 					<goal>clean</goal>
@@ -30,14 +30,14 @@
 			</pluginExecutionFilter>
 			<action>
 				<configurator>
-					<id>org.fornax.toolsupport.eclipse.m2e.plugin.workflowConfigurator</id>
+					<id>org.sculptor.eclipse.m2e.plugin.workflowConfigurator</id>
 				</configurator>
 			</action>
 		</pluginExecution>
 		<pluginExecution>
 			<pluginExecutionFilter>
-				<groupId>org.fornax.toolsupport</groupId>
-				<artifactId>fornax-checksum-m2-plugin</artifactId>
+				<groupId>org.sculptor</groupId>
+				<artifactId>sculptor-maven-plugin-checksum</artifactId>
 				<versionRange>[1.0.0,)</versionRange>
 				<goals>
 					<goal>run</goal>
@@ -49,8 +49,8 @@
 		</pluginExecution>
 		<pluginExecution>
 			<pluginExecutionFilter>
-				<groupId>org.fornax.toolsupport</groupId>
-				<artifactId>fornax-graphviz-m2-plugin</artifactId>
+				<groupId>org.sculptor</groupId>
+				<artifactId>sculptor-maven-plugin-graphviz</artifactId>
 				<versionRange>[1.0.0,)</versionRange>
 				<goals>
 					<goal>run</goal>
