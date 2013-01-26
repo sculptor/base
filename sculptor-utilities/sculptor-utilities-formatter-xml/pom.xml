@@ -7,7 +7,6 @@
 		<version>3.5</version>
 		<relativePath>../../sculptor-parent</relativePath>
 	</parent>
-	<groupId>org.sculptor</groupId>
 	<artifactId>sculptor-utilities-formatter-xml</artifactId>
 	<version>2.3.0-SNAPSHOT</version>
 	<name>Sculptor XML Code Formatter</name>
