@@ -156,7 +156,8 @@ public class XpandUnit {
             throw new UnsupportedOperationException();
         }
         // for Xpand 1.0
-        public String getAbsolutePath() {
+        @SuppressWarnings("unused")
+		public String getAbsolutePath() {
         	throw new UnsupportedOperationException();
         }
     }

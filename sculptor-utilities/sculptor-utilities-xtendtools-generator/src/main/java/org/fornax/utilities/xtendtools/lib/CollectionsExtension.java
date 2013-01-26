@@ -63,7 +63,6 @@ public final class CollectionsExtension {
 	 * Inserts the element <tt>value</tt> at position <tt>index</tt> into the
 	 * list <tt>list</tt> and returns the modified list.
 	 */
-	@SuppressWarnings("unchecked")
 	public static List<Object> insert(final List<Object> list, final Integer index, final Object value) {
 		if (list instanceof EList) {
 			EList<Object> elist = (EList<Object>) list;

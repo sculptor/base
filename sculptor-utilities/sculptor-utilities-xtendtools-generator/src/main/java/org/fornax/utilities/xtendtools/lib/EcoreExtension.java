@@ -21,31 +21,34 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 
 /**
- * This class provides the implementations for the Java extensions defined in ecore.ext.
+ * This class provides the implementations for the Java extensions defined in
+ * ecore.ext.
  * 
  * @author Ingo Feltes
  */
 public final class EcoreExtension {
 
-    private EcoreExtension() {
-    }
+	private EcoreExtension() {
+	}
 
-    /**
-     * Recursively removes the model element from the model.
-     */
-    public static void delete(final EObject o) {
-        EcoreUtil.delete(o, true);
-    }
+	/**
+	 * Recursively removes the model element from the model.
+	 */
+	public static void delete(final EObject o) {
+		EcoreUtil.delete(o, true);
+	}
 
-    @SuppressWarnings("unchecked")
-    public static void replaceInContainer(final EObject search, final EObject replacement) {
-        EObject container = search.eContainer();
-        EStructuralFeature f = search.eContainingFeature();
-        if (f.isMany()) {
-            EList l = (EList) container.eGet(f);
-            l.set(l.indexOf(search), replacement);
-        } else {
-            container.eSet(f, replacement);
-        }
-    }
+	public static void replaceInContainer(final EObject search,
+			final EObject replacement) {
+		EObject container = search.eContainer();
+		EStructuralFeature f = search.eContainingFeature();
+		if (f.isMany()) {
+			@SuppressWarnings("unchecked")
+			EList<? super EObject> l = (EList<? super EObject>) container
+					.eGet(f);
+			l.set(l.indexOf(search), replacement);
+		} else {
+			container.eSet(f, replacement);
+		}
+	}
 }

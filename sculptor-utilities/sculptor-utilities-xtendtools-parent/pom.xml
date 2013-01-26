@@ -7,9 +7,7 @@
 		<version>3.5</version>
 		<relativePath>../../sculptor-parent</relativePath>
 	</parent>
-	<groupId>org.sculptor</groupId>
 	<artifactId>sculptor-utilities-xtendtools-parent</artifactId>
-	<version>3.5</version>
 	<name>Sculptor Xtend-Tools Parent</name>
 	<packaging>pom</packaging>
 	<properties>
