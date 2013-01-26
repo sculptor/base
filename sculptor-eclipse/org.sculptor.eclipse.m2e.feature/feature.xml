@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="org.fornax.toolsupport.m2e.feature"
+      id="org.sculptor.eclipse.m2e.feature"
       label="Fornax M2E Extensions"
-      version="1.0.2"
+      version="2.3.0.qualifier"
       provider-name="Fornax Platform">
 
    <description url="http://fornax-platform.org/">
@@ -33,7 +33,7 @@ and limitations under the License.
    </url>
 
    <plugin
-         id="org.fornax.toolsupport.m2e.connector"
+         id="org.sculptor.eclipse.m2e.plugin"
          download-size="0"
          install-size="0"
          version="0.0.0"

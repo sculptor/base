@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.fornax.toolsupport.m2e.connector;
+package org.sculptor.eclipse.m2e.plugin;
 
 import java.io.File;
 

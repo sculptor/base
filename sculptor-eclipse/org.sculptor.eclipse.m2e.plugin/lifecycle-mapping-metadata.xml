@@ -3,8 +3,8 @@
 	<pluginExecutions>
 		<pluginExecution>
 			<pluginExecutionFilter>
-				<groupId>org.fornax.toolsupport</groupId>
-				<artifactId>fornax-oaw-m2-plugin</artifactId>
+				<groupId>org.sculptor</groupId>
+				<artifactId>sculptor-toolsupport-maven-plugin-oaw</artifactId>
 				<versionRange>[1.0.0,)</versionRange>
 				<goals>
 					<goal>run-workflow</goal>
@@ -13,7 +13,7 @@
 			</pluginExecutionFilter>
 			<action>
 				<configurator>
-					<id>org.fornax.toolsupport.m2e.connector.workflowConfigurator</id>
+					<id>org.fornax.toolsupport.eclipse.m2e.plugin.workflowConfigurator</id>
 				</configurator>
 			</action>
 		</pluginExecution>
@@ -30,7 +30,7 @@
 			</pluginExecutionFilter>
 			<action>
 				<configurator>
-					<id>org.fornax.toolsupport.m2e.connector.workflowConfigurator</id>
+					<id>org.fornax.toolsupport.eclipse.m2e.plugin.workflowConfigurator</id>
 				</configurator>
 			</action>
 		</pluginExecution>

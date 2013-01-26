@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.fornax.toolsupport.m2e.connector;
+package org.sculptor.eclipse.m2e.plugin;
 
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.plugin.AbstractUIPlugin;

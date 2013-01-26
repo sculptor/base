@@ -7,8 +7,8 @@
    <extension
          point="org.eclipse.m2e.core.projectConfigurators">
       <configurator
-            class="org.fornax.toolsupport.m2e.connector.WorkflowProjectConfigurator"
-            id="org.fornax.toolsupport.m2e.connector.workflowConfigurator"
+            class="org.sculptor.eclipse.m2e.plugin.WorkflowProjectConfigurator"
+            id="org.sculptor.eclipse.m2e.plugin.workflowConfigurator"
             name="Fornax Code Generator">
       </configurator>
    </extension>
