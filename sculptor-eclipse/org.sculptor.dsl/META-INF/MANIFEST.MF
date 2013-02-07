@@ -1,35 +1,34 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Sculptor DSL Plug-in
-Bundle-Vendor: Fornax Sculptor
-Bundle-Version: 2.2.0.0
-Bundle-SymbolicName: org.fornax.cartridges.sculptor.dsl; singleton:=true
+Bundle-Name: org.sculptor.dsl
+Bundle-Vendor: Sculptor Team
+Bundle-Version: 2.3.0.qualifier
+Bundle-SymbolicName: org.sculptor.dsl;singleton:=true
 Bundle-ActivationPolicy: lazy
-Require-Bundle: org.eclipse.xtext;bundle-version="1.0.1",
- org.eclipse.xtext.generator;bundle-version="1.0.1";resolution:=optional,
- de.itemis.xtext.antlr;bundle-version="1.0.1";resolution:=optional,
- org.apache.commons.logging;resolution:=optional,
- org.eclipse.emf.codegen.ecore;bundle-version="[2.6.0,3.0.0)";resolution:=optional,
- org.eclipse.emf.mwe.utils;bundle-version="[1.0.0,2.0.0)";resolution:=optional,
- com.ibm.icu;resolution:=optional,
- org.eclipse.xtext.xtend;bundle-version="1.0.1";resolution:=optional,
- org.eclipse.xtext.util;bundle-version="1.0.1",
- org.eclipse.emf.ecore;bundle-version="[2.6.0,3.0.0)",
- org.eclipse.emf.common;bundle-version="[2.6.0,3.0.0)",
- org.antlr.runtime;bundle-version="[3.0.0,4.0.0)",
- org.eclipse.xtend;bundle-version="1.0.1",
- org.apache.log4j,
- org.eclipse.emf.mwe2.launch;bundle-version="[1.0.0,2.0.0)";resolution:=optional
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
-Export-Package: org.fornax.cartridges.sculptor.dsl,
- org.fornax.cartridges.sculptor.dsl.formatting,
- org.fornax.cartridges.sculptor.dsl.scoping,
- org.fornax.cartridges.sculptor.dsl.validation,
- org.fornax.cartridges.sculptor.dsl.services,
- org.fornax.cartridges.sculptor.dsl.sculptordsl,
- org.fornax.cartridges.sculptor.dsl.sculptordsl.impl,
- org.fornax.cartridges.sculptor.dsl.sculptordsl.util,
- org.fornax.cartridges.sculptor.dsl.parseTreeConstruction,
- org.fornax.cartridges.sculptor.dsl.parser.antlr,
- org.fornax.cartridges.sculptor.dsl.parser.antlr.internal
-Import-Package: org.apache.log4j
+Require-Bundle: org.eclipse.xtext;bundle-version="2.0.0";visibility:=reexport,
+ org.eclipse.xtext.xbase;resolution:=optional;visibility:=reexport,
+ org.eclipse.xtext.generator;resolution:=optional,
+ org.apache.commons.logging;bundle-version="1.0.4";resolution:=optional,
+ org.eclipse.emf.codegen.ecore;resolution:=optional,
+ org.eclipse.emf.mwe.utils;resolution:=optional,
+ org.eclipse.emf.mwe2.launch;resolution:=optional,
+ org.eclipse.xtext.util,
+ org.antlr.runtime,
+ org.eclipse.xtext.common.types,
+ org.eclipse.emf.ecore;bundle-version="2.6.0",
+ org.eclipse.emf.common
+Import-Package: org.apache.log4j,
+ org.eclipse.xtext.xbase.lib
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: org.sculptor.dsl,
+ org.sculptor.dsl.formatting,
+ org.sculptor.dsl.parser.antlr,
+ org.sculptor.dsl.parser.antlr.internal,
+ org.sculptor.dsl.scoping,
+ org.sculptor.dsl.sculptordsl,
+ org.sculptor.dsl.sculptordsl.impl,
+ org.sculptor.dsl.sculptordsl.util,
+ org.sculptor.dsl.serializer,
+ org.sculptor.dsl.services,
+ org.sculptor.dsl.validation
+

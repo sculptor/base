@@ -1,0 +1,58 @@
+/*
+ * This check file is used to specify constraints for the derived metamodels.
+ * They will be executed by the editor when the user saves a file.
+ * At generation time they will be executed as well.
+ *
+ */
+
+import sculptordsl;
+
+extension org::fornax::cartridges::sculptor::dsl::Extensions;
+extension org::fornax::cartridges::sculptor::dsl::ModelLoadExtensions;
+
+
+// check for duplicate names
+context DslSimpleDomainObject#name if name != null
+       ERROR "Duplicate name.  There is already an existing Domain Object named '" + name + "'." :
+       this.domainObjectsForName().size <= 1;
+
+context DslService#name if name != null
+       ERROR "Duplicate name.  There is already an existing Service named '" + name + "'." :
+       this.objectsWithSameTypeAndName().size <= 1;
+
+context DslRepository#name if name != null
+       ERROR "Duplicate name.  There is already an existing Repository named '" + name + "'." :
+       this.objectsWithSameTypeAndName().size <= 1;
+
+context DslModule#name if name != null
+       ERROR "Duplicate name.  There is already an existing Module named '" + name + "'." :
+       this.objectsWithSameTypeAndName().size <= 1;
+
+context DslApplication#name if name != null
+       ERROR "Duplicate name.  There is already an existing Application/ApplicationPart named '" + name + "'." :
+       this.objectsWithSameTypeAndName().size <= 1;
+
+context DslAttribute if type != null && collectionType == DslCollectionType::None
+	WARNING "Use - " + type :
+	this.domainObjectsForAttributeType().size == 0;
+	
+context DslAttribute if type != null && collectionType != DslCollectionType::None
+	WARNING "Use - " + collectionType + "<" + type + ">" :
+	this.domainObjectsForAttributeType().size == 0;
+	
+context DslServiceOperation#returnType if returnType != null && returnType.domainObjectType == null && returnType.type != null
+	WARNING "Use @" + returnType.type :
+	this.returnType.domainObjectsForType().size == 0;
+	
+context DslRepositoryOperation#returnType if returnType != null && returnType.domainObjectType == null && returnType.type != null
+	WARNING "Use @" + returnType.type :
+	this.returnType.domainObjectsForType().size == 0;
+	
+context DslParameter#parameterType if parameterType != null && parameterType.domainObjectType == null && parameterType.type != null
+	WARNING "Use @" + parameterType.type :
+	this.parameterType.domainObjectsForType().size == 0;
+	
+
+
+
+

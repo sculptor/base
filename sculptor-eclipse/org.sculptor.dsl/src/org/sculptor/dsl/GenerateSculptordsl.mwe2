@@ -1,0 +1,163 @@
+/*
+ * Copyright 2013 The Sculptor Project Team, including the original 
+ * author or authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module org.sculptor.dsl.GenerateSculptordsl
+
+import org.eclipse.emf.mwe.utils.*
+import org.eclipse.xtext.generator.*
+import org.eclipse.xtext.ui.generator.*
+
+var grammarURI = "classpath:/org/sculptor/dsl/Sculptordsl.xtext"
+var file.extensions = "btdesign"
+var projectName = "org.sculptor.dsl"
+var runtimeProject = "../${projectName}"
+
+Workflow {
+	bean = StandaloneSetup {
+		platformUri = "${runtimeProject}/.."
+		// The following two lines can be removed, if Xbase is not used.
+//		registerGeneratedEPackage = "org.eclipse.xtext.xbase.XbasePackage"
+//		registerGenModelFile = "platform:/resource/org.eclipse.xtext.xbase/model/Xbase.genmodel"
+	}
+
+	component = DirectoryCleaner {
+		directory = "${runtimeProject}/src-gen"
+	}
+
+	component = DirectoryCleaner {
+		directory = "${runtimeProject}.ui/src-gen"
+	}
+
+	component = Generator {
+		pathRtProject = runtimeProject
+		pathUiProject = "${runtimeProject}.ui"
+		pathTestProject = "${runtimeProject}.tests"
+		projectNameRt = projectName
+		projectNameUi = "${projectName}.ui"
+		language = {
+			uri = grammarURI
+			fileExtensions = file.extensions
+
+			// Java API to access grammar elements (required by several other fragments)
+			fragment = grammarAccess.GrammarAccessFragment {}
+
+			// generates Java API for the generated EPackages
+			fragment = ecore.EcoreGeneratorFragment {
+//				referencedGenModels = "
+//					platform:/resource/org.eclipse.xtext.xbase/model/Xbase.genmodel,
+//					platform:/resource/org.eclipse.xtext.common.types/model/JavaVMTypes.genmodel
+//				"
+			}
+
+			// Serializer 2.0
+			fragment = serializer.SerializerFragment {
+				generateStub = false
+			}
+
+			// the serialization component (1.0)
+//			fragment = parseTreeConstructor.ParseTreeConstructorFragment {}
+
+			// a custom ResourceFactory for use with EMF
+			fragment = resourceFactory.ResourceFactoryFragment {
+				fileExtensions = file.extensions
+			}
+
+			// The antlr parser generator fragment.
+			fragment = parser.antlr.XtextAntlrGeneratorFragment {
+//				options = {
+//					backtrack = true
+//				}
+			}
+
+			// the Ecore2Xtext specific terminal converter
+			fragment = ecore2xtext.Ecore2XtextValueConverterServiceFragment {}
+
+			// java-based API for validation
+			fragment = validation.JavaValidatorFragment {
+				// add additional validators
+				composedCheck = "org.eclipse.xtext.validation.ImportUriValidator"
+				composedCheck = "org.eclipse.xtext.validation.NamesAreUniqueValidator"
+			}
+
+			// scoping and exporting API
+//			fragment = scoping.ImportNamespacesScopingFragment {}
+			fragment = scoping.ImportURIScopingFragment {
+				generateStub=true
+ 			}
+
+//			fragment = exporting.QualifiedNamesFragment {}
+			fragment = exporting.SimpleNamesFragment {}
+			fragment = builder.BuilderIntegrationFragment {}
+
+			// generator API
+//			fragment = generator.GeneratorFragment {
+//				generateMwe = true
+//				generateJavaMain = true
+//			}
+
+			// formatter API
+			fragment = formatting.FormatterFragment {}
+
+			// labeling API
+			fragment = labeling.LabelProviderFragment {}
+
+			// outline API
+			fragment = outline.OutlineTreeProviderFragment {}
+			fragment = outline.QuickOutlineFragment {}
+
+            // quickfix API
+            fragment = quickfix.QuickfixProviderFragment {}
+
+            // content assist API
+            fragment = contentAssist.JavaBasedContentAssistFragment {}
+
+            // generates a more lightweight Antlr parser and lexer tailored for content assist
+			// antlr parser generator tailored for content assist 
+			fragment = parser.antlr.XtextAntlrUiGeneratorFragment {
+				options = {
+					classSplitting = true
+				}
+			}
+
+            // generates junit test support classes into Generator#pathTestProject
+            fragment = junit.Junit4Fragment {}
+
+            // project wizard (optional)
+            fragment = projectWizard.SimpleProjectWizardFragment {
+                 generatorProjectName = "${projectName}"
+                 modelFileExtension = file.extensions
+            }
+
+            // rename refactoring
+            fragment = refactoring.RefactorElementNameFragment {}
+
+            // provides the necessary bindings for java types integration
+            fragment = types.TypesGeneratorFragment {}
+
+			// generates the required bindings only if the grammar inherits from Xbase
+//			fragment = xbase.XbaseGeneratorFragment {}
+
+			// provides a preference page for template proposals
+			fragment = templates.CodetemplatesGeneratorFragment {}
+
+			// provides a compare view
+			fragment = compare.CompareFragment {
+				fileExtensions = file.extensions
+			}
+		}
+	}
+}
