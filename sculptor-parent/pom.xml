@@ -164,24 +164,34 @@
 	</scm>
 	<distributionManagement>
 		<repository>
-			<id>releases.fornax-platform.org</id>
-			<name>Fornax Release Repository</name>
-			<url>dav:http://fornax-platform.org/nexus/content/repositories/releases/
-			</url>
+			<id>vci-nexus</id>
+			<name>vci-nexus</name>
+			<url>http://vci/nexus/content/repositories/releases</url>
 		</repository>
 		<snapshotRepository>
-			<id>snapshots.fornax-platform.org</id>
-			<name>Fornax Snapshot Repository</name>
-			<url>
-				dav:http://fornax-platform.org/nexus/content/repositories/snapshots/
-			</url>
+			<id>vci-nexus</id>
+			<name>vci-nexus</name>
+			<url>http://vci/nexus/content/repositories/snapshots</url>
 		</snapshotRepository>
-		<site>
-			<id>deploy.fornax-platform.org</id>
-			<url>
-				scp://${sfuser}@shell.sf.net:/home/groups/f/fo/fornax/htdocs/${projectId}/
-			</url>
-		</site>
+		<!-- <repository> -->
+		<!-- <id>releases.fornax-platform.org</id> -->
+		<!-- <name>Fornax Release Repository</name> -->
+		<!-- <url>dav:http://fornax-platform.org/nexus/content/repositories/releases/ -->
+		<!-- </url> -->
+		<!-- </repository> -->
+		<!-- <snapshotRepository> -->
+		<!-- <id>snapshots.fornax-platform.org</id> -->
+		<!-- <name>Fornax Snapshot Repository</name> -->
+		<!-- <url> -->
+		<!-- dav:http://fornax-platform.org/nexus/content/repositories/snapshots/ -->
+		<!-- </url> -->
+		<!-- </snapshotRepository> -->
+		<!-- <site> -->
+		<!-- <id>deploy.fornax-platform.org</id> -->
+		<!-- <url> -->
+		<!-- scp://${sfuser}@shell.sf.net:/home/groups/f/fo/fornax/htdocs/${projectId}/ -->
+		<!-- </url> -->
+		<!-- </site> -->
 	</distributionManagement>
 	<build>
 		<extensions>
@@ -373,14 +383,6 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-shade-plugin</artifactId>
 					<version>2.0</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-deploy-plugin</artifactId>
-					<version>2.7</version>
-					<configuration>
-						<skip>true</skip>
-					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>

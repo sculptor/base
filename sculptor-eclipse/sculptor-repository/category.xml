@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+	<category-def name="sculptor-m2e" label="Sculptor M2E connectors"/>
+	<feature url="features/org.sculptor.eclipse.m2e.feature_2.3.0.qualifier.jar" id="org.sculptor.eclipse.m2e.feature" version="2.3.0.qualifier">
+		<category name="org.sculptor.eclipse.m2e"/>
+	</feature>
+
+	<!-- <category-def name="sculptor-dsl" label="Sculptor DSL Editor"/> -->
+	<!-- <feature url="features/org.sculptor.dsl.feature_3.0.0.qualifier.jar" id="org.sculptor.dsl.feature" version="3.0.0.qualifier"> -->
+	<!-- <category name="sculptor-dsl"/> -->
+	<!-- </feature> -->
+</site>
