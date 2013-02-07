@@ -1,8 +1,12 @@
+# Binary files
 *.class
-
-# Package Files #
 *.jar
 *.war
 *.ear
 
+# Generated source directories
+src-gen/
+xtend-gen/
+
+# Maven build directories
 target/
