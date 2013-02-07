@@ -8,5 +8,8 @@
 src-gen/
 xtend-gen/
 
+# Generated source files
+plugin.xml_gen
+
 # Maven build directories
 target/
