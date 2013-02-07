@@ -112,13 +112,11 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>${version.junit}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
-			<version>1.8.0</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -145,7 +143,6 @@
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
-			<version>1.2.14</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
