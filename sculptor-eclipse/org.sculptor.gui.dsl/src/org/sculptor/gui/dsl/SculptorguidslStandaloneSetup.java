@@ -1,5 +1,5 @@
 
-package org.fornax.cartridges.sculptor.gui.dsl;
+package org.sculptor.gui.dsl;
 
 /**
  * Initialization support for running Xtext languages 

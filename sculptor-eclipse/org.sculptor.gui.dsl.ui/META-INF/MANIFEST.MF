@@ -11,12 +11,22 @@ Require-Bundle: org.eclipse.ui.editors,
  org.antlr.runtime,
  org.fornax.cartridges.sculptor.gui.dsl;bundle-version="2.0.0",
  org.eclipse.xtext.ui.shared,
- org.eclipse.xtext.ui
+ org.eclipse.xtext.ui,
+ org.eclipse.xtext.builder,
+ org.eclipse.core.runtime,
+ org.eclipse.core.resources,
+ org.eclipse.xtend,
+ org.eclipse.xpand,
+ org.eclipse.xtext.common.types.ui,
+ org.eclipse.xtext.ui.codetemplates.ui,
+ org.eclipse.compare
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Export-Package: org.fornax.cartridges.sculptor.gui.dsl.ui,
  org.fornax.cartridges.sculptor.gui.dsl.ui.contentassist,
  org.fornax.cartridges.sculptor.gui.dsl.ui.labeling,
  org.fornax.cartridges.sculptor.gui.dsl.ui.outline,
- org.fornax.cartridges.sculptor.gui.dsl.ui.contentassist.antlr
+ org.fornax.cartridges.sculptor.gui.dsl.ui.contentassist.antlr,
+ org.sculptor.gui.dsl.ui.contentassist,
+ org.sculptor.gui.dsl.ui.contentassist.antlr
 Bundle-Activator: org.fornax.cartridges.sculptor.gui.dsl.ui.internal.SculptorguidslActivator
 Import-Package: org.apache.log4j

@@ -1,4 +1,4 @@
-package org.fornax.cartridges.sculptor.gui.dsl.validation;
+package org.sculptor.gui.dsl.validation;
  
 
 public class SculptorguidslJavaValidator extends AbstractSculptorguidslJavaValidator {
