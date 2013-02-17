@@ -12,7 +12,7 @@
 
   <extension point="org.eclipse.emf.ecore.generated_package">
     <package 
-       uri = "http://www.fornax-platform.org/sculptor" 
+       uri = "http://sculptor.org/sculptor" 
        class = "sculptormetamodel.SculptormetamodelPackage"
        genModel = "model/sculptormetamodel.genmodel" /> 
   </extension>

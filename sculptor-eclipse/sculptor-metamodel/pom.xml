@@ -8,9 +8,9 @@
 		<relativePath>../../sculptor-parent/</relativePath>
 	</parent>
 	<artifactId>sculptor-metamodel</artifactId>
-	<name>Sculptor Metamodel</name>
+		<packaging>eclipse-plugin</packaging>
+	<name>Sculptor :: Metamodel</name>
 	<description></description>
-	<packaging>eclipse-plugin</packaging>
 	<build>
 		<plugins>
 			<plugin>
@@ -24,6 +24,13 @@
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>
 				<artifactId>tycho-source-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.fornax.toolsupport</groupId>
+				<artifactId>fornax-oaw-m2-plugin</artifactId>
+				<configuration>
+					<workflowDescriptor>model/GenerateMetaModel.mwe2</workflowDescriptor>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
