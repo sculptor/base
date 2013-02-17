@@ -32,6 +32,10 @@
 				<artifactId>target-platform-configuration</artifactId>
 			</plugin>
 			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-source-plugin</artifactId>
+			</plugin>
+			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
 				<executions>
@@ -44,7 +48,6 @@
 						<configuration>
 							<sources>
 								<source>src-gen</source>
-								<source>xtend-gen</source>
 							</sources>
 						</configuration>
 					</execution>
@@ -58,10 +61,6 @@
 							<resources>
 								<resource>
 									<directory>src-gen</directory>
-									<targetPath>resources</targetPath>
-								</resource>
-								<resource>
-									<directory>xtend-gen</directory>
 									<targetPath>resources</targetPath>
 								</resource>
 							</resources>

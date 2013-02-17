@@ -78,9 +78,10 @@ Workflow {
 
 			// The antlr parser generator fragment.
 			fragment = parser.antlr.XtextAntlrGeneratorFragment {
-//				options = {
-//					backtrack = true
-//				}
+				options = {
+					backtrack = true 
+					classSplitting = true
+				}
 			}
 
 			// the Ecore2Xtext specific terminal converter
@@ -129,6 +130,7 @@ Workflow {
 			// antlr parser generator tailored for content assist 
 			fragment = parser.antlr.XtextAntlrUiGeneratorFragment {
 				options = {
+					backtrack = true 
 					classSplitting = true
 				}
 			}

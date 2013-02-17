@@ -106,15 +106,17 @@
 		<projectPID>10050</projectPID>
 		<projectName>Sculptor</projectName>
 		<category>cartridges/sculptor</category>
-		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
-
-		<tycho-version>0.16.0</tycho-version>
 		
-		<junit-version>4.11</junit-version>
-
-		<fornax-oaw-m2.version>3.2.3</fornax-oaw-m2.version>
+		<maven-version>3.0</maven-version>
+		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
+		
+		<eclipse-release>juno</eclipse-release>
+		<tycho-version>0.16.0</tycho-version>
+		<fornax-oaw-m2.version>3.4.0</fornax-oaw-m2.version>
+		<xtext-version>2.3.1</xtext-version>
 		<slf4j.version>1.6.4</slf4j.version>
-		<logback.version>1.0.0</logback.version>
+		<logback.version>1.0.7</logback.version>
+		<junit-version>4.11</junit-version>
 
 		<category/>
 		<!-- The URL components classifying the SCM URL <scm-url-prefix>trunk</scm-url-prefix> <scm-url-suffix>${category}</scm-url-suffix> -->
@@ -299,12 +301,52 @@
 					<version>${tycho-version}</version>
 					<configuration>
 						<resolver>p2</resolver>
+						<environments>
+							<environment>
+								<os>linux</os>
+								<ws>gtk</ws>
+								<arch>x86</arch>
+							</environment>
+							<environment>
+								<os>linux</os>
+								<ws>gtk</ws>
+								<arch>x86_64</arch>
+							</environment>
+							<environment>
+								<os>win32</os>
+								<ws>win32</ws>
+								<arch>x86</arch>
+							</environment>
+							<environment>
+								<os>win32</os>
+								<ws>win32</ws>
+								<arch>x86_64</arch>
+							</environment>
+							<environment>
+								<os>macosx</os>
+								<ws>cocoa</ws>
+								<arch>x86</arch>
+							</environment>
+							<environment>
+								<os>macosx</os>
+								<ws>cocoa</ws>
+								<arch>x86_64</arch>
+							</environment>
+						</environments>
 					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.eclipse.tycho</groupId>
 					<artifactId>tycho-source-plugin</artifactId>
 					<version>${tycho-version}</version>
+					<executions>
+						<execution>
+							<id>plugin-source</id>
+							<goals>
+								<goal>plugin-source</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
 				<plugin>
 					<groupId>org.eclipse.tycho</groupId>
@@ -406,7 +448,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-invoker-plugin</artifactId>
-					<version>1.8</version>
+					<version>1.6</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>

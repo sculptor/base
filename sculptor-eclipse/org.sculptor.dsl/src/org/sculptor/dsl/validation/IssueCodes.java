@@ -15,27 +15,18 @@
  * limitations under the License.
  */
 
-package org.sculptor.dsl.ui.labeling;
-
-import org.eclipse.xtext.ui.label.DefaultDescriptionLabelProvider;
+package org.sculptor.dsl.validation;
 
 /**
- * Provides labels for a IEObjectDescriptions and IResourceDescriptions.
- * 
- * see http://www.eclipse.org/Xtext/documentation/latest/xtext.html#labelProvider
+ * Constants for validation errors.
+ * <p>
+ * These constants are needed for Quick Fixes 
  */
-public class SculptordslDescriptionLabelProvider extends DefaultDescriptionLabelProvider {
+public class IssueCodes {
 
-/*
-	//Labels and icons can be computed like this:
-	
-	String text(IEObjectDescription ele) {
-	  return "my "+ele.getName();
-	}
-	 
-    String image(IEObjectDescription ele) {
-      return ele.getEClass().getName() + ".gif";
-    }	 
-*/
+	protected static final String ISSUE_CODE_PREFIX = "org.sculptor.dsl.validation.issue.";
+
+	public static final String CAPITALIZED_NAME = ISSUE_CODE_PREFIX + "capitalized_name";
+	public static final String UNCAPITALIZED_NAME = ISSUE_CODE_PREFIX + "uncapitalized_name";
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 The Fornax Project Team, including the original 
+ * Copyright 2013 The Sculptor Project Team, including the original 
  * author or authors.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,16 @@ package org.sculptor.dsl;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.sculptor.dsl.sculptordsl.DslApplication;
+import org.sculptor.dsl.sculptordsl.DslCommandEvent;
+import org.sculptor.dsl.sculptordsl.DslDataTransferObject;
+import org.sculptor.dsl.sculptordsl.DslDomainEvent;
+import org.sculptor.dsl.sculptordsl.DslDomainObject;
+import org.sculptor.dsl.sculptordsl.DslEntity;
+import org.sculptor.dsl.sculptordsl.DslModule;
+import org.sculptor.dsl.sculptordsl.DslSimpleDomainObject;
+import org.sculptor.dsl.sculptordsl.DslValueObject;
 
 /**
  * Java utilities for extension functions
