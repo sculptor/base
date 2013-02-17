@@ -10,6 +10,7 @@
 	<version>2.3.0-SNAPSHOT</version>
 	<artifactId>org.sculptor.gui.dsl</artifactId>
 	<packaging>eclipse-plugin</packaging>
+	<name>Sculptor :: Eclipse GUI DSL</name>
 	<description></description>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
