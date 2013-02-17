@@ -1,19 +1,17 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: %pluginName
-Bundle-SymbolicName: org.fornax.cartridges.sculptor.metamodel;singleton:=true
-Bundle-Version: 2.2.0.0
-Bundle-ClassPath: src/main/java/,
- .
-Bundle-Vendor: %providerName
-Bundle-Localization: plugin
+Bundle-Name: Sculptor Metamodel Plugin
+Bundle-Vendor: Fornax Sculptor
+Bundle-Version: 2.3.0.qualifier
+Bundle-SymbolicName: org.fornax.toolsupport.eclipse.sculptor.metamodel.plugin;singleton:=true
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.emf.ecore;visibility:=reexport
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: sculptorguimetamodel,
  sculptorguimetamodel.impl,
  sculptorguimetamodel.util,
  sculptormetamodel,
  sculptormetamodel.impl,
  sculptormetamodel.util
-Require-Bundle: org.eclipse.core.runtime,
- org.eclipse.emf.ecore;visibility:=reexport
-Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+
