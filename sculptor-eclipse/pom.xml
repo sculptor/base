@@ -21,6 +21,7 @@
 		<module>org.sculptor.dsl.ui</module>
 		<module>org.sculptor.dsl.feature</module>
 		<module>org.sculptor.gui.dsl</module>
+		<module>org.sculptor.gui.dsl.ui</module>
 		<module>sculptor-repository</module>
 	</modules>
 </project>

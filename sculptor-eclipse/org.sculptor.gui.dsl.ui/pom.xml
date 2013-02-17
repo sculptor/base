@@ -1,15 +1,16 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<parent>
-		<groupId>org.fornax.cartridges</groupId>
-		<artifactId>fornax-cartridges-sculptor-parent</artifactId>
-		<version>2.2.0-SNAPSHOT</version>
-		<relativePath>../fornax-cartridges-sculptor-parent/</relativePath>
-	</parent>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.fornax.cartridges</groupId>
-	<artifactId>org.fornax.cartridges.sculptor.gui.dsl.ui</artifactId>
-	<name>Fornax Cartridge: Sculptor Textual GUI DSL Editor</name>
+	<parent>
+		<groupId>org.sculptor</groupId>
+		<artifactId>sculptor-parent</artifactId>
+		<version>3.5</version>
+		<relativePath>../../sculptor-parent/</relativePath>
+	</parent>
+	<version>2.3.0-SNAPSHOT</version>
+	<artifactId>org.sculptor.gui.dsl.ui</artifactId>
+	<packaging>eclipse-plugin</packaging>
+	<name>Sculptor :: Eclipse GUI DSL Editor</name>
 	<description></description>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
@@ -23,9 +24,20 @@
 		</resources>
 		<plugins>
 			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>target-platform-configuration</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-source-plugin</artifactId>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.3.1</version>
 				<configuration>
 					<archive>
 						<manifestFile>
@@ -34,14 +46,39 @@
 					</archive>
 				</configuration>
 			</plugin>
-
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>src-gen</source>
+							</sources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>add-resource</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>add-resource</goal>
+						</goals>
+						<configuration>
+							<resources>
+								<resource>
+									<directory>src-gen</directory>
+									<targetPath>resources</targetPath>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
-	<dependencies>
-               <dependency>
-			<groupId>org.fornax.cartridges</groupId>
-			<artifactId>org.fornax.cartridges.sculptor.gui.dsl</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-        </dependencies>
 </project>
