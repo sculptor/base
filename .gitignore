@@ -13,3 +13,6 @@ plugin.xml_gen
 
 # Maven build directories
 target/
+
+# Generated eclipse project settings
+.settings/
