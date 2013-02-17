@@ -9,8 +9,8 @@
 		<relativePath>../sculptor-parent/</relativePath>
 	</parent>
 	<version>2.3.0-SNAPSHOT</version>
-	<artifactId>org.sculptor.eclipse.m2e.feature</artifactId>
-	<name>Sculptor M2E Connector - Feature</name>
+	<artifactId>org.sculptor.m2e.feature</artifactId>
+	<name>Sculptor :: M2E Connector Feature</name>
 	<packaging>eclipse-feature</packaging>
 	<build>
 		<plugins>

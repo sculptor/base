@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.sculptor.eclipse.m2e.plugin;
+package org.sculptor.m2e;
 
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
@@ -27,7 +27,7 @@ import org.osgi.framework.BundleContext;
 public class Activator extends AbstractUIPlugin {
 
 	// The plug-in ID
-	public static final String PLUGIN_ID = "org.fornax.toolsupport.m2e.connector"; //$NON-NLS-1$
+	public static final String PLUGIN_ID = "org.sculptor.m2e"; //$NON-NLS-1$
 
 	// The shared instance
 	private static Activator plugin;

@@ -13,7 +13,7 @@
 			</pluginExecutionFilter>
 			<action>
 				<configurator>
-					<id>org.sculptor.eclipse.m2e.plugin.workflowConfigurator</id>
+					<id>org.sculptor.m2e.workflowConfigurator</id>
 				</configurator>
 			</action>
 		</pluginExecution>
@@ -30,7 +30,7 @@
 			</pluginExecutionFilter>
 			<action>
 				<configurator>
-					<id>org.sculptor.eclipse.m2e.plugin.workflowConfigurator</id>
+					<id>org.sculptor.m2e.workflowConfigurator</id>
 				</configurator>
 			</action>
 		</pluginExecution>

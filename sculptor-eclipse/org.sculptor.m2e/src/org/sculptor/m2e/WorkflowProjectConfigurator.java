@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.sculptor.eclipse.m2e.plugin;
+package org.sculptor.m2e;
 
 import java.io.File;
 

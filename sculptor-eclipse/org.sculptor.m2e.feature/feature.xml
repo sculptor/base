@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="org.sculptor.eclipse.m2e.feature"
-      label="Fornax M2E Extensions"
+      id="org.sculptor.m2e.feature"
+      label="Sculptor M2E Connector"
       version="2.3.0.qualifier"
-      provider-name="Fornax Platform">
+      provider-name="Sculptor Project Team">
 
-   <description url="http://fornax-platform.org/">
-      M2E Extensions for the Fornax Platform tools
+   <description url="http://sculptor-mdsd.org/">
+      M2E Extensions for Sculptor
    </description>
 
    <copyright>
-      Copyright 2012 The Fornax Project Team, including the original
+      Copyright 2013 Sculptor Project Team, including the original
 author or authors.
    </copyright>
 
@@ -28,12 +28,12 @@ and limitations under the License.
    </license>
 
    <url>
-      <update label="Fornax Platform" url="http://www.fornax-platform.org/updatesite/"/>
+      <update label="Sculptor" url="http://sculptor-mdsd.org/updatesite/"/>
       <discovery label="Maven Integration (m2e)" url="http://download.eclipse.org/technology/m2e/releases"/>
    </url>
 
    <plugin
-         id="org.sculptor.eclipse.m2e.plugin"
+         id="org.sculptor.m2e"
          download-size="0"
          install-size="0"
          version="0.0.0"
