@@ -3,29 +3,28 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.sculptor</groupId>
-		<artifactId>sculptor-parent</artifactId>
-		<version>3.5</version>
-		<relativePath>../../sculptor-parent/</relativePath>
+		<artifactId>sculptor-eclipse-parent</artifactId>
+		<version>2.3.0-SNAPSHOT</version>
+		<relativePath>../sculptor-eclipse-parent/</relativePath>
 	</parent>
-	<version>2.3.0-SNAPSHOT</version>
 	<artifactId>org.sculptor.dsl.tests</artifactId>
 	<packaging>eclipse-test-plugin</packaging>
 	<name>Sculptor :: Eclipse Textual DSL Tests</name>
 	<description></description>
 	<build>
+		<sourceDirectory>src</sourceDirectory>
+		<resources>
+			<resource>
+				<directory>src</directory>
+			</resource>
+			<resource>
+				<directory>src-gen</directory>
+			</resource>
+			<resource>
+				<directory>xtend-gen</directory>
+			</resource>
+		</resources>
 		<plugins>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>target-platform-configuration</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-source-plugin</artifactId>
-			</plugin>
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>
 				<artifactId>tycho-surefire-plugin</artifactId>
@@ -59,6 +58,44 @@
 						<goals>
 							<goal>test</goal>
 						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>src-gen</source>
+								<source>xtend-gen</source>
+							</sources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>add-resource</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>add-resource</goal>
+						</goals>
+						<configuration>
+							<resources>
+								<resource>
+									<directory>src-gen</directory>
+									<targetPath>resources</targetPath>
+								</resource>
+								<resource>
+									<directory>xtend-gen</directory>
+									<targetPath>resources</targetPath>
+								</resource>
+							</resources>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>

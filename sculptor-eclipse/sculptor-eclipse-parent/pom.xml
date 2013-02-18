@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.sculptor</groupId>
+		<artifactId>sculptor-parent</artifactId>
+		<version>3.5</version>
+		<relativePath>../../sculptor-parent/</relativePath>
+	</parent>
+	<version>2.3.0-SNAPSHOT</version>
+	<artifactId>sculptor-eclipse-parent</artifactId>
+	<packaging>pom</packaging>
+	<name>Sculptor :: Eclipse Parent</name>
+	<description>The parent project for all sculptor eclipse modules
+	</description>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-maven-plugin</artifactId>
+				<extensions>true</extensions>
+			</plugin>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>target-platform-configuration</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-source-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>

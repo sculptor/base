@@ -3,24 +3,15 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.sculptor</groupId>
-		<artifactId>sculptor-parent</artifactId>
-		<version>3.5</version>
-		<relativePath>../../sculptor-parent/</relativePath>
+		<artifactId>sculptor-eclipse-parent</artifactId>
+		<version>2.3.0-SNAPSHOT</version>
+		<relativePath>../sculptor-eclipse-parent/</relativePath>
 	</parent>
-	<version>2.3.0-SNAPSHOT</version>
 	<artifactId>sculptor-repository</artifactId>
 	<packaging>eclipse-repository</packaging>
 	<name>Sculptor :: Eclipse p2 Repository</name>
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>target-platform-configuration</artifactId>
-			</plugin>
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>
 				<artifactId>tycho-p2-repository-plugin</artifactId>

@@ -3,11 +3,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.sculptor</groupId>
-		<artifactId>sculptor-parent</artifactId>
-		<version>3.5</version>
-		<relativePath>../../sculptor-parent/</relativePath>
+		<artifactId>sculptor-eclipse-parent</artifactId>
+		<version>2.3.0-SNAPSHOT</version>
+		<relativePath>../sculptor-eclipse-parent/</relativePath>
 	</parent>
-	<version>2.3.0-SNAPSHOT</version>
 	<artifactId>org.sculptor.dsl</artifactId>
 	<packaging>eclipse-plugin</packaging>
 	<name>Sculptor :: Eclipse Textual DSL</name>
@@ -24,16 +23,22 @@
 		</resources>
 		<plugins>
 			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-maven-plugin</artifactId>
+				<groupId>org.sculptor</groupId>
+				<artifactId>sculptor-maven-plugin-oaw</artifactId>
+				<configuration>
+					<workflowDescriptor>src/org/sculptor/dsl/GenerateSculptorDsl.mwe2</workflowDescriptor>
+				</configuration>
 			</plugin>
 			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>target-platform-configuration</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-source-plugin</artifactId>
+				<groupId>org.eclipse.xtend</groupId>
+				<artifactId>xtend-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
@@ -69,21 +74,35 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>org.sculptor</groupId>
-				<artifactId>sculptor-maven-plugin-oaw</artifactId>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-clean-plugin</artifactId>
 				<configuration>
-					<workflowDescriptor>src/org/sculptor/dsl/GenerateSculptordsl.mwe2</workflowDescriptor>
-					<checkFilesets>
-						<checkFileset>
-							<directory>${basedir}</directory>
+					<filesets>
+						<fileset>
+							<directory>${basedir}/src-gen</directory>
 							<includes>
-								<include>src/org/sculptor/dsl/Sculptordsl.xtext</include>
+								<include>**</include>
 							</includes>
-						</checkFileset>
-					</checkFilesets>
-					<outletSrcDir>src-gen</outletSrcDir>
-					<outletSrcOnceDir>src</outletSrcOnceDir>
-					<outletResOnceDir>resources</outletResOnceDir>
+						</fileset>
+						<fileset>
+							<directory>${basedir}/../org.sculptor.dsl.tests/src-gen</directory>
+							<includes>
+								<include>**</include>
+							</includes>
+						</fileset>
+						<fileset>
+							<directory>${basedir}/../org.sculptor.dsl.tests/xtend-gen</directory>
+							<includes>
+								<include>**</include>
+							</includes>
+						</fileset>
+						<fileset>
+							<directory>${basedir}/../org.sculptor.dsl.ui/src-gen</directory>
+							<includes>
+								<include>**</include>
+							</includes>
+						</fileset>
+					</filesets>
 				</configuration>
 			</plugin>
 		</plugins>

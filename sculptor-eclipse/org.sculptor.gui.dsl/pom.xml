@@ -3,11 +3,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.sculptor</groupId>
-		<artifactId>sculptor-parent</artifactId>
-		<version>3.5</version>
-		<relativePath>../../sculptor-parent/</relativePath>
+		<artifactId>sculptor-eclipse-parent</artifactId>
+		<version>2.3.0-SNAPSHOT</version>
+		<relativePath>../sculptor-eclipse-parent/</relativePath>
 	</parent>
-	<version>2.3.0-SNAPSHOT</version>
 	<artifactId>org.sculptor.gui.dsl</artifactId>
 	<packaging>eclipse-plugin</packaging>
 	<name>Sculptor :: Eclipse GUI DSL</name>
@@ -18,29 +17,16 @@
 			<resource>
 				<directory>src</directory>
 			</resource>
+			<resource>
+				<directory>src-gen</directory>
+			</resource>
 		</resources>
 		<plugins>
 			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>target-platform-configuration</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-source-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
+				<groupId>org.sculptor</groupId>
+				<artifactId>sculptor-maven-plugin-oaw</artifactId>
 				<configuration>
-					<archive>
-						<manifestFile>
-							../${project.artifactId}/META-INF/MANIFEST.MF
-						</manifestFile>
-					</archive>
+					<workflowDescriptor>src/org/sculptor/gui/dsl/GenerateSculptorguidsl.mwe2</workflowDescriptor>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -56,7 +42,6 @@
 						<configuration>
 							<sources>
 								<source>src-gen</source>
-								<source>xtend-gen</source>
 							</sources>
 						</configuration>
 					</execution>
@@ -72,48 +57,30 @@
 									<directory>src-gen</directory>
 									<targetPath>resources</targetPath>
 								</resource>
-								<resource>
-									<directory>xtend-gen</directory>
-									<targetPath>resources</targetPath>
-								</resource>
 							</resources>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>${project.groupId}</groupId>
-				<artifactId>sculptor-maven-plugin-oaw</artifactId>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-clean-plugin</artifactId>
 				<configuration>
-					<workflowEngine>mwe2</workflowEngine>
-					<workflowDescriptor>src/org/sculptor/gui/dsl/GenerateSculptorguidsl.mwe2</workflowDescriptor>
-					<checkFilesets>
-						<checkFileset>
-							<directory>${basedir}</directory>
+					<filesets>
+						<fileset>
+							<directory>${basedir}/src-gen</directory>
 							<includes>
-								<include>src/org/sculptor/gui/dsl/Sculptorguidsl.xtext</include>
+								<include>**</include>
 							</includes>
-						</checkFileset>
-					</checkFilesets>
-					<outletSrcDir>src-gen</outletSrcDir>
-					<outletSrcOnceDir>src</outletSrcOnceDir>
-					<outletResOnceDir>resources</outletResOnceDir>
-					<properties></properties>
-					<jvmSettings>
-						<jvmArgs>
-							<jvmArg>-Xms256m</jvmArg>
-							<jvmArg>-Xmx512m</jvmArg>
-						</jvmArgs>
-					</jvmSettings>
+						</fileset>
+						<fileset>
+							<directory>${basedir}/../org.sculptor.gui.dsl.ui/src-gen</directory>
+							<includes>
+								<include>**</include>
+							</includes>
+						</fileset>
+					</filesets>
 				</configuration>
-				<executions>
-					<execution>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>run-workflow</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>
