@@ -8,7 +8,7 @@
 		<relativePath>../../sculptor-parent</relativePath>
 	</parent>
 	<artifactId>sculptor-utilities-formatter-xml</artifactId>
-	<version>2.3.0-SNAPSHOT</version>
+	<version>2.4.0-SNAPSHOT</version>
 	<name>Sculptor XML Code Formatter</name>
 	<description>XML code formatter for Xpand</description>
 	<properties>

@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: org.sculptor.gui.dsl.ui
 Bundle-Vendor: Sculptor Team
-Bundle-Version: 2.3.0.qualifier
+Bundle-Version: 2.4.0.qualifier
 Bundle-SymbolicName: org.sculptor.gui.dsl.ui;singleton:=true
 Bundle-ActivationPolicy: lazy
-Require-Bundle: org.sculptor.gui.dsl;bundle-version="[2.3.0,4.0.0)";visibility:=reexport,
+Require-Bundle: org.sculptor.gui.dsl;bundle-version="[2.4.0,4.0.0)";visibility:=reexport,
  org.eclipse.xtext.ui,
  org.eclipse.ui.editors,
  org.eclipse.ui.ide,
