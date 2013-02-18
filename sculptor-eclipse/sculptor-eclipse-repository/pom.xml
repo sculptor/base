@@ -7,7 +7,7 @@
 		<version>2.3.0-SNAPSHOT</version>
 		<relativePath>../sculptor-eclipse-parent/</relativePath>
 	</parent>
-	<artifactId>sculptor-repository</artifactId>
+	<artifactId>sculptor-eclipse-repository</artifactId>
 	<packaging>eclipse-repository</packaging>
 	<name>Sculptor :: Eclipse p2 Repository</name>
 	<build>

@@ -13,6 +13,10 @@
 	<description>Aggregator project for all eclipse modules.</description>
 	<modules>
 		<module>sculptor-eclipse-parent</module>
+		
+		<module>sculptor-eclipse-mirror</module>
+		<module>sculptor-eclipse-library</module>
+		
 		<module>sculptor-metamodel</module>
 
 		<module>org.sculptor.dsl</module>
@@ -26,6 +30,6 @@
 		<module>org.sculptor.m2e</module>
 		<module>org.sculptor.m2e.feature</module>
 
-		<module>sculptor-repository</module>
+		<module>sculptor-eclipse-repository</module>
 	</modules>
 </project>
