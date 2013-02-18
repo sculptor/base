@@ -21,4 +21,9 @@ package org.sculptor.dsl;
  */
 public class SculptordslRuntimeModule extends org.sculptor.dsl.AbstractSculptordslRuntimeModule {
 
+	@Override
+	@org.eclipse.xtext.service.SingletonBinding(eager=true)	public Class<? extends org.sculptor.dsl.validation.SculptordslJavaValidator> bindSculptordslJavaValidator() {
+		return org.sculptor.dsl.validation.SculptordslXtendValidator.class;
+	}
+
 }

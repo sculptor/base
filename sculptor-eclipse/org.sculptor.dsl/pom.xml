@@ -20,6 +20,9 @@
 			<resource>
 				<directory>src-gen</directory>
 			</resource>
+			<resource>
+				<directory>xtend-gen</directory>
+			</resource>
 		</resources>
 		<plugins>
 			<plugin>
@@ -52,6 +55,7 @@
 						</goals>
 						<configuration>
 							<sources>
+								<source>xtend-gen</source>
 								<source>src-gen</source>
 							</sources>
 						</configuration>
@@ -64,6 +68,10 @@
 						</goals>
 						<configuration>
 							<resources>
+								<resource>
+									<directory>xtend-gen</directory>
+									<targetPath>resources</targetPath>
+								</resource>
 								<resource>
 									<directory>src-gen</directory>
 									<targetPath>resources</targetPath>
@@ -80,6 +88,12 @@
 					<filesets>
 						<fileset>
 							<directory>${basedir}/src-gen</directory>
+							<includes>
+								<include>**</include>
+							</includes>
+						</fileset>
+						<fileset>
+							<directory>${basedir}/xtend-gen</directory>
 							<includes>
 								<include>**</include>
 							</includes>
