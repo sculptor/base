@@ -18,6 +18,7 @@
 package org.fornax.cartridges.sculptor.framework.accessimpl.jpahibernate;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -31,6 +32,7 @@ import org.fornax.cartridges.sculptor.framework.accessapi.ConditionalCriteria;
 import org.fornax.cartridges.sculptor.framework.accessapi.ConditionalCriteria.Operator;
 import org.fornax.cartridges.sculptor.framework.accessapi.FindByConditionAccess;
 import org.fornax.cartridges.sculptor.framework.accessimpl.jpa.JpaAccessBase;
+import org.fornax.cartridges.sculptor.framework.domain.Property;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
 import org.hibernate.criterion.Conjunction;
@@ -54,13 +56,13 @@ public class JpaHibFindByConditionAccessImpl<T> extends JpaAccessBase<T>
 		implements FindByConditionAccess<T> {
 
 	private List<ConditionalCriteria> cndCriterias = new ArrayList<ConditionalCriteria>();
-//	private Set<String> fetchAssociations = new HashSet<String>();
 	private int firstResult = -1;
 	private int maxResult = 0;
 	private boolean realDistinctRoot=false;
 	private List<T> result;
 	Long rowCount = null;
 	private ResultTransformer resultTransformer=Criteria.DISTINCT_ROOT_ENTITY;
+	private Property<?>[] fetchEager;
 
 	public JpaHibFindByConditionAccessImpl(Class<T> persistentClass) {
 		setPersistentClass(persistentClass);
@@ -88,6 +90,14 @@ public class JpaHibFindByConditionAccessImpl<T> extends JpaAccessBase<T>
 
 	public void setMaxResult(int maxResult) {
 		this.maxResult = maxResult;
+	}
+
+	public void setFetchEager(Property<?>[] fetchEager) {
+		this.fetchEager = fetchEager;
+	}
+
+	public Property<?>[] getFetchEager() {
+		return fetchEager;
 	}
 
 	public List<T> getResult() {
@@ -149,11 +159,27 @@ public class JpaHibFindByConditionAccessImpl<T> extends JpaAccessBase<T>
 	}
 
 	private void addFetchStrategy(Criteria criteria) {
+		List<Property<?>> eagerProps =  new ArrayList<Property<?>>(Arrays.asList(fetchEager != null ? fetchEager : new Property<?> [] {}));
 		for (ConditionalCriteria crit : cndCriterias) {
 			if (Operator.FetchEager.equals(crit.getOperator())) {
 				criteria.setFetchMode(crit.getPropertyFullName(), FetchMode.JOIN);
+				removeProp(eagerProps, crit);
 			} else if (Operator.FetchLazy.equals(crit.getOperator())) {
 				criteria.setFetchMode(crit.getPropertyFullName(), FetchMode.SELECT);
+				removeProp(eagerProps, crit);
+			}
+		}
+		for (Property<?> p : eagerProps) {
+			criteria.setFetchMode(p.getName(), FetchMode.JOIN);
+		}
+	}
+
+	private void removeProp(List<Property<?>> eagerProps, ConditionalCriteria crit) {
+		// Criteria fetch has higher priority than fetchEager
+		for (int i=0; i < eagerProps.size(); i++) {
+			if (eagerProps.get(i).getName().equals(crit.getPropertyFullName())) {
+				eagerProps.remove(i);
+				break;
 			}
 		}
 	}
