@@ -101,6 +101,7 @@ public «IF gapClass»abstract «ENDIF»class «name»«gapClass ? "Base" : getSuffix("
     public «name»«gapClass ? "Base" : getSuffix("Impl")»() {
     }
 
+    «EXPAND fetchEagerFields-»
     «EXPAND repositoryDependencies»
 
     «EXPAND baseRepositoryMethod FOREACH operations.select(op | op.delegateToAccessObject && !op.isGenericAccessObject())»
@@ -184,6 +185,14 @@ public «IF gapClass»abstract «ENDIF»class «name»«gapClass ? "Base" : getSuffix("
     protected javax.persistence.EntityManager getEntityManager() {
         return entityManager;
     }
+«ENDDEFINE»
+
+«DEFINE fetchEagerFields FOR Repository»
+	«IF (operations.exists(e | e.hasHint("useFetchEager")))»
+   private static final org.fornax.cartridges.sculptor.framework.domain.Property<?>[] eagerFields={
+		«FOREACH aggregateRoot.references.select(r | !r.many && !r.isBasicTypeReference() && !r.isEnumReference()) AS e SEPARATOR ", "»«getDomainPackage(aggregateRoot)».«aggregateRoot.name»Properties.«e.name»()«ENDFOREACH»
+	};
+	«ENDIF»
 «ENDDEFINE»
 
 «DEFINE repositoryDependencies FOR Repository»
@@ -278,6 +287,7 @@ public class «name + getSuffix("Impl")» extends «name»Base {
         «getAccessapiPackage(repository.aggregateRoot.module)».«getAccessObjectName()»«getGenericType()» ao = create«getAccessObjectName()»();
     «ENDIF»
 		«EXPAND setCache-»
+		«EXPAND setEagerColumns-»
 		«EXPAND setOrdered-»
 		«FOREACH parameters.reject(e | e == pagingParameter) AS parameter-»
 		ao.set«parameter.name.toFirstUpper()»(«parameter.name»);
@@ -326,6 +336,12 @@ public class «name + getSuffix("Impl")» extends «name»Base {
 «DEFINE setCache FOR RepositoryOperation»
     «IF hasHint("cache")-»
         ao.setCache(true);
+    «ENDIF-»
+«ENDDEFINE»
+
+«DEFINE setEagerColumns FOR RepositoryOperation»
+    «IF hasHint("useFetchEager")-»
+        ao.setFetchEager(eagerFields);
     «ENDIF-»
 «ENDDEFINE»
 
@@ -380,6 +396,7 @@ public class «name + getSuffix("Impl")» extends «name»Base {
             «genericAccessObjectInterface(name)»«getGenericType()» ao = create«getAccessObjectName()»();
     	«ENDIF»
     	«EXPAND setCache-»
+		«EXPAND setEagerColumns-»
     	«EXPAND setOrdered-»
     «IF hasHint("useSingleResult")»
     	ao.setUseSingleResult(true);
@@ -426,6 +443,7 @@ public class «name + getSuffix("Impl")» extends «name»Base {
         «genericAccessObjectInterface(name)»«getGenericType()» ao = create«getAccessObjectName()»();
     «ENDIF»
 		«EXPAND setCache-»
+		«EXPAND setEagerColumns-»
 		«EXPAND setOrdered-»
 		«FOREACH parameters.reject(e | e == pagingParameter) AS parameter-»
 		ao.set«parameter.name.toFirstUpper()»(«parameter.name»);

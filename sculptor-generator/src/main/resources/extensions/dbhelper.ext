@@ -42,7 +42,7 @@ private String getDerivedFetch(Reference ref) :
         null : // no default fetch for manyToMany
         ((ref.to.isEntityOrPersistentValueObject() && !ref.to.aggregateRoot) ?
             "join" :  // join fetch within same aggregate boundary
-            null);
+            getProperty("default.fetchStrategy", null));
 
 String getHibernateCacheUsage(Object obj) :
     switch (cacheProvider()) {

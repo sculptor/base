@@ -373,6 +373,9 @@ public class GenericAccessObjectManager {
                     addDefaultCollectionType(operation);
                 }
             }
+            if (GeneratorProperties.getBooleanProperty("generate.singleLevelFetchEager")) {
+                GenerationHelper.addHint(operation, "useFetchEager");
+            }
         }
 
         @Override
@@ -588,6 +591,10 @@ public class GenericAccessObjectManager {
                     addDefaultDomainObjectType(operation);
                     addDefaultCollectionType(operation);
                 }
+            }
+
+            if (GeneratorProperties.getBooleanProperty("generate.singleLevelFetchEager")) {
+                GenerationHelper.addHint(operation, "useFetchEager");
             }
         }
 

@@ -26,6 +26,7 @@ modify(Application app) :
 	initPropertiesHook() ->
 	app.modules.domainObjects.typeSelect(Trait).modifyChangeable() ->
 	app.modules.domainObjects.mixin() ->
+	app.modules.domainObjects.modifyExtends() ->
 	app.modules.getNonEnumDomainObjects().modifyUuid() ->
     app.getAllRepositories().operations.select(e | !e.delegateToAccessObject && !e.isGenericAccessObject() && e.isGeneratedFinder()).modifyDynamicFinderOperations() ->
     app.getAllRepositories().modifyPagingOperations() ->
@@ -33,7 +34,6 @@ modify(Application app) :
     app.getAllRepositories().modifySubscriber() ->
     app.modules.serviceAddDefaultValues() ->
     app.modules.resourceAddDefaultValues() ->
-    app.modules.domainObjects.modifyExtends() ->
     app.modules.domainObjects.modifyBelongsToAggregate() ->
     app.modules.domainObjects.typeSelect(ValueObject).modifySubclassesPersistent() ->
     app.modules.domainObjects.typeSelect(ValueObject).modifyAbstractPersistent() ->

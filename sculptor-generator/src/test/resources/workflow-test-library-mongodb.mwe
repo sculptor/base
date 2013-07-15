@@ -6,3 +6,11 @@
 	</cartridge>
 	
 </workflow>
+<workflow>
+
+	<cartridge file="sculptorworkflowtest.mwe">
+		<modelFile value="classpath:/library-mongodb.btdesign"/>
+		<appProject value="fornax-cartridges-sculptor-generator"/>
+	</cartridge>
+	
+</workflow>
